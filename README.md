@@ -3,7 +3,11 @@ Anomaly detection for transaction logs on ETH-family blockchains.
 ## Install dependencies and run
 Should use python virtual env or anaconda
 * `pip install -r requirements.txt`
-* `python main.py`
+* `python main.py -h`
+
+Sample usage: 
+* `python main.py -t 0x2272f93e8ce2b475521ed436cd72fca150fd6b672a867b9e6971b8c0dea5c331`
+
 ## TODO 
 * [x] Template for interacting with blockchain + getting tx info  
 * [ ] Clasify given address to different classes
