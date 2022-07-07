@@ -13,6 +13,7 @@ import os
 from web3 import Web3
 from eth_utils import to_wei, encode_hex
 import time
+from utils import classify_address
 def prepare_web3 (rpc_url = "https://eth-mainnet.public.blastapi.io/"):
   w3 = Web3(Web3.HTTPProvider(rpc_url))
   block = w3.eth.get_block('latest')
@@ -36,8 +37,9 @@ def process_tx(w3,tx_hash):
   time.sleep(0.1)
   for log in logs:
     if(log['address']):
-      addresses.append(log['address'])
+      addresses.extend([log['address']])
   return addresses
+  
 # TODO: input: ETH address, output: which class that address belong to 
 # (e.g. currently : 
 # + DEX (e.g. uniswap)
@@ -51,8 +53,8 @@ def process_tx(w3,tx_hash):
 # + What else that we can think of ?...
 # + other contracts (e.g. contracts with bytecode & we cant understand)
 # + normal address
-def classify_address(w3, addresses):
-  ...
+def process_address(w3, address):
+  return classify_address(w3,address)
 
 # get all tx hashes from_block, to_block, will be used as input to process_tx
 def get_tx_list(w3, from_block, to_block):
@@ -71,15 +73,18 @@ if __name__ == '__main__':
     parser.add_argument("-t", "--transaction", type=str, help="transaction hash to analyze")
     parser.add_argument( "--start-block", type=int, help="Start block number to analyze")
     parser.add_argument( "--num-block", type=int, default=1 , help="number of blocks to analyze")
+    parser.add_argument("-a", "--address", type=str, help="address to classify")
     args = parser.parse_args()
     w3 = prepare_web3()
     if args.transaction:
-        addr_list = process_tx(w3, args.transaction)
-        print ("list of log addr ", addr_list)
-        exit(0)
+      addr_list = process_tx(w3, args.transaction)
+      print ("list of log addr ", addr_list)
+      exit(0)
     if args.start_block:
-        tx_list = get_tx_list(w3, args.start_block, args.start_block + args.num_block)
-        addr_list = []
-        for tx in tx_list:
-          addr_list.append(process_tx(w3, tx))
-        print ("list of log addr ", addr_list)
+      tx_list = get_tx_list(w3, args.start_block, args.start_block + args.num_block)
+      addr_list = []
+      for tx in tx_list:
+        addr_list.append(process_tx(w3, tx))
+      print ("list of log addr ", addr_list)
+    if args.address:
+      address_class = process_address(w3,args.address)
