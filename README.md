@@ -10,7 +10,7 @@ Sample usage:
 * `python main.py -a 0xdAC17F958D2ee523a2206206994597C13D831ec7`
 ## TODO 
 * [x] Template for interacting with blockchain + getting tx info  
-* [ ] Clasify given address to different classes
+* [ ] Clasify given address to different classes. Using function + event signatures on ERC20, todo other ERC standards
 * [ ] Find a way to decode log entries to more structured data
 * [ ] Build database of decoded + cleaned tx log
 ## Team
