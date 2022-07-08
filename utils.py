@@ -5,7 +5,8 @@ from eth_utils import to_hex
 signature_files = {
                     "ERC20": 'signature_data/erc20_signature.json'
                 }
-
+# Special case when address is a proxy 
+proxy_signature = '5c60da1b' # implementation()
 # not the optimal way of doing this because we load json file everytime.
 # in the future after determined + processed all classes signatures
 # we can put these signatures in some constants variable
@@ -26,5 +27,15 @@ def classify_address(w3,address):
             matched_result = key_
         matching_results[key_] = match_count/len(signatures)
     print (f" found matched results {matched_result} {matched_perc*100}% identical ")
+    #check proxy
+    if matched_result == 'Not Identified' and proxy_signature in byte_code:
+        implementation_addr = '0x00'
+        # need to send tx with data "5c60da1b" to the proxy address.
+        # the current provider doesnt have account to sign, how to send ?
+        implementation_addr = w3.eth.call({'value': 0, 'gas': 100000, 
+                                            'to': address,
+                                                'data': '0x'+proxy_signature})
+        print ("implementation found ", implementation_addr)
+
     print ("debug ", matching_results)
     return matched_result
