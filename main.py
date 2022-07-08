@@ -14,7 +14,8 @@ from web3 import Web3
 from eth_utils import to_wei, encode_hex
 import time
 from utils import classify_address
-def prepare_web3 (rpc_url = "https://eth-mainnet.public.blastapi.io/"):
+# URL from Metamask's test code
+def prepare_web3 (rpc_url = "https://mainnet.infura.io/v3/341eacb578dd44a1a049cbc5f6fd4035"):
   w3 = Web3(Web3.HTTPProvider(rpc_url))
   block = w3.eth.get_block('latest')
   print ("Connected, latest block ", block.number)
@@ -63,7 +64,6 @@ def get_tx_list(w3, from_block, to_block):
     block = w3.eth.get_block(i)
     tx_list.extend(list(map(lambda x: Web3.toHex(x),block.transactions)))
   return tx_list
-
 
 # print(get_tx_list(w3, 15005468, 15005470))
 # target_tx_hash = "0x2272f93e8ce2b475521ed436cd72fca150fd6b672a867b9e6971b8c0dea5c331"

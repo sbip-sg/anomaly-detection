@@ -31,7 +31,9 @@ def classify_address(w3,address):
     if matched_result == 'Not Identified' and proxy_signature in byte_code:
         implementation_addr = '0x00'
         # need to send tx with data "5c60da1b" to the proxy address.
-        # the current provider doesnt have account to sign, how to send ?
+        # the unstructured proxy stores the impelemntation address at a location where we can get from source code
+        # https://ethereum.stackexchange.com/questions/103143/how-do-i-get-the-implementation-contract-address-from-the-proxy-contract-address
+        # https://eips.ethereum.org/EIPS/eip-1967#logic-contract-address
         implementation_addr = w3.eth.call({'value': 0, 'gas': 100000, 
                                             'to': address,
                                                 'data': '0x'+proxy_signature})
