@@ -11,9 +11,13 @@ Original file is located at
 import argparse
 import os
 from web3 import Web3
+from web3.logs import STRICT, IGNORE, DISCARD, WARN
 from eth_utils import to_wei, encode_hex
 import time
 from utils import classify_address
+import requests
+import json
+
 # URL from Metamask's test code
 def prepare_web3 (rpc_url = "https://mainnet.infura.io/v3/341eacb578dd44a1a049cbc5f6fd4035"):
   w3 = Web3(Web3.HTTPProvider(rpc_url))
@@ -29,17 +33,46 @@ def prepare_web3 (rpc_url = "https://mainnet.infura.io/v3/341eacb578dd44a1a049cb
 
 
 # log entry has address 
-# return all addresses own log entry + classify these addresses
+# return all addresses own log entry + classify these addresses 
 # TODO: inside log topics also has address, detect & decode these. 
-def process_tx(w3,tx_hash):
+def process_tx(w3, tx_hash, abi_token = 'BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD'):
+  # using a default abi_token 
   addresses = []
-  logs = w3.eth.getTransactionReceipt(tx_hash).logs
+  # readable logs
+  decoded_logs = []
+  # A dictionary between the name of funtion and its hex
+  # hex_of_function_name : function_name
+  database = {}
+  receipt = w3.eth.get_transaction_receipt(tx_hash)
+  logs = receipt.logs
   #using public RPC must restrict the connection number
   time.sleep(0.1)
   for log in logs:
     if(log['address']):
+      # print("log = ", log)
       addresses.extend([log['address']])
-  return addresses
+      smart_contract = log["address"]
+      abi_endpoint = f"https://api.etherscan.io/api?module=contract&action=getabi&address={smart_contract}&apikey={abi_token}"
+      abi = json.loads(requests.get(abi_endpoint).text)
+      contract = w3.eth.contract(smart_contract, abi=abi["result"])
+      receipt_event_signature_hex = w3.toHex(log["topics"][0])
+      abi_events = [abi for abi in contract.abi if abi["type"] == "event"]
+      for event in abi_events:
+        # Get event signature components
+        name = event["name"]
+        inputs = [param["type"] for param in event["inputs"]]
+        inputs = ",".join(inputs)
+        # Hash event signature
+        event_signature_text = f"{name}({inputs})"
+        event_signature_hex = w3.toHex(w3.keccak(text=event_signature_text))
+        # Find match between log's event signature and ABI's event signature
+        if event_signature_hex == receipt_event_signature_hex:
+            # Decode matching log
+            decoded_log = contract.events[event["name"]]().processReceipt(receipt, errors = DISCARD)
+            database[event_signature_hex] = event['name']
+            decoded_logs.append(decoded_log)
+  # return addresses + readable logs + dictionary between the name of funtion and its hex
+  return addresses, decoded_logs, database
   
 # TODO: input: ETH address, output: which class that address belong to 
 # (e.g. currently : 
@@ -65,6 +98,24 @@ def get_tx_list(w3, from_block, to_block):
     tx_list.extend(list(map(lambda x: Web3.toHex(x),block.transactions)))
   return tx_list
 
+# add database into file
+def store_json(file, database):
+  # read json file
+  f = open(file, 'r')
+  if len(f.read()) == 0:
+    db_dict = {}
+  else:
+    f.seek(0)
+    db_dict = json.load(f)
+  f.close()
+
+  # add new database and write it back
+  f = open(file, 'w')
+  db_dict.update(database)
+  db_json = json.dumps(db_dict)
+  f.write(db_json)
+  f.close()
+
 # print(get_tx_list(w3, 15005468, 15005470))
 # target_tx_hash = "0x2272f93e8ce2b475521ed436cd72fca150fd6b672a867b9e6971b8c0dea5c331"
 # print(process_tx(w3,target_tx_hash))
@@ -74,11 +125,20 @@ if __name__ == '__main__':
     parser.add_argument( "--start-block", type=int, help="Start block number to analyze")
     parser.add_argument( "--num-block", type=int, default=1 , help="number of blocks to analyze")
     parser.add_argument("-a", "--address", type=str, help="address to classify")
+    parser.add_argument("--rpc-url", type=str, help="user used rpc-url")
     args = parser.parse_args()
-    w3 = prepare_web3()
+    if args.rpc_url:
+      w3 = prepare_web3(args.rpc_url)
+    else:
+      w3 = prepare_web3()
     if args.transaction:
-      addr_list = process_tx(w3, args.transaction)
+      addr_list, decoded_logs, database = process_tx(w3, args.transaction)
       print ("list of log addr ", addr_list)
+      print()
+      for log in decoded_logs:
+        print("decoded log ", log)
+        print()
+      store_json('database/topics.json', database)
       exit(0)
     if args.start_block:
       tx_list = get_tx_list(w3, args.start_block, args.start_block + args.num_block)
