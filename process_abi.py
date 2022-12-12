@@ -1,9 +1,10 @@
 # process abi json file to a file with signatures for bytecode classification.
 # the bytecode contains all the signatures => belong to the class
 # we try not to rely on etherscan or the contract sourcecode, just bytecode querying from blockchain
-from eth_utils import event_abi_to_log_topic, function_abi_to_4byte_selector, to_hex
 import argparse
 import json
+from eth_utils import event_abi_to_log_topic, function_abi_to_4byte_selector, to_hex
+
 def process_abi_to_signature(input_file, output_file):
     #assume input_file has only 1 contract
     input_file = open(input_file)

@@ -62,9 +62,9 @@ jobs:
         run: |
           pip install pylint==2.15.3
           pylint **/*.py *.py
-      - name: Test with pytest or unittest
-        env:
-          LIB_TINYEVM: ./libtinyevm.so
-        run: |
-          # pytest
-          # python -m unittest discover tests
+      # - name: Test with pytest or unittest
+      #   env:
+      #     LIB_TINYEVM: ./libtinyevm.so
+      #   run: |
+      #     # pytest
+      #     # python -m unittest discover tests
