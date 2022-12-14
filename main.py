@@ -15,6 +15,8 @@ from web3.logs import STRICT, IGNORE, DISCARD, WARN
 from eth_utils import to_wei, encode_hex
 import time
 from utils.address_utils import classify_address
+from utils.json_utils import store_json, open_json
+from utils.etherscan_utils import get_passed_blocks_in_days
 import requests
 import json
 import datetime
@@ -44,10 +46,8 @@ def process_tx(w3, tx_hash):
     addresses = []
     # readable logs
     decoded_logs = []
-    # A dictionary between the name of funtion and its hex
-    # hex_of_function_name : function_name
-    database = {}
-
+    # hex and event lookup
+    db_dict = open_json()
     # deal with errors
     try:
         receipt = w3.eth.get_transaction_receipt(tx_hash)
@@ -61,22 +61,22 @@ def process_tx(w3, tx_hash):
     # using public RPC must restrict the connection number
     # time.sleep(0.1)
     for log in logs:
-        print ("log ", log)
-        event_address = log.get('address')
+        # print ("log ", log)
+        event_address = log.get("address")
+        log_topics = log.get("topics")
+        event_data = log.get("data")
         if event_address:
-            db_dict = open_json()
-            # print( w3.toHex(log["topics"][0]))
-            # skip function which has been added in database
-            if w3.toHex(log["topics"][0]) in db_dict.keys():
-                print("topic exists in db")
-                continue
+            decoded_log_entry = db_dict.get(w3.toHex(log_topics[0]))
+            if not decoded_log_entry:
+                decoded_log_entry = "Unknow Event"
+            decoded_logs.append((decoded_log_entry, log_topics[1:], event_data))
             # print("log = ", log)
             addresses.extend([event_address])
 
     # return addresses + readable logs + dictionary between the name of funtion and its hex
     # print("over")
     # print("whole time ", time.time()-begin)
-    return addresses, decoded_logs, database
+    return addresses, decoded_logs
 
 # TODO: input: ETH address, output: which class that address belong to
 # (e.g. currently :
@@ -92,31 +92,25 @@ def process_tx(w3, tx_hash):
 # + other contracts (e.g. contracts with bytecode & we cant understand)
 # + normal address
 
-def get_event_from_etherscan(contract_address , abi_token='BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD'):
-    abi_endpoint = f"https://api.etherscan.io/api?module=contract&action=getabi&address={contract_address}&apikey={abi_token}"
-    abi = json.loads(requests.get(abi_endpoint).text)
-    if abi['status'] == '0':
-        return {}
-    # print("abi =", abi)
-    contract = w3.eth.contract(contract_address, abi=abi["result"])
-    receipt_event_signature_hex = w3.toHex(log["topics"][0])
-    abi_events = [abi for abi in contract.abi if abi["type"] == "event"]
-    for event in abi_events:
-        # Get event signature components
-        name = event["name"]
-        inputs = [param["type"] for param in event["inputs"]]
-        inputs = ",".join(inputs)
-        # Hash event signature
-        event_signature_text = f"{name}({inputs})"
-        event_signature_hex = w3.toHex(w3.keccak(text=event_signature_text))
-        # Find match between log's event signature and ABI's event signature
-        if event_signature_hex == receipt_event_signature_hex:
-            # Decode matching log
-            decoded_log = contract.events[event["name"]]().processReceipt(receipt, errors=DISCARD)
-            topic = name + '(' + inputs + ')'
-            database[event_signature_hex] = topic
-            decoded_logs.append(decoded_log)
+def build_db_from_tx(w3, tx_hash):
+    database = {}
+    try:
+        receipt = w3.eth.get_transaction_receipt(tx_hash)
+    except requests.exceptions.HTTPError as exc:
+        print("request too much")
+        raise Exception('"request too much"') from exc
+
+    logs = receipt.logs
+    for log in logs:
+        print ("log ", log)
+        event_address = log.get('address')
+        if event_address:
+            db_dict = open_json()
+            if w3.toHex(log["topics"][0]) in db_dict.keys():
+                print("topic exists in db")
+                continue
     return database
+
 def process_address(w3, address):
     return classify_address(w3, address)
 
@@ -130,34 +124,9 @@ def get_tx_list(w3, from_block, to_block):
 
     return tx_list
 
-def open_json(file='database/topics.json'):
-    # read json file
-    f = open(file, 'r')
-    if len(f.read()) == 0:
-        db_dict = {}
-    else:
-        f.seek(0)
-        db_dict = json.load(f)
-    f.close()
-    return db_dict
-
-# add database into file
-
-
-def store_json(file, database):
-    db_dict = open_json(file)
-
-    # add new database and write it back
-    f = open(file, 'w')
-    db_dict.update(database)
-    print("num = ", len(db_dict))
-    db_json = json.dumps(db_dict, indent=4)
-    f.write(db_json)
-    f.close()
-
-
-def creat_database(w3, from_block, to_block):
-    # from_block, to_block = get_passed_blocks(7, abi_key)
+def creat_database(w3, from_block=0, to_block=0):
+    if to_block == 0:
+        from_block, to_block = get_passed_blocks_in_days(7)
     for i in range(from_block, to_block+1):
         begin = time.time()
         tx_list = get_tx_list(w3, i, i+1)
@@ -166,14 +135,11 @@ def creat_database(w3, from_block, to_block):
 
             # deal with http errors: multiple events
             try:
-                _, _, database = process_tx(w3, tx)
+                database = build_db_from_tx(w3, tx)
             except Exception as e:
                 e_msg = f"error at {i}th block, {j}th tx: {e}\n"
                 print(e_msg)
-                with open('error.txt', 'a') as f:
-                    f.write(e_msg)
-                continue
-                # exit(0)
+                exit(0)
             if len(database) > 0:
                 store_json('database/topics.json', database)
         print("block: ", i, '/', to_block, "(", i-from_block, "/", to_block-from_block, ") time ", time.time()-begin)
@@ -198,14 +164,13 @@ if __name__ == '__main__':
 
     if args.build_db:
         creat_database(w3)
+        exit(0)
 
     if args.transaction:
-        addr_list, decoded_logs, database = process_tx(w3, args.transaction)
+        addr_list, decoded_logs = process_tx(w3, args.transaction)
         print("list of log addr ", addr_list)
         for log in decoded_logs:
             print("decoded log ", log)
-            print()
-        store_json('database/topics.json', database)
         exit(0)
     if args.start_block:
         tx_list = get_tx_list(w3, args.start_block, args.start_block + args.num_block)
