@@ -14,90 +14,72 @@ from web3 import Web3
 from web3.logs import STRICT, IGNORE, DISCARD, WARN
 from eth_utils import to_wei, encode_hex
 import time
-from utils import classify_address
+from utils.address_utils import classify_address
+from utils.json_utils import store_json, open_json
+from utils.etherscan_utils import get_passed_blocks_in_days
 import requests
 import json
 import datetime
 
 # URL from Metamask's test code
-def prepare_web3 (rpc_url = "https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134"):
-  w3 = Web3(Web3.HTTPProvider(rpc_url))
-  block = w3.eth.get_block('latest')
-  print ("Connected, latest block ", block.number)
-  return w3
-
-#A normal transaction with 9 log entries (decoded): 
-#https://etherscan.io/tx/0x2272f93e8ce2b475521ed436cd72fca150fd6b672a867b9e6971b8c0dea5c331#eventlog
-#An exploit transaction made by hacker with 164 log entries: 	
-#https://etherscan.io/tx/0x0fe2542079644e107cbf13690eb9c2c65963ccb79089ff96bfaf8dced2331c92#eventlog
-#Another exploit transaction with 34 log entries https://etherscan.io/tx/0xb25e3f872896a0fde22ce60b57553b5304aa4584c47bdb293589bdbd3317de65#eventlog
 
 
-# log entry has address 
-# return all addresses own log entry + classify these addresses 
-# TODO: inside log topics also has address, detect & decode these. 
-def process_tx(w3, tx_hash, abi_token = 'BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD'):
-  # begin = time.time()
-  # using a default abi_token 
-  addresses = []
-  # readable logs
-  decoded_logs = []
-  # A dictionary between the name of funtion and its hex
-  # hex_of_function_name : function_name
-  database = {}
+def prepare_web3(rpc_url="https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134"):
+    w3 = Web3(Web3.HTTPProvider(rpc_url))
+    block = w3.eth.get_block('latest')
+    print("Connected, latest block ", block.number)
+    return w3
 
-  # deal with errors
-  try:
-    receipt = w3.eth.get_transaction_receipt(tx_hash)
-  except requests.exceptions.HTTPError:
-    print("request too much")
-    raise Exception('"request too much"')
+# A normal transaction with 9 log entries (decoded):
+# https://etherscan.io/tx/0x2272f93e8ce2b475521ed436cd72fca150fd6b672a867b9e6971b8c0dea5c331#eventlog
+# An exploit transaction made by hacker with 164 log entries:
+# https://etherscan.io/tx/0x0fe2542079644e107cbf13690eb9c2c65963ccb79089ff96bfaf8dced2331c92#eventlog
+# Another exploit transaction with 34 log entries https://etherscan.io/tx/0xb25e3f872896a0fde22ce60b57553b5304aa4584c47bdb293589bdbd3317de65#eventlog
 
-  # print("receipt ", time.time()-begin)
-  logs = receipt.logs
-  #using public RPC must restrict the connection number
-  # time.sleep(0.1)
-  for log in logs:
-    if(log['address']):
-      db_dict = open_json()
-      # print( w3.toHex(log["topics"][0]))
-      # skip function which has been added in database
-      if w3.toHex(log["topics"][0]) in set(db_dict.keys()):
-        # print("con")
-        continue  
-      # print("log = ", log)
-      addresses.extend([log['address']])
-      smart_contract = log["address"]
-      abi_endpoint = f"https://api.etherscan.io/api?module=contract&action=getabi&address={smart_contract}&apikey={abi_token}"
-      abi = json.loads(requests.get(abi_endpoint).text)
-      if abi['status'] == '0':
-        continue
-      # print("abi =", abi)
-      contract = w3.eth.contract(smart_contract, abi=abi["result"])
-      receipt_event_signature_hex = w3.toHex(log["topics"][0])
-      abi_events = [abi for abi in contract.abi if abi["type"] == "event"]
-      for event in abi_events:
-        # Get event signature components
-        name = event["name"]
-        inputs = [param["type"] for param in event["inputs"]]
-        inputs = ",".join(inputs)
-        # Hash event signature
-        event_signature_text = f"{name}({inputs})"
-        event_signature_hex = w3.toHex(w3.keccak(text=event_signature_text))
-        # Find match between log's event signature and ABI's event signature
-        if event_signature_hex == receipt_event_signature_hex:
-            # Decode matching log
-            decoded_log = contract.events[event["name"]]().processReceipt(receipt, errors = DISCARD)
-            topic = name + '(' + inputs + ')'
-            database[event_signature_hex] = topic
-            decoded_logs.append(decoded_log)
-  # return addresses + readable logs + dictionary between the name of funtion and its hex
-  # print("over")
-  # print("whole time ", time.time()-begin)
-  return addresses, decoded_logs, database
-  
-# TODO: input: ETH address, output: which class that address belong to 
-# (e.g. currently : 
+
+# log entry has address
+# return all addresses own log entry + classify these addresses
+# TODO: inside log topics also has address, detect & decode these.
+def process_tx(w3, tx_hash):
+    # begin = time.time()
+    # using a default abi_token
+    addresses = []
+    # readable logs
+    decoded_logs = []
+    # hex and event lookup
+    db_dict = open_json()
+    # deal with errors
+    try:
+        receipt = w3.eth.get_transaction_receipt(tx_hash)
+    except requests.exceptions.HTTPError as exc:
+        print("request too much")
+        raise Exception('"request too much"') from exc
+
+    print (f"process tx {tx_hash}")
+    # print("receipt ", time.time()-begin)
+    logs = receipt.logs
+    # using public RPC must restrict the connection number
+    # time.sleep(0.1)
+    for log in logs:
+        # print ("log ", log)
+        event_address = log.get("address")
+        log_topics = log.get("topics")
+        event_data = log.get("data")
+        if event_address:
+            decoded_log_entry = db_dict.get(w3.toHex(log_topics[0]))
+            if not decoded_log_entry:
+                decoded_log_entry = "Unknow Event"
+            decoded_logs.append((decoded_log_entry, log_topics[1:], event_data))
+            # print("log = ", log)
+            addresses.extend([event_address])
+
+    # return addresses + readable logs + dictionary between the name of funtion and its hex
+    # print("over")
+    # print("whole time ", time.time()-begin)
+    return addresses, decoded_logs
+
+# TODO: input: ETH address, output: which class that address belong to
+# (e.g. currently :
 # + DEX (e.g. uniswap)
 # + flashloan provider (e.g. Aave)
 # + Token contract (specify which type):
@@ -109,79 +91,59 @@ def process_tx(w3, tx_hash, abi_token = 'BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD'):
 # + What else that we can think of ?...
 # + other contracts (e.g. contracts with bytecode & we cant understand)
 # + normal address
+
+def build_db_from_tx(w3, tx_hash):
+    database = {}
+    try:
+        receipt = w3.eth.get_transaction_receipt(tx_hash)
+    except requests.exceptions.HTTPError as exc:
+        print("request too much")
+        raise Exception('"request too much"') from exc
+
+    logs = receipt.logs
+    for log in logs:
+        print ("log ", log)
+        event_address = log.get('address')
+        if event_address:
+            db_dict = open_json()
+            if w3.toHex(log["topics"][0]) in db_dict.keys():
+                print("topic exists in db")
+                continue
+    return database
+
 def process_address(w3, address):
-  return classify_address(w3,address)
+    return classify_address(w3, address)
 
-def get_block_num(dt):
-    timeStamp = int(dt.timestamp())
-    block_endpoint = f"https://api.etherscan.io/api?module=block&action=getblocknobytime&timestamp={timeStamp}&closest=before&apikey=BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD"
-    block_json = json.loads(requests.get(block_endpoint).text) 
-    return int(block_json['result'])
-
-def get_passed_blocks(delta_day = 7):
-  from_block = get_block_num(datetime.datetime.now() - datetime.timedelta(delta_day))
-  to_block = get_block_num(datetime.datetime.now())
-  return from_block, to_block
 
 # get all tx hashes from_block, to_block, will be used as input to process_tx
 def get_tx_list(w3, from_block, to_block):
-  tx_list = []
-  for i in range(from_block, to_block):
-    block = w3.eth.get_block(i)
-    tx_list.extend(list(map(lambda x: Web3.toHex(x),block.transactions)))
-    
-  return tx_list
+    tx_list = []
+    for i in range(from_block, to_block):
+        block = w3.eth.get_block(i)
+        tx_list.extend(list(map(lambda x: Web3.toHex(x), block.transactions)))
 
-def open_json(file = 'database/topics.json'):
-  # read json file
-  f = open(file, 'r')
-  if len(f.read()) == 0:
-    db_dict = {}
-  else:
-    f.seek(0)
-    db_dict = json.load(f)
-  f.close()
-  return db_dict
+    return tx_list
 
-# add database into file
-def store_json(file, database):
-  db_dict = open_json(file)
+def creat_database(w3, from_block=0, to_block=0):
+    if to_block == 0:
+        from_block, to_block = get_passed_blocks_in_days(7)
+    for i in range(from_block, to_block+1):
+        begin = time.time()
+        tx_list = get_tx_list(w3, i, i+1)
+        for j, tx in enumerate(tx_list):
+            print(j, '/', len(tx_list))
 
-  # add new database and write it back
-  f = open(file, 'w')
-  db_dict.update(database)
-  print("num = ", len(db_dict))
-  db_json = json.dumps(db_dict, indent=4)
-  f.write(db_json)
-  f.close()
+            # deal with http errors: multiple events
+            try:
+                database = build_db_from_tx(w3, tx)
+            except Exception as e:
+                e_msg = f"error at {i}th block, {j}th tx: {e}\n"
+                print(e_msg)
+                exit(0)
+            if len(database) > 0:
+                store_json('database/topics.json', database)
+        print("block: ", i, '/', to_block, "(", i-from_block, "/", to_block-from_block, ") time ", time.time()-begin)
 
-def creat_database(w3):
-  # from_block, to_block = get_passed_blocks()
-  # we got blocks from 16068488 to 16118608 , 50120 in total
-
-  # change the value of from_blocks when the program break
-  # from_block = 16072273
-  from_block = 16072780
-  to_block = 16122369
-  for i in range(from_block, to_block+1):
-    begin = time.time()
-    tx_list = get_tx_list(w3, i, i+1)
-    for j, tx in enumerate(tx_list):
-      print(j, '/', len(tx_list))
-
-      # deal with http errors: multiple events
-      try:
-        _, _, database = process_tx(w3, tx)
-      except Exception as e:
-        e_msg = f"error at {i}th block, {j}th tx: {e}\n"
-        print(e_msg)
-        with open('error.txt', 'a') as f:
-          f.write(e_msg)
-        continue
-        # exit(0)
-      if len(database) > 0:
-        store_json('database/topics.json', database)
-    print("block: " , i , '/' , to_block, "(", i-from_block, "/", to_block-from_block,") time ", time.time()-begin)
 
 # print(get_tx_list(w3, 15005468, 15005470))
 # target_tx_hash = "0x2272f93e8ce2b475521ed436cd72fca150fd6b672a867b9e6971b8c0dea5c331"
@@ -189,32 +151,32 @@ def creat_database(w3):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--transaction", type=str, help="transaction hash to analyze")
-    parser.add_argument( "--start-block", type=int, help="Start block number to analyze")
-    parser.add_argument( "--num-block", type=int, default=1 , help="number of blocks to analyze")
+    parser.add_argument("--start-block", type=int, help="Start block number to analyze")
+    parser.add_argument("--num-block", type=int, default=1, help="number of blocks to analyze")
     parser.add_argument("-a", "--address", type=str, help="address to classify")
     parser.add_argument("--rpc-url", type=str, help="user used rpc-url")
+    parser.add_argument("--build-db", action="store_true",help="build reverse lookup db", default=False)
     args = parser.parse_args()
     if args.rpc_url:
-      w3 = prepare_web3(args.rpc_url)
+        w3 = prepare_web3(args.rpc_url)
     else:
-      w3 = prepare_web3()
+        w3 = prepare_web3()
 
-    creat_database(w3)
+    if args.build_db:
+        creat_database(w3)
+        exit(0)
 
     if args.transaction:
-      addr_list, decoded_logs, database = process_tx(w3, args.transaction)
-      print ("list of log addr ", addr_list)
-      print()
-      for log in decoded_logs:
-        print("decoded log ", log)
-        print()
-      store_json('database/topics.json', database)
-      exit(0)
+        addr_list, decoded_logs = process_tx(w3, args.transaction)
+        print("list of log addr ", addr_list)
+        for log in decoded_logs:
+            print("decoded log ", log)
+        exit(0)
     if args.start_block:
-      tx_list = get_tx_list(w3, args.start_block, args.start_block + args.num_block)
-      addr_list = []
-      for tx in tx_list:
-        addr_list.append(process_tx(w3, tx))
-      print ("list of log addr ", addr_list)
+        tx_list = get_tx_list(w3, args.start_block, args.start_block + args.num_block)
+        addr_list = []
+        for tx in tx_list:
+            addr_list.append(process_tx(w3, tx))
+        print("list of log addr ", addr_list)
     if args.address:
-      address_class = process_address(w3,args.address)
+        address_class = process_address(w3, args.address)
