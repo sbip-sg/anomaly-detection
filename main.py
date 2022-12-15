@@ -12,6 +12,7 @@ import argparse
 import os
 from web3 import Web3
 from web3.logs import STRICT, IGNORE, DISCARD, WARN
+from web3.middleware import geth_poa_middleware
 from eth_utils import to_wei, encode_hex
 import time
 from utils.address_utils import classify_address
@@ -26,7 +27,12 @@ import datetime
 
 def prepare_web3(rpc_url="https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134"):
     w3 = Web3(Web3.HTTPProvider(rpc_url))
-    block = w3.eth.get_block('latest')
+    try:
+        block = w3.eth.get_block('latest')
+    except:
+        # try POA bsc chain
+        w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        block = w3.eth.get_block('latest')
     print("Connected, latest block ", block.number)
     return w3
 
