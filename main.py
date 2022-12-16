@@ -168,10 +168,10 @@ def decode_log_from_signature(event_sign, log_topics, log_data):
     inputs.extend(list(decoded_data))
   return inputs
 
-  
-  
-# TODO: input: ETH address, output: which class that address belong to 
-# (e.g. currently : 
+
+
+# TODO: input: ETH address, output: which class that address belong to
+# (e.g. currently :
 # + DEX (e.g. uniswap)
 # + flashloan provider (e.g. Aave)
 # + Token contract (specify which type):
@@ -213,7 +213,7 @@ def get_tx_list(w3, from_block, to_block):
   for i in range(from_block, to_block):
     block = w3.eth.get_block(i)
     tx_list.extend(list(map(lambda x: Web3.toHex(x),block.transactions)))
-    
+  
   return tx_list
 
 def open_json(file = 'database/topics.json'):
@@ -244,7 +244,7 @@ def creat_database(w3):
   # we got blocks from 16068488 to 16118608 , 50120 in total
 
   # change the value of from_blocks when the program break
-  # from_block = 16072273 
+  # from_block = 16072273
   # from_block = 16072780
   from_block = 16072280
   to_block = 16122369
@@ -286,7 +286,7 @@ if __name__ == '__main__':
         w3 = prepare_web3()
 
     # creat_database(w3)
-    
+  
 
     if args.transaction:
       addr_list, decoded_logs, database = process_tx(w3, args.transaction)
