@@ -31,19 +31,19 @@ def prepare_web3 (rpc_url = "https://mainnet.infura.io/v3/0377f17d56934a059be55f
   print ("Connected, latest block ", block.number)
   return w3
 
-#A normal transaction with 9 log entries (decoded): 
+#A normal transaction with 9 log entries (decoded):
 #https://etherscan.io/tx/0x2272f93e8ce2b475521ed436cd72fca150fd6b672a867b9e6971b8c0dea5c331#eventlog
-#An exploit transaction made by hacker with 164 log entries: 	
+#An exploit transaction made by hacker with 164 log entries:
 #https://etherscan.io/tx/0x0fe2542079644e107cbf13690eb9c2c65963ccb79089ff96bfaf8dced2331c92#eventlog
 #Another exploit transaction with 34 log entries https://etherscan.io/tx/0xb25e3f872896a0fde22ce60b57553b5304aa4584c47bdb293589bdbd3317de65#eventlog
 
 
-# log entry has address 
-# return all addresses own log entry + classify these addresses 
-# TODO: inside log topics also has address, detect & decode these. 
+# log entry has address
+# return all addresses own log entry + classify these addresses
+# TODO: inside log topics also has address, detect & decode these.
 def process_tx(w3, tx_hash, abi_token = 'BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD'):
   # begin = time.time()
-  # using a default abi_token 
+  # using a default abi_token
   addresses = []
   # readable logs
   decoded_logs = []
@@ -64,7 +64,7 @@ def process_tx(w3, tx_hash, abi_token = 'BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD'):
       # print( w3.toHex(log["topics"][0]))
       # skip function which has been added in database
       if w3.toHex(log["topics"][0]) in set(db_dict.keys()):
-        continue  
+        continue
       addresses.extend([log['address']])
       smart_contract = log["address"]
       abi_endpoint = f"https://api.etherscan.io/api?module=contract&action=getabi&address={smart_contract}&apikey={abi_token}"
