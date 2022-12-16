@@ -12,12 +12,14 @@ import argparse
 import os
 from web3 import Web3
 from web3.logs import STRICT, IGNORE, DISCARD, WARN
-from eth_utils import to_wei, encode_hex
+from eth_utils import to_wei, encode_hex, event_abi_to_log_topic, to_hex
+from web3._utils.events import get_event_data
 import time
 from utils import classify_address
 import requests
 import json
 import datetime
+from eth_abi import decode
 
 # URL from Metamask's test code
 def prepare_web3 (rpc_url = "https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134"):
@@ -63,24 +65,32 @@ def process_tx(w3, tx_hash, abi_token = 'BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD'):
       # print( w3.toHex(log["topics"][0]))
       # skip function which has been added in database
       if w3.toHex(log["topics"][0]) in set(db_dict.keys()):
-        # print("con")
         continue  
-      # print("log = ", log)
       addresses.extend([log['address']])
       smart_contract = log["address"]
       abi_endpoint = f"https://api.etherscan.io/api?module=contract&action=getabi&address={smart_contract}&apikey={abi_token}"
       abi = json.loads(requests.get(abi_endpoint).text)
       if abi['status'] == '0':
         continue
-      # print("abi =", abi)
       contract = w3.eth.contract(smart_contract, abi=abi["result"])
       receipt_event_signature_hex = w3.toHex(log["topics"][0])
       abi_events = [abi for abi in contract.abi if abi["type"] == "event"]
       for event in abi_events:
         # Get event signature components
         name = event["name"]
-        inputs = [param["type"] for param in event["inputs"]]
+        inputs_indexed = []
+        inputs_nonindexed = []
+
+        inputs = []
+        for param in event["inputs"]:
+          inputs.append(param['type'])
+          if param['indexed']:
+            inputs_indexed.append(param['type'] + ' indexed')
+          else:
+            inputs_nonindexed.append(param['type'])
+        inputs_indexed.extend(inputs_nonindexed)
         inputs = ",".join(inputs)
+        inputs_indexed = ",".join(inputs_indexed)
         # Hash event signature
         event_signature_text = f"{name}({inputs})"
         event_signature_hex = w3.toHex(w3.keccak(text=event_signature_text))
@@ -88,13 +98,73 @@ def process_tx(w3, tx_hash, abi_token = 'BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD'):
         if event_signature_hex == receipt_event_signature_hex:
             # Decode matching log
             decoded_log = contract.events[event["name"]]().processReceipt(receipt, errors = DISCARD)
-            topic = name + '(' + inputs + ')'
+            topic = name + '(' + inputs_indexed + ')'
             database[event_signature_hex] = topic
             decoded_logs.append(decoded_log)
+  return addresses, decoded_logs, database
   # return addresses + readable logs + dictionary between the name of funtion and its hex
   # print("over")
   # print("whole time ", time.time()-begin)
-  return addresses, decoded_logs, database
+
+
+def decode_log_from_signature(event_sign, log_topics, log_data):
+
+  sign2func = open_json('database/hash2event.json')
+  if event_sign not in list(sign2func.keys()):
+    print('Can not find the event')
+    exit(0)
+  function = sign2func[event_sign]
+
+  params = function.split('(')[1].split(')')[0].split(',')
+
+  inputs = []
+
+  # decode indexed parameters
+  for topic, param in zip(log_topics, params):
+
+    # separate 'type' and 'indexed'
+
+    # if it is type + indexed
+    # type = param.split(' ')
+    
+    # check whether it is an indexed parameter
+    # if type[1] != 'indexed':
+    #   print('Not indexed')
+    #   break
+
+    data = int(topic,16).to_bytes(32, 'big')
+    decoded_data = decode([param], data)
+    inputs.append(decoded_data[0])
+
+  # decode unindexed parameters
+
+  # remove the '0x' at beginning
+  data_len = len(log_data) - 2
+
+  # check if it can be divided by 64
+  if data_len % 64 != 0:
+    print("Error: The length of data can not be divide by 64")
+  else:
+    unindexed_num = len(params) - len(log_topics)
+    data = int(log_data,16).to_bytes(data_len//2, 'big')
+    decoded_data = decode(params[-unindexed_num:], data)
+    inputs.extend(list(decoded_data))
+  return function, inputs
+  
+def test_decode_log_from_signature():
+  try:
+    function, inputs  = decode_log_from_signature(
+      '127186556e7be68c7e31263195225b4de02820707889540969f62c05cf73525e',
+      ['0x000000000000000000000000000000000000000000000000000000000005b7d0']
+      ,
+      '0x99376a1bb23ef369547a93e252b662149b11e9f495246092c50919113c19b02000000000000000000000000000000000000000000000000000000000000000f40000000000000000000000000000000000000000000000000000000003000bba00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000'
+      )
+  except Exception as e:
+    print("Meet error during decoding:", e)
+  else:
+    print(function, inputs)
+
+  
   
 # TODO: input: ETH address, output: which class that address belong to 
 # (e.g. currently : 
@@ -160,8 +230,9 @@ def creat_database(w3):
   # we got blocks from 16068488 to 16118608 , 50120 in total
 
   # change the value of from_blocks when the program break
-  # from_block = 16072273
-  from_block = 16072780
+  # from_block = 16072273 
+  # from_block = 16072780
+  from_block = 16072280
   to_block = 16122369
   for i in range(from_block, to_block+1):
     begin = time.time()
@@ -199,7 +270,8 @@ if __name__ == '__main__':
     else:
       w3 = prepare_web3()
 
-    creat_database(w3)
+    # creat_database(w3)
+    test_decode_log_from_signature()
 
     if args.transaction:
       addr_list, decoded_logs, database = process_tx(w3, args.transaction)
