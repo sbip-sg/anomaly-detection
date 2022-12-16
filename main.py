@@ -15,7 +15,9 @@ from web3.logs import STRICT, IGNORE, DISCARD, WARN
 from eth_utils import to_wei, encode_hex, event_abi_to_log_topic, to_hex
 from web3._utils.events import get_event_data
 import time
-from utils import classify_address
+from utils.address_utils import classify_address
+from utils.json_utils import store_json, open_json
+from utils.etherscan_utils import get_passed_blocks_in_days
 import requests
 import json
 import datetime
@@ -185,19 +187,29 @@ def decode_log_from_signature(event_sign, log_topics, log_data):
 # + What else that we can think of ?...
 # + other contracts (e.g. contracts with bytecode & we cant understand)
 # + normal address
+
+def build_db_from_tx(w3, tx_hash):
+    database = {}
+    try:
+        receipt = w3.eth.get_transaction_receipt(tx_hash)
+    except requests.exceptions.HTTPError as exc:
+        print("request too much")
+        raise Exception('"request too much"') from exc
+
+    logs = receipt.logs
+    for log in logs:
+        print ("log ", log)
+        event_address = log.get('address')
+        if event_address:
+            db_dict = open_json()
+            if w3.toHex(log["topics"][0]) in db_dict.keys():
+                print("topic exists in db")
+                continue
+    return database
+
 def process_address(w3, address):
-  return classify_address(w3,address)
+    return classify_address(w3, address)
 
-def get_block_num(dt):
-    timeStamp = int(dt.timestamp())
-    block_endpoint = f"https://api.etherscan.io/api?module=block&action=getblocknobytime&timestamp={timeStamp}&closest=before&apikey=BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD"
-    block_json = json.loads(requests.get(block_endpoint).text) 
-    return int(block_json['result'])
-
-def get_passed_blocks(delta_day = 7):
-  from_block = get_block_num(datetime.datetime.now() - datetime.timedelta(delta_day))
-  to_block = get_block_num(datetime.datetime.now())
-  return from_block, to_block
 
 # get all tx hashes from_block, to_block, will be used as input to process_tx
 def get_tx_list(w3, from_block, to_block):
@@ -266,16 +278,17 @@ def creat_database(w3):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--transaction", type=str, help="transaction hash to analyze")
-    parser.add_argument( "--start-block", type=int, help="Start block number to analyze")
-    parser.add_argument( "--num-block", type=int, default=1 , help="number of blocks to analyze")
+    parser.add_argument("--start-block", type=int, help="Start block number to analyze")
+    parser.add_argument("--num-block", type=int, default=1, help="number of blocks to analyze")
     parser.add_argument("-a", "--address", type=str, help="address to classify")
     parser.add_argument("--rpc-url", type=str, help="user used rpc-url")
     parser.add_argument("--leveldb-path", type=str, help="database using to find hash of event signature")
+    parser.add_argument("--build-db", action="store_true",help="build reverse lookup db", default=False)
     args = parser.parse_args()
     if args.rpc_url:
-      w3 = prepare_web3(args.rpc_url)
+        w3 = prepare_web3(args.rpc_url)
     else:
-      w3 = prepare_web3()
+        w3 = prepare_web3()
 
     # creat_database(w3)
     
