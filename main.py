@@ -52,11 +52,7 @@ def process_tx(w3, tx_hash, abi_token = 'BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD'):
   database = {}
 
   # deal with errors
-  try:
-    receipt = w3.eth.get_transaction_receipt(tx_hash)
-  except requests.exceptions.HTTPError:
-    print("request too much")
-    raise Exception('"request too much"')
+  receipt = w3.eth.get_transaction_receipt(tx_hash)
 
   # print("receipt ", time.time()-begin)
   logs = receipt.logs
