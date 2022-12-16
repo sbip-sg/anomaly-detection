@@ -142,11 +142,8 @@ def decode_log_from_signature(event_sign, log_topics, log_data):
   Returns:
       list: inputs, the inputs of the event
   """
-  
   params = event_sign.split('(')[1].split(')')[0].split(',')
-
   inputs = []
-
   # decode indexed parameters
   for topic, param in zip(log_topics, params):
     data = int(topic,16).to_bytes(32, 'big')
@@ -213,7 +210,6 @@ def get_tx_list(w3, from_block, to_block):
   for i in range(from_block, to_block):
     block = w3.eth.get_block(i)
     tx_list.extend(list(map(lambda x: Web3.toHex(x),block.transactions)))
-  
   return tx_list
 
 def open_json(file = 'database/topics.json'):
@@ -286,7 +282,6 @@ if __name__ == '__main__':
         w3 = prepare_web3()
 
     # creat_database(w3)
-  
 
     if args.transaction:
       addr_list, decoded_logs, database = process_tx(w3, args.transaction)
