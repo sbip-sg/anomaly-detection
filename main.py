@@ -50,14 +50,14 @@ def prepare_web3(rpc_url="https://mainnet.infura.io/v3/0377f17d56934a059be55f9d9
 # log entry has address
 # return all addresses own log entry + classify these addresses
 # TODO: inside log topics also has address, detect & decode these.
-def process_tx(w3, tx_hash):
+def process_tx(w3, tx_hash, db_instance):
     # begin = time.time()
     # using a default abi_token
     addresses = []
     # readable logs
     decoded_logs = []
     # hex and event lookup
-    db_dict = open_json()
+
     # deal with errors
     try:
         receipt = w3.eth.get_transaction_receipt(tx_hash)
@@ -66,7 +66,6 @@ def process_tx(w3, tx_hash):
         raise Exception('"request too much"') from exc
 
     print(f"process tx {tx_hash}")
-    # print("receipt ", time.time()-begin)
     logs = receipt.logs
     # using public RPC must restrict the connection number
     # time.sleep(0.1)
@@ -76,10 +75,10 @@ def process_tx(w3, tx_hash):
         log_topics = log.get("topics")
         event_data = log.get("data")
         if event_address:
-            decoded_log_entry = db_dict.get(w3.toHex(log_topics[0]))
+            decoded_log_entry = decode_log_from_hash(db_instance, log_topics[0], log_topics[1:], event_data)
             if not decoded_log_entry:
                 decoded_log_entry = "Unknow Event"
-            decoded_logs.append((decoded_log_entry, log_topics[1:], event_data))
+            decoded_logs.append(decoded_log_entry)
             # print("log = ", log)
             addresses.extend([event_address])
 
@@ -117,7 +116,8 @@ def decode_log_from_hash(db, event_hash, log_topics, log_data):
         str: function signature, e.g. "transfer(address,uint256)"
         list: inputs, the inputs of the event
     """
-
+    if type(event_hash) is not str:
+        event_hash = event_hash.hex()
     if event_hash.startswith("0x"):
         event_hash = event_hash[2:]
     try:
@@ -146,12 +146,14 @@ def decode_log_from_signature(event_sign, log_topics, log_data):
 
     # decode indexed parameters
     for topic, param in zip(log_topics, params):
-        data = int(topic, 16).to_bytes(32, "big")
+        data = topic
+        if type(topic) is str:
+            data = int(topic, 16).to_bytes(32, "big")
         decoded_data = decode([param], data)
         inputs.append(decoded_data[0])
 
     # decode unindexed parameters
-
+    # TODO : Should do some checking, cant assume this is the default
     # remove the '0x' at beginning
     data_len = len(log_data) - 2
 
@@ -234,7 +236,9 @@ if __name__ == "__main__":
     parser.add_argument("-a", "--address", type=str, help="address to classify")
     parser.add_argument("--rpc-url", type=str, help="user used rpc-url")
     parser.add_argument("--build-db", action="store_true", help="build reverse lookup db", default=False)
-    parser.add_argument("--leveldb-path", type=str, help="database using to find hash of event signature")
+    parser.add_argument(
+        "--leveldb-path", type=str, help="database using to find hash of event signature", required=True
+    )
     args = parser.parse_args()
     if args.rpc_url:
         w3 = prepare_web3(args.rpc_url)
@@ -245,8 +249,11 @@ if __name__ == "__main__":
         creat_database(w3)
         exit(0)
 
+    if args.leveldb_path:
+        event_db = leveldb.LevelDB(args.leveldb_path)
+
     if args.transaction:
-        addr_list, decoded_logs = process_tx(w3, args.transaction)
+        addr_list, decoded_logs = process_tx(w3, args.transaction, event_db)
         print("list of log addr ", addr_list)
         for log in decoded_logs:
             print("decoded log ", log)
@@ -255,23 +262,7 @@ if __name__ == "__main__":
         tx_list = get_tx_list(w3, args.start_block, args.start_block + args.num_block)
         addr_list = []
         for tx in tx_list:
-            addr_list.append(process_tx(w3, tx))
+            addr_list.append(process_tx(w3, tx, event_db))
         print("list of log addr ", addr_list)
     if args.address:
         address_class = process_address(w3, args.address)
-
-    if args.leveldb_path:
-        event_db = leveldb.LevelDB(args.leveldb_path)
-        try:
-            # This is an example
-            function, inputs = decode_log_from_hash(
-                event_db,
-                # 'TransactionBatchAppended(uint256,bytes32,uint256,uint256,bytes)',
-                "127186556e7be68c7e31263195225b4de02820707889540969f62c05cf73525e",
-                ["0x000000000000000000000000000000000000000000000000000000000005b7d0"],
-                "0x99376a1bb23ef369547a93e252b662149b11e9f495246092c50919113c19b02000000000000000000000000000000000000000000000000000000000000000f40000000000000000000000000000000000000000000000000000000003000bba00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000",
-            )
-        except Exception as e:
-            print("Meet error during decoding:", e)
-        else:
-            print(function, inputs)
