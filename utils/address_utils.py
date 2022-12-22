@@ -37,7 +37,7 @@ def classify_address(w3,address):
 
         # For fixed storage slot
         # storagePositions = [keccak256("org.zeppelinos.proxy.implementation", bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1))]
-        storage_positions = [ "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3", 
+        storage_positions = [ "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
                               "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"]
 
         # try every storage position until find the correct one
@@ -53,12 +53,9 @@ def classify_address(w3,address):
             else:
                 # print("Implement address ", implement_address)
                 break
-                
-        
         # implementation_addr = w3.eth.call({'value': 0, 'gas': 100000,
         #                                     'to': address,
         #                                         'data': '0x'+proxy_signature})
-        
         # print ("implementation found ", implementation_addr)
     else:
         print (f" found matched results {matched_result} {matched_perc*100}% identical ")
