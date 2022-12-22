@@ -274,7 +274,14 @@ if __name__ == '__main__':
     parser.add_argument("--num-block", type=int, default=1, help="number of blocks to analyze")
     parser.add_argument("-a", "--address", type=str, help="address to classify")
     parser.add_argument("--rpc-url", type=str, help="user used rpc-url")
+<<<<<<< Updated upstream
     parser.add_argument("--leveldb-path", type=str, help="database using to find hash of event signature")
+=======
+    parser.add_argument("--build-db", action="store_true", help="build reverse lookup db", default=False)
+    parser.add_argument(
+        "--leveldb-path", type=str, help="database using to find hash of event signature"
+    )
+>>>>>>> Stashed changes
     args = parser.parse_args()
     if args.rpc_url:
         w3 = prepare_web3(args.rpc_url)
