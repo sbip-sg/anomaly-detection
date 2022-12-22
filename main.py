@@ -39,25 +39,24 @@ def prepare_web3(rpc_url="https://mainnet.infura.io/v3/0377f17d56934a059be55f9d9
     print("Connected, latest block ", block.number)
     return w3
 
-#A normal transaction with 9 log entries (decoded): 
-#https://etherscan.io/tx/0x2272f93e8ce2b475521ed436cd72fca150fd6b672a867b9e6971b8c0dea5c331#eventlog
-#An exploit transaction made by hacker with 164 log entries: 	
-#https://etherscan.io/tx/0x0fe2542079644e107cbf13690eb9c2c65963ccb79089ff96bfaf8dced2331c92#eventlog
-#Another exploit transaction with 34 log entries https://etherscan.io/tx/0xb25e3f872896a0fde22ce60b57553b5304aa4584c47bdb293589bdbd3317de65#eventlog
+
+# A normal transaction with 9 log entries (decoded):
+# https://etherscan.io/tx/0x2272f93e8ce2b475521ed436cd72fca150fd6b672a867b9e6971b8c0dea5c331#eventlog
+# An exploit transaction made by hacker with 164 log entries:
+# https://etherscan.io/tx/0x0fe2542079644e107cbf13690eb9c2c65963ccb79089ff96bfaf8dced2331c92#eventlog
+# Another exploit transaction with 34 log entries https://etherscan.io/tx/0xb25e3f872896a0fde22ce60b57553b5304aa4584c47bdb293589bdbd3317de65#eventlog
 
 
-# log entry has address 
-# return all addresses own log entry + classify these addresses 
-# TODO: inside log topics also has address, detect & decode these. 
-def process_tx(w3, tx_hash, abi_token = 'BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD'):
-  # begin = time.time()
-  # using a default abi_token 
-  addresses = []
-  # readable logs
-  decoded_logs = []
-  # A dictionary between the name of funtion and its hex
-  # hex_of_function_name : function_name
-  database = {}
+# log entry has address
+# return all addresses own log entry + classify these addresses
+# TODO: inside log topics also has address, detect & decode these.
+def process_tx(w3, tx_hash, db_instance):
+    # begin = time.time()
+    # using a default abi_token
+    addresses = []
+    # readable logs
+    decoded_logs = []
+    # hex and event lookup
 
     # deal with errors
     try:
@@ -66,31 +65,22 @@ def process_tx(w3, tx_hash, abi_token = 'BHJV4F9VUKS3ETFQ75NVJKGX97Z9SYKRBD'):
         print("request too much")
         raise Exception('"request too much"') from exc
 
-  # print("receipt ", time.time()-begin)
-  logs = receipt.logs
-  #using public RPC must restrict the connection number
-  # time.sleep(0.1)
-  for log in logs:
-    if(log['address']):
-      db_dict = open_json()
-      # print( w3.toHex(log["topics"][0]))
-      # skip function which has been added in database
-      if w3.toHex(log["topics"][0]) in set(db_dict.keys()):
-        continue  
-      addresses.extend([log['address']])
-      smart_contract = log["address"]
-      abi_endpoint = f"https://api.etherscan.io/api?module=contract&action=getabi&address={smart_contract}&apikey={abi_token}"
-      abi = json.loads(requests.get(abi_endpoint).text)
-      if abi['status'] == '0':
-        continue
-      contract = w3.eth.contract(smart_contract, abi=abi["result"])
-      receipt_event_signature_hex = w3.toHex(log["topics"][0])
-      abi_events = [abi for abi in contract.abi if abi["type"] == "event"]
-      for event in abi_events:
-        # Get event signature components
-        name = event["name"]
-        inputs_indexed = []
-        inputs_nonindexed = []
+    print(f"process tx {tx_hash}")
+    logs = receipt.logs
+    # using public RPC must restrict the connection number
+    # time.sleep(0.1)
+    for log in logs:
+        # print ("log ", log)
+        event_address = log.get("address")
+        log_topics = log.get("topics")
+        event_data = log.get("data")
+        if event_address:
+            decoded_log_entry = decode_log_from_hash(db_instance, log_topics[0], log_topics[1:], event_data)
+            if not decoded_log_entry:
+                decoded_log_entry = "Unknow Event"
+            decoded_logs.append(decoded_log_entry)
+            # print("log = ", log)
+            addresses.extend([event_address])
 
     # return addresses + readable logs + dictionary between the name of funtion and its hex
     # print("over")
