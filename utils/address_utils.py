@@ -3,7 +3,9 @@ import json
 from eth_utils import to_hex
 # define the list of classes + coressponding signature file
 signature_files = {
-                    "ERC20": 'signature_data/erc20_signature.json'
+                    "ERC20": 'signature_data/erc20_signature.json',
+                    "ERC721": 'signature_data/erc721_signature.json',
+                    "ERC1155": 'signature_data/erc1155_signature.json'
                 }
 # default value at uinitialized storage slot
 ZERO_ADDRESS = '0x' + '0'*40
