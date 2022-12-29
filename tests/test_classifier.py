@@ -7,7 +7,7 @@ from utils.address_utils import classify_address
 class TestClassifier(unittest.TestCase):
     def test_erc20_classifier(self):
         w3 = prepare_web3()
-        top100_dict = open_json('top100.json')
+        top100_dict = open_json('tests/test_classifier_db/erc20_top100.json')
         for address in top100_dict.values():
             if classify_address(w3, address) != 'ERC20':
                 break
@@ -15,7 +15,7 @@ class TestClassifier(unittest.TestCase):
 
     def test_erc721_classifier(self):
         w3 = prepare_web3()
-        top100_dict = open_json('top100.json')
+        top100_dict = open_json('tests/test_classifier_db/erc721_top100.json')
         for address in top100_dict.values():
             if classify_address(w3, address) != 'ERC721':
                 break
@@ -23,7 +23,7 @@ class TestClassifier(unittest.TestCase):
 
     def test_erc1155_classifier(self):
         w3 = prepare_web3()
-        top100_dict = open_json('top100.json')
+        top100_dict = open_json('tests/test_classifier_db/erc1155_top100.json')
         for address in top100_dict.values():
             if classify_address(w3, address) != 'ERC1155':
                 break
