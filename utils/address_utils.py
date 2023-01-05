@@ -31,20 +31,34 @@ def classify_address(w3,address):
             matched_result = key_
         matching_results[key_] = match_count/len(signatures)
     #check proxy
-    if matched_result == 'Not Identified' and proxy_signature in byte_code:
+
+    if matched_result == 'Not Identified':
         print("This is a proxy contract")
-        implementation_addr = '0x00'
         # need to send tx with data "5c60da1b" to the proxy address.
         # the unstructured proxy stores the impelemntation address at a location where we can get from source code
         # https://ethereum.stackexchange.com/questions/103143/how-do-i-get-the-implementation-contract-address-from-the-proxy-contract-address
         # https://eips.ethereum.org/EIPS/eip-1967#logic-contract-address
 
         # For fixed storage slot
-        # storagePositions = [keccak256("org.zeppelinos.proxy.implementation", bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1))]
+        # storagePositions = [keccak256("org.zeppelinos.proxy.implementation,
+        # bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)),
+        # keccak256("PROXIABLE") ]
         storage_positions = [ "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3",
-                              "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"]
+                              "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+                              "0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7",
+                              "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50",
+                              "0x8c379a000000000000000000000000000000000000000000000000000000000"
+                             ]
         implement_address = ZERO_ADDRESS
         # try every storage position until find the correct one
+        fallback_func = "0x363d3d373d3d3d363d73"
+
+        if fallback_func in byte_code:
+            implement_address = '0x' + byte_code[22:22+40]
+            implement_address = w3.toChecksumAddress(implement_address)
+            matched_result = classify_address(w3, implement_address)
+            return matched_result
+
         for storage_position in storage_positions:
             # find the implement address
             result = w3.eth.getStorageAt(address, storage_position)
