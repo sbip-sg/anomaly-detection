@@ -18,6 +18,7 @@ def classify_address(w3,address):
     matching_results = {}
     matched_result = 'Not Identified'
     matched_perc = 0
+    matched_num = 0
     byte_code = to_hex(w3.eth.get_code(address))
     for key_ in signature_files.keys():
         file_ = open(signature_files[key_])
@@ -26,9 +27,10 @@ def classify_address(w3,address):
         for item in signatures:
             if (item in byte_code):
                 match_count += 1
-        if match_count/len(signatures) > matched_perc:
+        if match_count/len(signatures) > matched_perc or (match_count/len(signatures) == matched_perc and matched_num < match_count):
             matched_perc = match_count/len(signatures)
             matched_result = key_
+            matched_num = match_count
         matching_results[key_] = match_count/len(signatures)
     #check proxy
 
@@ -67,14 +69,17 @@ def classify_address(w3,address):
             if implement_address != ZERO_ADDRESS:
                 break
         if implement_address == ZERO_ADDRESS:
-            implement_address = w3.eth.call({'value': 0, 'gas': 100000,
-                                            'to': address,
-                                                'data': '0x'+proxy_signature})
+            try:
+                implement_address = w3.eth.call({'value': 0, 'gas': 100000,
+                                                'to': address,
+                                                    'data': '0x'+proxy_signature})
+            except Exception as e:
+                print(e)
+                return 'Unknown'
             if type (implement_address) is not str:
                 implement_address = w3.toChecksumAddress(implement_address.hex()[-40:])
         print ("implementation found ", implement_address)
         matched_result = classify_address(w3, implement_address)
     else:
         print (f" found matched results {matched_result} {matched_perc*100}% identical ")
-    # print ("debug ", matching_results)
     return matched_result
