@@ -11,6 +11,7 @@ signature_files = {
 ZERO_ADDRESS = '0x' + '0'*40
 # Special case when address is a proxy
 proxy_signature = '5c60da1b' # implementation()
+unknown = 'Unknown'
 # not the optimal way of doing this because we load json file everytime.
 # in the future after determined + processed all classes signatures
 # we can put these signatures in some constants variable
@@ -20,6 +21,8 @@ def classify_address(w3,address):
     matched_perc = 0
     matched_num = 0
     byte_code = to_hex(w3.eth.get_code(address))
+    if byte_code == '0x':
+        return unknown
     for key_ in signature_files.keys():
         file_ = open(signature_files[key_])
         signatures = json.load(file_)
@@ -75,7 +78,7 @@ def classify_address(w3,address):
                                                     'data': '0x'+proxy_signature})
             except Exception as e:
                 print(e)
-                return 'Unknown'
+                return unknown
             if type (implement_address) is not str:
                 implement_address = w3.toChecksumAddress(implement_address.hex()[-40:])
         print ("implementation found ", implement_address)
