@@ -1,9 +1,12 @@
 from main import prepare_web3, process_tx, classify_address
 import leveldb
 import fasttext
+import fasttext.util
 import numpy as np
 import re
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 address_type = {'ERC20':1, 'ERC721':2, 'ERC1155':3, 'Unknown':4}
 
@@ -12,7 +15,10 @@ w3 = prepare_web3()
 event_db = leveldb.LevelDB('db/event_db')
 
 addr_list, decoded_logs = process_tx(w3, '0x015b2b4858e8be25a2fdcfb7697709a6d9f2dcb42bcc0c0dad4763e36f98e619', event_db)
+assert not (decoded_logs == ['Unknown Event'])
 
+fasttext.util.download_model('en', if_exists='ignore')
+model = fasttext.load_model('cc.en.300.bin')
 # log
 # AttributeDict({'address': '0xdAC17F958D2ee523a2206206994597C13D831ec7', 'blockHash': HexBytes('0x39d88daafb66b3bc7553086437bc143d1bb7ddb8c7c305488aa709dfff9c19ae'),
 # 'blockNumber': 16424933, 'data': '0x0000000000000000000000000000000000000000000000000000000007270e00', 'logIndex': 76, 'removed': False,
@@ -34,10 +40,9 @@ for log in decoded_logs:
 
     # Before vectorize the function name, we need to build a model for function name
     # In this part, we assume that we already have a well trained model for function name
-    model = fasttext.train_unsupervised('function_name.txt', model='skipgram')
-    model.save_model("some.well-trained.model")
-    model = fasttext.load_model('some.well-trained.model')
     fn_vector = model.get_sentence_vector(function_name)
+    # print(type(fn_vector))      # numpy.ndarray
+    # print(len(fn_vector))       # 300
 
     # for address, we use its category
     for i in range(parameters_size):
