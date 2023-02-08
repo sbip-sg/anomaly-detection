@@ -8,10 +8,30 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class LogEmbedding(nn.Module):
+
+    def __init__(self, fn_size, pa_size) -> None:
+        super(LogEmbedding, self).__init__()
+        self.para_weight = nn.Linear(pa_size, fn_size)
+
+    # function_name and parameters are torch.tensor
+    def forward(self, function_name, parameters):
+        if function_name.dim() == 1:
+            function_name.unsqueeze(0)
+        if parameters.dim() == 1:
+            parameters.unsqueeze(0)
+
+        x = self.para_weight(parameters.float())
+
+        #  connect function_name with parameters
+        x = torch.cat((x, function_name), 0)
+
+        return x
+
+
 address_type = {'ERC20':1, 'ERC721':2, 'ERC1155':3, 'Unknown':4}
 
 w3 = prepare_web3()
-
 event_db = leveldb.LevelDB('db/event_db')
 
 addr_list, decoded_logs = process_tx(w3, '0x015b2b4858e8be25a2fdcfb7697709a6d9f2dcb42bcc0c0dad4763e36f98e619', event_db)
@@ -56,7 +76,9 @@ for log in decoded_logs:
 
     # create some weight matrixs
     fn_size = np.size(fn_vector)
-    W1 = torch.randn(fn_size, fn_size)
-    W2 = torch.randn(fn_size, parameters_size)
 
-    vector = torch.matmul(W1, torch.from_numpy(fn_vector)) + torch.matmul(W2, torch.from_numpy(parameters))
+    v1 = torch.from_numpy(fn_vector)
+    v2 = torch.from_numpy(np.array(parameters))
+
+    model = LogEmbedding(fn_size, parameters_size)
+    result = model.forward(v1, v2)
