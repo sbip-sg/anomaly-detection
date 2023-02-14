@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import argparse
+import math
 
 class LogEmbedding(nn.Module):
 
@@ -28,16 +29,6 @@ class LogEmbedding(nn.Module):
         x = torch.cat((x, function_name), 0)
 
         return x
-
-# change a long uint number into several int64 numbers
-def big_int_2_int64(number, digit):
-    divisor = 0x100000000
-    output = []
-    for i in range(int(np.ceil(digit//32))):
-        output.append(int(number % divisor))
-        number = int(number // divisor)
-    return output
-
 
 
 address_type = {'ERC20':1, 'ERC721':2, 'ERC1155':3, 'Unknown':4}
@@ -88,14 +79,8 @@ for tx_i in range(1, len(tx_dict)+1):
                 new_parameters.append(address_type[classify_address(w3, w3.toChecksumAddress(parameters[i]))])
                 # parameters = np.array([4, 4, 120000000])
             # divide long uint into several int64
-            elif re.search(r'uint', function_structure[i]) != None:
-                digit = re.findall(r'(?<=uint)(\d+)', function_structure[i])
-                # if the parameter type is 'uint'
-                if len(digit) == 0:
-                    digit = 256
-                else:
-                    digit = int(digit[0])
-                new_parameters.extend(big_int_2_int64(parameters[i], digit))
+            elif re.search(r'int', function_structure[i]) != None:
+                new_parameters.append(math.log2(parameters[i]+1))
             else:
                 new_parameters.append(parameters[i])
 
