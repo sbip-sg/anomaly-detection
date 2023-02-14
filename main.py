@@ -120,9 +120,7 @@ def decode_log_from_hash(db, event_hash, log_topics, log_data):
     if event_hash.startswith("0x"):
         event_hash = event_hash[2:]
     try:
-        print(event_hash.encode())
         signatures = db.Get(event_hash.encode()).decode()
-        print(signatures)
     except KeyError:
         return None
     inputs = decode_log_from_signature(signatures, log_topics, log_data)
