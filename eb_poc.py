@@ -80,6 +80,7 @@ for tx_i in range(1, len(tx_dict)+1):
                 # parameters = np.array([4, 4, 120000000])
             # divide long uint into several int64
             elif re.search(r'int', function_structure[i]) != None:
+                assert parameters[i] >= 0
                 new_parameters.append(math.log2(parameters[i]+1))
             else:
                 new_parameters.append(parameters[i])
