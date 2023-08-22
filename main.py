@@ -70,14 +70,13 @@ def process_tx(w3, tx_hash, db_instance):
     # using public RPC must restrict the connection number
     # time.sleep(0.1)
     for log in logs:
-        # print ("log ", log)
         event_address = log.get("address")
         log_topics = log.get("topics")
         event_data = log.get("data")
         if event_address:
             decoded_log_entry = decode_log_from_hash(db_instance, log_topics[0], log_topics[1:], event_data)
             if not decoded_log_entry:
-                decoded_log_entry = "Unknow Event"
+                decoded_log_entry = "Unknown Event"
             decoded_logs.append(decoded_log_entry)
             # print("log = ", log)
             addresses.extend([event_address])
