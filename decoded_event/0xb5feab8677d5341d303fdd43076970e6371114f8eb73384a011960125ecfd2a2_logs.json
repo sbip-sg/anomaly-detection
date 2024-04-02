@@ -1,0 +1,400 @@
+[
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      25246921216593918929
+    ],
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  },
+  {
+    "eventname": "Approval(address,address,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0x216b4b4ba9f3e719726886d34a177484278bfcae"
+    ],
+    "data": [],
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  },
+  {
+    "eventname": "Approval(address,address,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0x216b4b4ba9f3e719726886d34a177484278bfcae"
+    ],
+    "data": [
+      25246921216593918929
+    ],
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0xdef171fe48cf0115b1d80b88dc8eab59176fee57"
+    ],
+    "data": [
+      25246921216593918928
+    ],
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0x109830a1aaad605bbf02a9dfa7b0b92ec2fb7daa",
+      "0xdef171fe48cf0115b1d80b88dc8eab59176fee57"
+    ],
+    "data": [
+      21649083088867484310
+    ],
+    "address": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0xdef171fe48cf0115b1d80b88dc8eab59176fee57",
+      "0x109830a1aaad605bbf02a9dfa7b0b92ec2fb7daa"
+    ],
+    "data": [
+      25121299183289348475
+    ],
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  },
+  {
+    "eventname": "Swap(address,address,int256,int256,uint160,uint128,int24)",
+    "topics": [
+      "0xe592427a0aece92de3edee1f18e0157c05861564",
+      "0xdef171fe48cf0115b1d80b88dc8eab59176fee57"
+    ],
+    "data": [],
+    "address": "0x109830a1aaad605bbf02a9dfa7b0b92ec2fb7daa"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0xdef171fe48cf0115b1d80b88dc8eab59176fee57",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      21649083088867484310
+    ],
+    "address": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0xdef171fe48cf0115b1d80b88dc8eab59176fee57",
+      "0xef13101c5bbd737cfb2bf00bbd38c626ad6952f7"
+    ],
+    "data": [
+      15460087685284
+    ],
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0xdef171fe48cf0115b1d80b88dc8eab59176fee57",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      125606573216885169
+    ],
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  },
+  {
+    "eventname": "BoughtV3(bytes16,address,uint256,address,address,address,address,uint256,uint256,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+    ],
+    "data": [],
+    "address": "0xdef171fe48cf0115b1d80b88dc8eab59176fee57"
+  },
+  {
+    "eventname": "Bought(address,address,uint256,uint256)",
+    "topics": [
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+    ],
+    "data": [
+      25121314643377033759
+    ],
+    "address": "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+  },
+  {
+    "eventname": "Approval(address,address,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+    ],
+    "data": [],
+    "address": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+  },
+  {
+    "eventname": "Approval(address,address,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+    ],
+    "data": [
+      21649083088867484310
+    ],
+    "address": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0xa5803fc995b26ba718dd53316125fa5f9a7f69e9"
+    ],
+    "data": [
+      21630252692600939986
+    ],
+    "address": "0xc96113eed8cab59cd8a66813bcb0ceb29f06d2e4"
+  },
+  {
+    "eventname": "Burn(address,address,uint256,uint256,uint256)",
+    "topics": [
+      "0xa5803fc995b26ba718dd53316125fa5f9a7f69e9"
+    ],
+    "data": [
+      21630252692600939986
+    ],
+    "address": "0xc96113eed8cab59cd8a66813bcb0ceb29f06d2e4"
+  },
+  {
+    "eventname": "ReserveDataUpdated(address,uint256,uint256,uint256,uint256,uint256)",
+    "topics": [
+      "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+    ],
+    "data": [
+      8340564122527655489685
+    ],
+    "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0x0b925ed163218f6662a35e0f0371ac234f9e9371"
+    ],
+    "data": [
+      21649083088867484310
+    ],
+    "address": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+  },
+  {
+    "eventname": "Approval(address,address,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+    ],
+    "data": [],
+    "address": "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+  },
+  {
+    "eventname": "Repay(address,address,address,uint256,bool)",
+    "topics": [
+      "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",
+      "0xa5803fc995b26ba718dd53316125fa5f9a7f69e9",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      21649083088867484310
+    ],
+    "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+  },
+  {
+    "eventname": "Approval(address,address,uint256)",
+    "topics": [
+      "0xa5803fc995b26ba718dd53316125fa5f9a7f69e9",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      27771613338253310000
+    ],
+    "address": "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8"
+  },
+  {
+    "eventname": "Approval(address,address,uint256)",
+    "topics": [
+      "0xa5803fc995b26ba718dd53316125fa5f9a7f69e9",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      2637675234267979282
+    ],
+    "address": "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0xa5803fc995b26ba718dd53316125fa5f9a7f69e9"
+    ],
+    "data": [
+      164475881610857068
+    ],
+    "address": "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8"
+  },
+  {
+    "eventname": "Mint(address,address,uint256,uint256,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0xa5803fc995b26ba718dd53316125fa5f9a7f69e9"
+    ],
+    "data": [
+      164475881610857068
+    ],
+    "address": "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0xa5803fc995b26ba718dd53316125fa5f9a7f69e9",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      25133938103985330718
+    ],
+    "address": "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8"
+  },
+  {
+    "eventname": "ReserveUsedAsCollateralEnabled(address,address)",
+    "topics": [
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [],
+    "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+  },
+  {
+    "eventname": "BalanceTransfer(address,address,uint256,uint256)",
+    "topics": [
+      "0xa5803fc995b26ba718dd53316125fa5f9a7f69e9",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      24591099127583377720
+    ],
+    "address": "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8"
+  },
+  {
+    "eventname": "ReserveDataUpdated(address,uint256,uint256,uint256,uint256,uint256)",
+    "topics": [
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "data": [
+      16297508406692403626725403
+    ],
+    "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+  },
+  {
+    "eventname": "ReserveUsedAsCollateralDisabled(address,address)",
+    "topics": [
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [],
+    "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      25133938103985330718
+    ],
+    "address": "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8"
+  },
+  {
+    "eventname": "Burn(address,address,uint256,uint256,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      25133938103985330718
+    ],
+    "address": "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      25133938103985330718
+    ],
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  },
+  {
+    "eventname": "Withdraw(address,address,address,uint256)",
+    "topics": [
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3"
+    ],
+    "data": [
+      25133938103985330718
+    ],
+    "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+  },
+  {
+    "eventname": "Approval(address,address,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+    ],
+    "data": [],
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  },
+  {
+    "eventname": "Approval(address,address,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+    ],
+    "data": [
+      25259544677202215888
+    ],
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  },
+  {
+    "eventname": "ReserveDataUpdated(address,uint256,uint256,uint256,uint256,uint256)",
+    "topics": [
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "data": [
+      16296336351825666221721189
+    ],
+    "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+  },
+  {
+    "eventname": "Transfer(address,address,uint256)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0x4d5f47fa6a74757f35c14fd3a6ef8e3c9bc514e8"
+    ],
+    "data": [
+      25259544677202215888
+    ],
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  },
+  {
+    "eventname": "FlashLoan(address,address,address,uint256,uint8,uint256,uint16)",
+    "topics": [
+      "0x02e7b8511831b1b02d9018215a0f8f500ea5c6b3",
+      "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+    ],
+    "data": [
+      "0xa5803fc995b26ba718dd53316125fa5f9a7f69e9"
+    ],
+    "address": "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2"
+  }
+]
