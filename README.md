@@ -1,20 +1,23 @@
-# Anomaly-detection
-Anomaly detection for transaction logs on ETH-family blockchains.
-## Install dependencies and run
-Should use python virtual env or anaconda
-* `pip install -r requirements.txt`
-* `python main.py -h`
+# ETH Transaction Processing Pipelines
 
-Sample usage:
-* `python main.py -t 0x2272f93e8ce2b475521ed436cd72fca150fd6b672a867b9e6971b8c0dea5c331`
-* `python main.py -a 0xdAC17F958D2ee523a2206206994597C13D831ec7`
-## TODO
-* [x] Template for interacting with blockchain + getting tx info
-* [ ] Clasify given address to different classes. Using function + event signatures on ERC20, todo other ERC standards
-* [ ] Find a way to decode log entries to more structured data
-* [ ] Build database of decoded + cleaned tx log
-## Team
-* Minh
-* KunPeng
-* ShaoFeng
-* Cui Chi
+Anomaly detection for transaction logs on ETH-family blockchains.
+
+## How to set input data?
+
+The input data is transaction hash starting with "0x".
+
+Data structure should be like file.txt file. Each line is a transaction hash.
+
+## How to process?
+
+Run Pipeline.py file. It will process the hash in file.txt. Make sure that there is no result folder.
+
+## How to collect result?
+
+Open result folder. Basic_info.csv is the basic information of transactions.
+
+Folder event_json stores json files containing raw event data. Folder decoded_eventstores json files containing decoded event data. For traces, they are similarly stored.
+
+File balance.json stores balance changes of transactions in a dictionary. Keys are transaction hash, values are dictionary storing balance changes of each address. File othertoken.json is a intermediate product and you can delete it.
+
+After retriving data, you need to delete reuslt folder to start another processing task.
