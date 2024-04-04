@@ -3,13 +3,15 @@ import pandas as pd
 from os import listdir
 from eth_abi import decode
 
-hash = pd.read_csv('dictionary/event_dict.csv')
-hashdict = hash.set_index('hash')['event'].to_dict()
+# Read event dictionary CSV file and convert it to a dictionary
+hash_file = pd.read_csv('dictionary/event_dict.csv')
+hashdict = hash_file.set_index('hash')['event'].to_dict()
 
+# Get list of JSON files in event_json directory
 jsonlist = listdir('result/event_json')
 
 
-# decode inputs of traces
+# Function to decode input data based on event text and input hash
 def decode_input(event_text, input_hash):
 	input_list = []
 	if len(input_hash) % 64 == 0:
@@ -28,9 +30,9 @@ def decode_input(event_text, input_hash):
 			chunks = [input_hash[i:i + 64] for i in range(0, len(input_hash), 64)]
 			for line in chunks:
 				count_of_zeros = len(line) - len(line.lstrip('0'))
-				if count_of_zeros >= 24 and count_of_zeros < 30:
+				if 24 <= count_of_zeros < 30:
 					input_list.append(decode(['address'], bytes.fromhex(line))[0])
-				elif count_of_zeros >= 30 and count_of_zeros < 60:
+				elif 30 <= count_of_zeros < 60:
 					input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
 	start_index = event_text.find('(')
 	end_index = event_text.rfind(')')
@@ -39,13 +41,14 @@ def decode_input(event_text, input_hash):
 		chunks = [input_hash[i:i + 64] for i in range(0, len(input_hash), 64)]
 		for line in chunks:
 			count_of_zeros = len(line) - len(line.lstrip('0'))
-			if count_of_zeros >= 24 and count_of_zeros < 30:
+			if 24 <= count_of_zeros < 30:
 				input_list.append(decode(['address'], bytes.fromhex(line))[0])
-			elif count_of_zeros >= 30 and count_of_zeros < 60:
+			elif 30 <= count_of_zeros < 60:
 				input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
 	return input_list
 
 
+# Function to check if parentheses are balanced in a string
 def are_parentheses_balanced(s):
 	stack = []
 	mapping = {')': '(', '}': '{', ']': '['}
@@ -60,6 +63,7 @@ def are_parentheses_balanced(s):
 	return not stack
 
 
+# Function to split parameters in a string
 def split_parameters(s):
 	s_list = s.split(',')
 	i = 0
@@ -73,7 +77,8 @@ def split_parameters(s):
 
 	return s_list
 
-# modifying the summary of balance of an address
+
+# Function to modify the summary of balance of an address
 def update_summary(summary, address, currency, amount):
 	if address not in summary:
 		summary[address] = {}
@@ -84,23 +89,31 @@ def update_summary(summary, address, currency, amount):
 	return summary
 
 
+# Function to handle other transfer transactions (not ETH)
 def othertransfer(summary, currency, from_address, to_address, amount):
 	summary = update_summary(summary, from_address, currency, -amount)
 	summary = update_summary(summary, to_address, currency, amount)
 	return summary
 
+
+# Initialize dictionary to store total summaries
 total_dict = {}
 
+
+# Function to collect token transaction details
 def collect_token():
 	for i in jsonlist:
 		file = open('result/event_json/' + i)
 		summary_dict = {}
 		tx = json.load(file)
 		for log in tx:
+			# Determine event name
 			if log['topics'][0][2:] in hashdict.keys():
 				eventname = hashdict[log['topics'][0][2:]]
 			else:
 				eventname = log['topics'][0][2:7]
+
+			# Process different types of events
 			if len(eventname.split('(')) != 1:
 				if eventname.split('(')[0].lower() == 'transfer':
 					currency = log["address"].lower()
@@ -123,6 +136,9 @@ def collect_token():
 					to_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					amount = decode_input(eventname, log['data'][2:])[0]
 					summary_dict = othertransfer(summary_dict, currency, currency, to_address, amount)
+		# Store summary dictionary for each transaction
 		total_dict[tx[0]["transactionHash"]] = summary_dict
+
+	# Write total summaries to a JSON file
 	with open('result/othertoken.json', 'w') as json_file:
 		json.dump(total_dict, json_file, indent=2)
