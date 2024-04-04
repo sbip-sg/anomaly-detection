@@ -2,15 +2,19 @@
 
 Anomaly detection for transaction logs on ETH-family blockchains.
 
+## Install dependencies
+
+pip install -r requirements.txt
+
 ## How to set input data?
 
 The input data is transaction hash starting with "0x".
 
-Data structure should be like file.txt file. Each line is a transaction hash.
+Data structure should be like a file in which each line is a transaction hash.
 
 ## How to process?
 
-Run Pipeline.py file. It will process the hash in file.txt. Make sure that there is no result folder.
+python pipeline.py <yourfile>. It will process the hash in your file. Make sure that there is no result folder.
 
 ## How to collect result?
 

@@ -113,12 +113,11 @@ def deal_selfdestruct(summary, trace):
 
     return summary
 
-# Load summary dictionary from othertoken.json
-file = open('result/othertoken.json')
-dict1 = json.load(file)
-
 # Function to collect ETH transaction details
 def collect_eth():
+    # Load summary dictionary from othertoken.json
+    file = open('result/othertoken.json')
+    dict1 = json.load(file)
     for i in jsonlist:
         summary_dict = {}
         file = open('result/trace_json/' + i)
