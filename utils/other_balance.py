@@ -7,9 +7,6 @@ from eth_abi import decode
 hash_file = pd.read_csv('dictionary/event_dict.csv')
 hashdict = hash_file.set_index('hash')['event'].to_dict()
 
-# Get list of JSON files in event_json directory
-jsonlist = listdir('result/event_json')
-
 
 # Function to decode input data based on event text and input hash
 def decode_input(event_text, input_hash):
@@ -102,6 +99,8 @@ total_dict = {}
 
 # Function to collect token transaction details
 def collect_token():
+	# Get list of JSON files in event_json directory
+	jsonlist = listdir('result/event_json')
 	for i in jsonlist:
 		file = open('result/event_json/' + i)
 		summary_dict = {}

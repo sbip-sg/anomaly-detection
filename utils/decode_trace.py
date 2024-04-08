@@ -6,9 +6,6 @@ from eth_abi import decode
 import base64
 import os
 
-# Get list of JSON files in trace_json directory
-jsonlist = listdir('result/trace_json')
-
 # Read the CSV file containing function hash mappings
 func_df = pd.read_csv('dictionary/function_dict.csv')
 
@@ -82,6 +79,9 @@ def convert_bytes_to_string(obj):
 # Function to decode trace JSON files
 def decode_trace_json():
     json_file_path = 'result/decoded_trace/'
+
+    # Get list of JSON files in trace_json directory
+    jsonlist = listdir('result/trace_json')
     for i in jsonlist:
         file = open('result/trace_json/' + i)
         traces = []
@@ -132,4 +132,4 @@ def decode_trace_json():
                             func_dict[func_hash] = func_hash
             traces.append(new_trace)
         with open(json_file_path + i, 'w') as jsonfile:
-            json.dump(traces, jsonfile, default=convert_bytes_to_string)
+            json.dump(traces, jsonfile, default=convert_bytes_to_string, indent=2)

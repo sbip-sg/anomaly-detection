@@ -38,10 +38,8 @@ def main(input_file):
 
 	# Collect token balances
 	collect_token()
-
 	# Collect ETH balances
 	collect_eth()
-
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()

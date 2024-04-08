@@ -2,9 +2,6 @@ import json
 from os import listdir
 from eth_abi import decode
 
-# Get list of JSON files in trace_json directory
-jsonlist = listdir('result/trace_json')
-
 # Base URL for Etherface API
 base_url = "https://api.etherface.io/v1/signatures/hash/all/"
 
@@ -115,6 +112,9 @@ def deal_selfdestruct(summary, trace):
 
 # Function to collect ETH transaction details
 def collect_eth():
+    # Get list of JSON files in trace_json directory
+    jsonlist = listdir('result/trace_json')
+
     # Load summary dictionary from othertoken.json
     file = open('result/othertoken.json')
     dict1 = json.load(file)
