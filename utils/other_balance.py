@@ -136,7 +136,8 @@ def collect_token():
 					amount = decode_input(eventname, log['data'][2:])[0]
 					summary_dict = othertransfer(summary_dict, currency, currency, to_address, amount)
 		# Store summary dictionary for each transaction
-		total_dict[tx[0]["transactionHash"]] = summary_dict
+		if len(tx) > 0:
+			total_dict[tx[0]["transactionHash"]] = summary_dict
 
 	# Write total summaries to a JSON file
 	with open('result/othertoken.json', 'w') as json_file:

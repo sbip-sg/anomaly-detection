@@ -39,3 +39,4 @@ def collect_trace(raw_list):
 			filename = os.path.join(output_directory, f"trace_{transaction_hash}.json")
 			with open(filename, 'w') as json_file:
 				json.dump(result, json_file, indent=2)
+			print('trace_finished', transaction_hash)

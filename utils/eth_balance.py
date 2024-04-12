@@ -122,7 +122,11 @@ def collect_eth():
         summary_dict = {}
         file = open('result/trace_json/' + i)
         tx = json.load(file)
-        new_dict = dict1[tx[0]["transactionHash"]]
+        if tx[0]["transactionHash"] in dict1.keys():
+            new_dict = dict1[tx[0]["transactionHash"]]
+        else:
+            dict1[tx[0]["transactionHash"]] = {}
+            new_dict = dict1[tx[0]["transactionHash"]]
         for trace in tx:
             if 'error' not in trace.keys():
                 if trace['type'] == 'call' and trace["action"]["callType"] != "delegatecall" and int(

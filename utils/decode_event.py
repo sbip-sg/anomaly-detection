@@ -77,4 +77,5 @@ def decode_event_json():
         # Write decoded events to JSON files
         with open(json_file_path + i, 'w') as jsonfile:
             json.dump(events, jsonfile, default=convert_bytes_to_string, indent=2)
+        print('decode_event_finished', i)
 

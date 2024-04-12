@@ -133,3 +133,4 @@ def decode_trace_json():
             traces.append(new_trace)
         with open(json_file_path + i, 'w') as jsonfile:
             json.dump(traces, jsonfile, default=convert_bytes_to_string, indent=2)
+        print('decode_trace_finished', i)

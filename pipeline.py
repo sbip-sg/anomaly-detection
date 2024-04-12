@@ -1,7 +1,6 @@
 import os
 import argparse
 from utils.collect_basic_info import collectinfo
-from utils.get_events import collect_event
 from utils.get_traces import collect_trace
 from utils.decode_event import decode_event_json
 from utils.decode_trace import decode_trace_json
@@ -23,9 +22,6 @@ def main(input_file):
 	# Collect basic information
 	basic_info = collectinfo(raw_file)
 	basic_info.to_csv('result/basic_info.csv')
-
-	# Collect events
-	collect_event(raw_file)
 
 	# Collect traces
 	collect_trace(raw_file)
