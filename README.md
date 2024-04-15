@@ -13,8 +13,4 @@ Sample usage:
 * [ ] Clasify given address to different classes. Using function + event signatures on ERC20, todo other ERC standards
 * [ ] Find a way to decode log entries to more structured data
 * [ ] Build database of decoded + cleaned tx log
-## Team
-* Minh
-* KunPeng
-* ShaoFeng
-* Cui Chi
+
