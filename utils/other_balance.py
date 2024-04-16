@@ -7,6 +7,21 @@ from eth_abi import decode
 hash_file = pd.read_csv('dictionary/event_dict.csv')
 hashdict = hash_file.set_index('hash')['event'].to_dict()
 
+token_names = {
+	"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2": "Wrapped ETH",
+	"0xdac17f958d2ee523a2206206994597c13d831ec7": "Tether: USDT Stablecoin",
+	"0xb8c77482e45f1f44de1745f52c74426c631bdd52": "BNB",
+	"0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": "USDC",
+	"0xae7ab96520de3a18e5e111b5eaab095312d7fe84": "stETH",
+	"0x582d872a1b094fc48f5de31d3b73f2d9be47def1": "Wrapped TON Coin",
+	"0x95ad61b0a150d79219dcf64e1e6cc01f0b64c4ce": "SHIBA INU",
+	"0x2260fac5e5542a773aa44fbcfedf7c193bc2c599": "Wrapped BTC",
+	"0x50327c6c5a14dcade707abad2e27eb517df87ab5": "TRON",
+	"0x514910771af9ca656af840dff83e8264ecf986ca": "ChainLink Token",
+	"0x85f17cf997934a597031b2e18a9ab6ebd4B9f6a4": "NEAR"
+
+}
+
 
 # Function to decode input data based on event text and input hash
 def decode_input(event_text, input_hash):
@@ -117,6 +132,8 @@ def collect_token(folder_prefix="result"):
 			if len(eventname.split('(')) != 1:
 				if eventname.split('(')[0].lower() == 'transfer':
 					currency = log["address"].lower()
+					if currency in token_names.keys():
+						currency = token_names[currency]
 					from_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					to_address = decode(['address'], bytes.fromhex(log['topics'][2][2:]))[0]
 					if len(log['topics'][1:]) == 3:
@@ -127,12 +144,16 @@ def collect_token(folder_prefix="result"):
 				if eventname.split('(')[0].lower() == 'withdrawal' and log[
 					"address"].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
 					currency = log["address"].lower()
+					if currency in token_names.keys():
+						currency = token_names[currency]
 					from_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					amount = decode_input(eventname, log['data'][2:])[0]
 					summary_dict = othertransfer(summary_dict, currency, from_address, currency, amount)
 				if eventname.split('(')[0].lower() == 'deposit' and log[
 					"address"].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
 					currency = log["address"].lower()
+					if currency in token_names.keys():
+						currency = token_names[currency]
 					to_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					amount = decode_input(eventname, log['data'][2:])[0]
 					summary_dict = othertransfer(summary_dict, currency, currency, to_address, amount)

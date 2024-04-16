@@ -83,8 +83,8 @@ def deal_ethtransfer(summary, trace):
     to_address = trace["action"]["to"]
     amount = int(trace["action"]["value"][2:], 16)
 
-    summary = update_summary(summary, from_address, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', -amount)
-    summary = update_summary(summary, to_address, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', amount)
+    summary = update_summary(summary, from_address, 'ETH', -amount)
+    summary = update_summary(summary, to_address, 'ETH', amount)
 
     return summary
 
@@ -94,8 +94,8 @@ def deal_create(summary, trace):
     amount = int(trace["action"]["value"][2:], 16)
     to_address = trace["result"]["address"]
 
-    summary = update_summary(summary, from_address, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', -amount)
-    summary = update_summary(summary, to_address, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', amount)
+    summary = update_summary(summary, from_address, 'ETH', -amount)
+    summary = update_summary(summary, to_address, 'ETH', amount)
 
     return summary
 
@@ -105,8 +105,8 @@ def deal_selfdestruct(summary, trace):
     amount = int(trace["action"]["balance"][2:], 16)
     to_address = trace["action"]["refundAddress"]
 
-    summary = update_summary(summary, from_address, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', -amount)
-    summary = update_summary(summary, to_address, '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', amount)
+    summary = update_summary(summary, from_address, 'ETH', -amount)
+    summary = update_summary(summary, to_address, 'ETH', amount)
 
     return summary
 
@@ -137,11 +137,11 @@ def collect_eth(folder_prefix="result"):
                 elif trace['type'] == 'suicide' and int(trace["action"]["balance"][2:], 16) != 0:
                     summary_dict = deal_selfdestruct(summary_dict, trace)
         for user in summary_dict.keys():
-            if summary_dict[user]['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] != 0:
+            if summary_dict[user]['ETH'] != 0:
                 if user not in new_dict.keys():
                     new_dict[user] = {}
-                new_dict[user]['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] = summary_dict[user][
-                    '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee']
+                new_dict[user]['ETH'] = summary_dict[user][
+                    'ETH']
     for key1 in dict1.keys():
         for key2 in dict1[key1].keys():
             keys_to_delete = [key for key, value in dict1[key1][key2].items() if value == 0]
