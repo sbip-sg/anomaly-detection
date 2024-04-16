@@ -2,3 +2,4 @@ pandas
 requests
 web3
 eth_abi
+ccxt
