@@ -93,12 +93,13 @@ def othertransfer(summary, currency, from_address, to_address, amount):
 	return summary
 
 
-# Initialize dictionary to store total summaries
-total_dict = {}
-
 
 # Function to collect token transaction details
 def collect_token(folder_prefix="result"):
+	# Initialize dictionary to store total summaries
+	total_dict = {}
+
+
 	# Get list of JSON files in event_json directory
 	jsonlist = listdir(folder_prefix + '/event_json')
 	for i in jsonlist:
