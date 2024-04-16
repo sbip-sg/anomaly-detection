@@ -34,13 +34,13 @@ def convert_bytes_to_string(obj):
     raise TypeError("Object of type {} not serializable".format(type(obj)))
 
 # Function to decode event JSON files
-def decode_event_json():
+def decode_event_json(folder_prefix="result"):
     # Get list of JSON files in event_json directory
-    jsonlist = listdir('result/event_json')
-    json_file_path = 'result/decoded_event/'
+    jsonlist = listdir(folder_prefix + '/event_json')
+    json_file_path = folder_prefix + '/decoded_event/'
     os.makedirs(json_file_path, exist_ok=True)
     for i in jsonlist:
-        file = open('result/event_json/' + i)
+        file = open(folder_prefix + '/event_json/' + i)
         events = []
         tx = json.load(file)
         for event in tx:

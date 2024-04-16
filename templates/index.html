@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Processor</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .negative { color: red; }
+        .positive { color: green; }
+        .error { color: red; font-style: italic; }
+        textarea { width: 95%; height: 150px; margin: 10px; padding: 5px; font-family: Consolas, 'Courier New', monospace; }
+    </style>
+</head>
+<body>
+    <h1>Transaction Viewer</h1>
+    <form action="/" method="post">
+        <label for="txhash">Transaction Hash:</label>
+        <input type="text" id="txhash" name="txhash" required>
+        <label for="overwrite">Overwrite:</label>
+        <input type="checkbox" id="overwrite" name="overwrite">
+        <button type="submit">Process</button>
+    </form>
+    <h2>Results:</h2>
+    {% if results %}
+        <h3>Basic Information</h3>
+        {% if results.get('basic_info') %}
+            <div id="basic_info">
+                <p><strong>From:</strong> {{ results.basic_info.from|default('N/A') }}</p>
+                <p><strong>To:</strong> {{ results.basic_info.to|default('N/A') }}</p>
+                <p><strong>Gas Used:</strong> {{ results.basic_info.gasUsed|default('N/A') }}</p>
+                <p><strong>Value Transferred:</strong> {{ results.basic_info.value|default('0') }} ETH></p>
+            </div>
+        {% else %}
+            <p class="error">No basic information available.</p>
+        {% endif %}
+        <h2>Balance Information:</h2>
+        {% if results.get('balance_info') %}
+            <table>
+                <tr>
+                    <th>Account</th>
+                    <th>Token</th>
+                    <th>Balance Change</th>
+                </tr>
+                {% for tx_hash, accounts in results.balance_info.items() %}
+                    {% for account, tokens in accounts.items() %}
+                        {% for token, change in tokens.items() %}
+                        <tr>
+                            <td>{{ account }}</td>
+                            <td>{{ token_names.get(token.lower(), token) }}</td>
+                            <td class="{% if change < 0 %}negative{% else %}positive{% endif %}">{{ (change|float / 1e18)|round(6) }} x10<sup>18</sup</td>
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                {% endfor %}
+            </table>
+        {% else %}
+            <p class="error">No balance information available.</p>
+        {% endif %}
+
+        <h2>Other Information:</h2>
+        {% if results.get('other_data') %}
+            <textarea readonly>{{ results.other_data|formatjson }}</textarea>
+        {% else %}
+            <p class="error">No other information available.</p>
+        {% endif %}
+
+    {% else %}
+        <p class="error">No results to display. Please submit a transaction hash above.</p>
+    {% endif %}
+
+</body>
+</html>

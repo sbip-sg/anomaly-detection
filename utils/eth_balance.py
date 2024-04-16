@@ -111,16 +111,16 @@ def deal_selfdestruct(summary, trace):
     return summary
 
 # Function to collect ETH transaction details
-def collect_eth():
+def collect_eth(folder_prefix="result"):
     # Get list of JSON files in trace_json directory
-    jsonlist = listdir('result/trace_json')
+    jsonlist = listdir(folder_prefix + '/trace_json')
 
     # Load summary dictionary from othertoken.json
-    file = open('result/othertoken.json')
+    file = open(folder_prefix + '/othertoken.json')
     dict1 = json.load(file)
     for i in jsonlist:
         summary_dict = {}
-        file = open('result/trace_json/' + i)
+        file = open(folder_prefix + '/trace_json/' + i)
         tx = json.load(file)
         if tx[0]["transactionHash"] in dict1.keys():
             new_dict = dict1[tx[0]["transactionHash"]]
@@ -151,5 +151,5 @@ def collect_eth():
         keys_to_delete = [key for key, value in dict1[key1].items() if value == {}]
         for key2 in keys_to_delete:
             del dict1[key1][key2]
-    with open('result/balance.json', 'w') as json_file:
+    with open(folder_prefix + '/balance.json', 'w') as json_file:
         json.dump(dict1, json_file, indent=2)

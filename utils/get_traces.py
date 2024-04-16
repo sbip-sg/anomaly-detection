@@ -12,13 +12,15 @@ url = 'https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134'
 # Headers for the HTTP request
 headers = {'Content-Type': 'application/json'}
 
-# Create a directory if it doesn't exist
-output_directory = 'result/trace_json'
-os.makedirs(output_directory, exist_ok=True)
 
 
 # Function to collect transaction traces and save them as JSON files
-def collect_trace(raw_list):
+def collect_trace(raw_list, folder_prefix="result"):
+	# Create a directory if it doesn't exist
+	output_directory = folder_prefix + '/trace_json'
+	os.makedirs(output_directory, exist_ok=True)
+	if type(raw_list) == str:
+		raw_list = [raw_list]
 	for transaction_hash in raw_list:
 		# Construct JSON-RPC request data
 		data = {

@@ -98,11 +98,11 @@ total_dict = {}
 
 
 # Function to collect token transaction details
-def collect_token():
+def collect_token(folder_prefix="result"):
 	# Get list of JSON files in event_json directory
-	jsonlist = listdir('result/event_json')
+	jsonlist = listdir(folder_prefix + '/event_json')
 	for i in jsonlist:
-		file = open('result/event_json/' + i)
+		file = open(folder_prefix + '/event_json/' + i)
 		summary_dict = {}
 		tx = json.load(file)
 		for log in tx:
@@ -140,5 +140,5 @@ def collect_token():
 			total_dict[tx[0]["transactionHash"]] = summary_dict
 
 	# Write total summaries to a JSON file
-	with open('result/othertoken.json', 'w') as json_file:
+	with open(folder_prefix + '/othertoken.json', 'w') as json_file:
 		json.dump(total_dict, json_file, indent=2)

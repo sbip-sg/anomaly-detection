@@ -18,13 +18,14 @@ def convert(obj):
 		return obj
 
 
-# Define output directory for JSON files
-output_directory = 'result/event_json'
-os.makedirs(output_directory, exist_ok=True)
-
 
 # Function to collect transaction information and return as a DataFrame
-def collectinfo(raw_list):
+def collectinfo(raw_list, folder_prefix="result"):
+	# Define output directory for JSON files
+	output_directory = folder_prefix+'/event_json'
+	os.makedirs(output_directory, exist_ok=True)
+	if type(raw_list) == str:
+		raw_list = [raw_list]
 	# Define columns for the new DataFrame
 	new_dataframe_columns = ['hash', 'value', 'from', 'to', 'gasUsed']
 	# Create an empty DataFrame with defined columns
@@ -69,10 +70,10 @@ def collectinfo(raw_list):
 		filename = f"{transaction_hash}_logs.json"
 
 		# Save logs as JSON
-		with open('result/event_json/' + filename, 'w') as file:
+		with open(folder_prefix+'/event_json/' + filename, 'w') as file:
 			json.dump(logs_dicts, file, indent=2)
 
-		print('collect_finished',transaction_hash)
+		# print('collect_finished',transaction_hash)
 
 
 	# Return the DataFrame containing transaction information

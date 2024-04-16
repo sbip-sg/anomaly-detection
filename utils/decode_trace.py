@@ -15,9 +15,6 @@ func_dict = func_df.set_index('hash')['function'].to_dict()
 # Base URL for Etherface API
 base_url = "https://api.etherface.io/v1/signatures/hash/all/"
 
-# Output directory for decoded trace JSON files
-output_directory = 'result/decoded_trace'
-os.makedirs(output_directory, exist_ok=True)
 
 # Function to check if parentheses are balanced in a string
 def are_parentheses_balanced(s):
@@ -77,13 +74,14 @@ def convert_bytes_to_string(obj):
     raise TypeError("Object of type {} not serializable".format(type(obj)))
 
 # Function to decode trace JSON files
-def decode_trace_json():
-    json_file_path = 'result/decoded_trace/'
+def decode_trace_json(folder_prefix="result"):
+    json_file_path = folder_prefix + '/decoded_trace/'
+    os.makedirs(json_file_path, exist_ok=True)
 
     # Get list of JSON files in trace_json directory
-    jsonlist = listdir('result/trace_json')
+    jsonlist = listdir(folder_prefix + '/trace_json')
     for i in jsonlist:
-        file = open('result/trace_json/' + i)
+        file = open(folder_prefix + '/trace_json/' + i)
         traces = []
         tx = json.load(file)
         for trace in tx:
