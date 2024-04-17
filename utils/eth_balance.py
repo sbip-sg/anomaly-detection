@@ -1,6 +1,7 @@
 import json
 from os import listdir
 from eth_abi import decode
+from utils.get_rate import get_rate
 
 # Base URL for Etherface API
 base_url = "https://api.etherface.io/v1/signatures/hash/all/"
@@ -111,7 +112,7 @@ def deal_selfdestruct(summary, trace):
     return summary
 
 # Function to collect ETH transaction details
-def collect_eth(folder_prefix="result"):
+def collect_eth(timestamp_dict ,folder_prefix="result"):
     # Get list of JSON files in trace_json directory
     jsonlist = listdir(folder_prefix + '/trace_json')
 
@@ -136,12 +137,13 @@ def collect_eth(folder_prefix="result"):
                     summary_dict = deal_create(summary_dict, trace)
                 elif trace['type'] == 'suicide' and int(trace["action"]["balance"][2:], 16) != 0:
                     summary_dict = deal_selfdestruct(summary_dict, trace)
+        time_stamp = timestamp_dict[tx[0]["transactionHash"]]
+        rate = get_rate(time_stamp, 'ETH')
         for user in summary_dict.keys():
             if summary_dict[user]['ETH'] != 0:
                 if user not in new_dict.keys():
                     new_dict[user] = {}
-                new_dict[user]['ETH'] = summary_dict[user][
-                    'ETH']
+                new_dict[user]['ETH'] = [summary_dict[user]['ETH'],summary_dict[user]['ETH']*rate]
     for key1 in dict1.keys():
         for key2 in dict1[key1].keys():
             keys_to_delete = [key for key, value in dict1[key1][key2].items() if value == 0]

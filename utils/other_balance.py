@@ -3,6 +3,7 @@ import pandas as pd
 from os import listdir
 from eth_abi import decode
 from web3 import Web3
+from utils.get_rate import get_rate
 
 w3 = Web3(Web3.HTTPProvider('https://eth.llamarpc.com'))
 abi_file = open("dictionary/erc20.abi.json")
@@ -114,7 +115,7 @@ def othertransfer(summary, currency, from_address, to_address, amount):
 
 
 # Function to collect token transaction details
-def collect_token(folder_prefix="result"):
+def collect_token(timestamp_dict, folder_prefix="result"):
 	# Initialize dictionary to store total summaries
 	total_dict = {}
 
@@ -156,6 +157,13 @@ def collect_token(folder_prefix="result"):
 					amount = decode_input(eventname, log['data'][2:])[0]
 					summary_dict = othertransfer(summary_dict, currency, currency, to_address, amount/pow(10,decimal))
 		# Store summary dictionary for each transaction
+		time_stamp = timestamp_dict[tx[0]["transactionHash"]]
+		for address in summary_dict.keys():
+			address_balance = summary_dict[address]
+			for token in address_balance:
+				value = address_balance[token]
+				rate = get_rate(time_stamp, token)
+				address_balance[token] = [value, value*rate]
 		if len(tx) > 0:
 			total_dict[tx[0]["transactionHash"]] = summary_dict
 

@@ -2,9 +2,11 @@ import pandas as pd
 from web3 import Web3
 import os
 import json
+from web3.middleware import geth_poa_middleware
 
 # Initialize Web3 instance with the RPC provider
 w3 = Web3(Web3.HTTPProvider('https://eth.llamarpc.com'))
+w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 # Function to recursively convert bytes to hexadecimal, lists, and dictionaries
 def convert(obj):
@@ -31,12 +33,16 @@ def collectinfo(raw_list, folder_prefix="result"):
 	# Create an empty DataFrame with defined columns
 	new_dataframe = pd.DataFrame(columns=new_dataframe_columns)
 
+	timestamps_dict = {}
+
 	# Loop through each transaction hash in the input list
 	for transaction_hash in raw_list:
 		# Get transaction details
 		transaction = w3.eth.get_transaction(transaction_hash)
 		# Get transaction receipt
 		receipt = w3.eth.get_transaction_receipt(transaction_hash)
+		timestamp = w3.eth.get_block(transaction['blockNumber'])['timestamp']
+		timestamps_dict[transaction_hash] = timestamp
 
 		# Extract sender and recipient addresses, converting to lowercase for consistency
 		sender = transaction['from'].lower()
@@ -77,4 +83,4 @@ def collectinfo(raw_list, folder_prefix="result"):
 
 
 	# Return the DataFrame containing transaction information
-	return new_dataframe
+	return new_dataframe, timestamps_dict

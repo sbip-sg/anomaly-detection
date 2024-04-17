@@ -17,7 +17,7 @@ def main(tx_hash, overwrite=False):
 		print(f"Result for {tx_hash} already exists. Use -o to overwrite.")
 		return
 	# Collect basic information
-	basic_info = collectinfo(tx_hash, folder_prefix)
+	basic_info, time_stamp_dict = collectinfo(tx_hash, folder_prefix)
 	# basic_info.to_csv('result/basic_info.csv')
 	basic_info.to_json(folder_prefix + '/basic_info.json', orient='records', lines=True)
 
@@ -31,9 +31,9 @@ def main(tx_hash, overwrite=False):
 	decode_trace_json(folder_prefix)
 
 	# Collect token balances
-	collect_token(folder_prefix)
+	collect_token(time_stamp_dict, folder_prefix)
 	# Collect ETH balances
-	collect_eth(folder_prefix)
+	collect_eth(time_stamp_dict, folder_prefix)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
