@@ -20,10 +20,11 @@ def get_currency(hash):
 			abi=abi,
 		)
 		currency = contract.functions.symbol().call()
-		currencydict[hash] = currency
+		decimal = contract.functions.decimals().call()
+		currencydict[hash] = (currency, decimal)
 	else:
-		currency = currencydict[hash]
-	return currency
+		(currency, decimal) = currencydict[hash]
+	return currency, decimal
 
 
 # Function to decode input data based on event text and input hash
@@ -134,26 +135,26 @@ def collect_token(folder_prefix="result"):
 			# Process different types of events
 			if len(eventname.split('(')) != 1:
 				if eventname.split('(')[0].lower() == 'transfer':
-					currency = get_currency(log["address"].lower())
+					currency, decimal = get_currency(log["address"].lower())
 					from_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					to_address = decode(['address'], bytes.fromhex(log['topics'][2][2:]))[0]
 					if len(log['topics'][1:]) == 3:
 						amount = decode(['uint256'], bytes.fromhex(log['topics'][3][2:]))[0]
 					else:
 						amount = decode(['uint256'], bytes.fromhex(log['data'][2:]))[0]
-					summary_dict = othertransfer(summary_dict, currency, from_address, to_address, amount)
+					summary_dict = othertransfer(summary_dict, currency, from_address, to_address, amount/pow(10,decimal))
 				if eventname.split('(')[0].lower() == 'withdrawal' and log[
 					"address"].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-					currency = get_currency(log["address"].lower())
+					currency, decimal = get_currency(log["address"].lower())
 					from_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					amount = decode_input(eventname, log['data'][2:])[0]
-					summary_dict = othertransfer(summary_dict, currency, from_address, currency, amount)
+					summary_dict = othertransfer(summary_dict, currency, from_address, currency, amount/pow(10,decimal))
 				if eventname.split('(')[0].lower() == 'deposit' and log[
 					"address"].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-					currency = get_currency(log["address"].lower())
+					currency, decimal = get_currency(log["address"].lower())
 					to_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					amount = decode_input(eventname, log['data'][2:])[0]
-					summary_dict = othertransfer(summary_dict, currency, currency, to_address, amount)
+					summary_dict = othertransfer(summary_dict, currency, currency, to_address, amount/pow(10,decimal))
 		# Store summary dictionary for each transaction
 		if len(tx) > 0:
 			total_dict[tx[0]["transactionHash"]] = summary_dict

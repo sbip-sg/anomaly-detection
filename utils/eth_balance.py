@@ -74,7 +74,7 @@ def update_summary(summary, address, currency, amount):
     if currency not in summary[address]:
         summary[address][currency] = 0
 
-    summary[address][currency] += amount
+    summary[address][currency] += amount/1e18
     return summary
 
 # Function to deal with ETH transfer transactions
