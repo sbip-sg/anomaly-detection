@@ -107,9 +107,11 @@ def update_summary(summary, address, currency, amount):
 
 
 # Function to handle other transfer transactions (not ETH)
-def othertransfer(summary, currency, from_address, to_address, amount):
+def othertransfer(summary, currency, from_address, to_address, amount, flow):
 	summary = update_summary(summary, from_address, currency, -amount)
 	summary = update_summary(summary, to_address, currency, amount)
+	flow.loc[len(flow)] = [from_address, to_address, currency, amount]
+
 	return summary
 
 
@@ -118,6 +120,7 @@ def othertransfer(summary, currency, from_address, to_address, amount):
 def collect_token(timestamp_dict, folder_prefix="result"):
 	# Initialize dictionary to store total summaries
 	total_dict = {}
+	flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
 
 
 	# Get list of JSON files in event_json directory
@@ -143,19 +146,19 @@ def collect_token(timestamp_dict, folder_prefix="result"):
 						amount = decode(['uint256'], bytes.fromhex(log['topics'][3][2:]))[0]
 					else:
 						amount = decode(['uint256'], bytes.fromhex(log['data'][2:]))[0]
-					summary_dict = othertransfer(summary_dict, currency, from_address, to_address, amount/pow(10,decimal))
+					summary_dict = othertransfer(summary_dict, currency, from_address, to_address, amount/pow(10,decimal), flow)
 				if eventname.split('(')[0].lower() == 'withdrawal' and log[
 					"address"].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
 					currency, decimal = get_currency(log["address"].lower())
 					from_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					amount = decode_input(eventname, log['data'][2:])[0]
-					summary_dict = othertransfer(summary_dict, currency, from_address, currency, amount/pow(10,decimal))
+					summary_dict = othertransfer(summary_dict, currency, from_address, currency, amount/pow(10,decimal),flow)
 				if eventname.split('(')[0].lower() == 'deposit' and log[
 					"address"].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
 					currency, decimal = get_currency(log["address"].lower())
 					to_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					amount = decode_input(eventname, log['data'][2:])[0]
-					summary_dict = othertransfer(summary_dict, currency, currency, to_address, amount/pow(10,decimal))
+					summary_dict = othertransfer(summary_dict, currency, currency, to_address, amount/pow(10,decimal), flow)
 		# Store summary dictionary for each transaction
 		time_stamp = timestamp_dict[tx[0]["transactionHash"]]
 		for address in summary_dict.keys():
@@ -168,5 +171,4 @@ def collect_token(timestamp_dict, folder_prefix="result"):
 			total_dict[tx[0]["transactionHash"]] = summary_dict
 
 	# Write total summaries to a JSON file
-	with open(folder_prefix + '/othertoken.json', 'w') as json_file:
-		json.dump(total_dict, json_file, indent=2)
+	return total_dict, flow

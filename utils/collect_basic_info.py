@@ -3,6 +3,7 @@ from web3 import Web3
 import os
 import json
 from web3.middleware import geth_poa_middleware
+import datetime
 
 # Initialize Web3 instance with the RPC provider
 w3 = Web3(Web3.HTTPProvider('https://eth.llamarpc.com'))
@@ -29,7 +30,7 @@ def collectinfo(raw_list, folder_prefix="result"):
 	if type(raw_list) == str:
 		raw_list = [raw_list]
 	# Define columns for the new DataFrame
-	new_dataframe_columns = ['hash', 'value', 'from', 'to', 'gasUsed']
+	new_dataframe_columns = ['hash', 'value', 'from', 'to', 'gasUsed', 'timestamp']
 	# Create an empty DataFrame with defined columns
 	new_dataframe = pd.DataFrame(columns=new_dataframe_columns)
 
@@ -58,6 +59,7 @@ def collectinfo(raw_list, folder_prefix="result"):
 			'from': sender,
 			'to': recipient,
 			'gasUsed': receipt['gasUsed'],  # Get gas used from transaction receipt
+			'timestamp': datetime.datetime.fromtimestamp(timestamp).strftime('%d-%m-%y %H:%M:%S')
 		}
 
 		# Append transaction data to the DataFrame
@@ -78,9 +80,6 @@ def collectinfo(raw_list, folder_prefix="result"):
 		# Save logs as JSON
 		with open(folder_prefix+'/event_json/' + filename, 'w') as file:
 			json.dump(logs_dicts, file, indent=2)
-
-		# print('collect_finished',transaction_hash)
-
 
 	# Return the DataFrame containing transaction information
 	return new_dataframe, timestamps_dict

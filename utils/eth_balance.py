@@ -79,46 +79,47 @@ def update_summary(summary, address, currency, amount):
     return summary
 
 # Function to deal with ETH transfer transactions
-def deal_ethtransfer(summary, trace):
+def deal_ethtransfer(summary, trace, flow):
     from_address = trace["action"]["from"]
     to_address = trace["action"]["to"]
     amount = int(trace["action"]["value"][2:], 16)
 
     summary = update_summary(summary, from_address, 'ETH', -amount)
     summary = update_summary(summary, to_address, 'ETH', amount)
+    flow.loc[len(flow)] = [from_address, to_address, 'ETH', amount/1e18]
 
     return summary
 
 # Function to deal with contract creation transactions
-def deal_create(summary, trace):
+def deal_create(summary, trace, flow):
     from_address = trace["action"]["from"]
     amount = int(trace["action"]["value"][2:], 16)
     to_address = trace["result"]["address"]
 
     summary = update_summary(summary, from_address, 'ETH', -amount)
     summary = update_summary(summary, to_address, 'ETH', amount)
+    flow.loc[len(flow)] = [from_address, to_address, 'ETH', amount/1e18]
 
     return summary
 
 # Function to deal with selfdestruct transactions
-def deal_selfdestruct(summary, trace):
+def deal_selfdestruct(summary, trace, flow):
     from_address = trace["action"]["address"]
     amount = int(trace["action"]["balance"][2:], 16)
     to_address = trace["action"]["refundAddress"]
 
     summary = update_summary(summary, from_address, 'ETH', -amount)
     summary = update_summary(summary, to_address, 'ETH', amount)
+    flow.loc[len(flow)] = [from_address, to_address, 'ETH', amount/1e18]
 
     return summary
 
 # Function to collect ETH transaction details
-def collect_eth(timestamp_dict ,folder_prefix="result"):
+def collect_eth(total_dict, timestamp_dict, flow, folder_prefix="result"):
     # Get list of JSON files in trace_json directory
     jsonlist = listdir(folder_prefix + '/trace_json')
 
-    # Load summary dictionary from othertoken.json
-    file = open(folder_prefix + '/othertoken.json')
-    dict1 = json.load(file)
+    dict1 = total_dict
     for i in jsonlist:
         summary_dict = {}
         file = open(folder_prefix + '/trace_json/' + i)
@@ -132,11 +133,11 @@ def collect_eth(timestamp_dict ,folder_prefix="result"):
             if 'error' not in trace.keys():
                 if trace['type'] == 'call' and trace["action"]["callType"] != "delegatecall" and int(
                         trace["action"]["value"][2:], 16) != 0:
-                    summary_dict = deal_ethtransfer(summary_dict, trace)
+                    summary_dict = deal_ethtransfer(summary_dict, trace, flow)
                 elif trace['type'] == 'create' and int(trace["action"]["value"][2:], 16) != 0:
-                    summary_dict = deal_create(summary_dict, trace)
+                    summary_dict = deal_create(summary_dict, trace, flow)
                 elif trace['type'] == 'suicide' and int(trace["action"]["balance"][2:], 16) != 0:
-                    summary_dict = deal_selfdestruct(summary_dict, trace)
+                    summary_dict = deal_selfdestruct(summary_dict, trace, flow)
         time_stamp = timestamp_dict[tx[0]["transactionHash"]]
         rate = get_rate(time_stamp, 'ETH')
         for user in summary_dict.keys():
@@ -155,3 +156,5 @@ def collect_eth(timestamp_dict ,folder_prefix="result"):
             del dict1[key1][key2]
     with open(folder_prefix + '/balance.json', 'w') as json_file:
         json.dump(dict1, json_file, indent=2)
+
+    flow.to_json(folder_prefix + '/tokenflow.json', orient='records', lines=True)

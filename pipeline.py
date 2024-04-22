@@ -31,9 +31,9 @@ def main(tx_hash, overwrite=False):
 	decode_trace_json(folder_prefix)
 
 	# Collect token balances
-	collect_token(time_stamp_dict, folder_prefix)
+	total_dict, flow = collect_token(time_stamp_dict, folder_prefix)
 	# Collect ETH balances
-	collect_eth(time_stamp_dict, folder_prefix)
+	collect_eth(total_dict, time_stamp_dict, flow, folder_prefix)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
