@@ -47,11 +47,11 @@
                 </tr>
                 {% for tx_hash, accounts in results.balance_info.items() %}
                     {% for account, tokens in accounts.items() %}
-                        {% for token, change in tokens.items() %}
+                        {% for token, (change, change_in_usd) in tokens.items() %}
                         <tr>
                             <td>{{ account }}</td>
                             <td>{{ token_names.get(token.lower(), token) }}</td>
-                            <td class="{% if change < 0 %}negative{% else %}positive{% endif %}">{{ (change|float / 1e18)|round(6) }} x10<sup>18</sup</td>
+                            <td class="{% if change < 0 %}negative{% else %}positive{% endif %}">{{ change|float | round(6) }} / {{ change_in_usd | float | round(2) }} USD</sup</td>
                         </tr>
                         {% endfor %}
                     {% endfor %}

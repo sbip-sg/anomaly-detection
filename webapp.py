@@ -7,6 +7,15 @@ app = Flask(__name__)
 
 from pipeline import main as process_request
 
+def try_read_as_json(path):
+    try:
+        with open(path, 'r') as f:
+            return json.load(f)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return None
+
 
 @app.template_filter('formatjson')
 def formatjson_filter(data):
@@ -15,29 +24,21 @@ def formatjson_filter(data):
 def get_results(tx_hash, overwrite):
     folder_prefix = f'result/{tx_hash}_eth'
     process_request(tx_hash, overwrite)
-    try:
-        with open(f'{folder_prefix}/basic_info.json', 'r') as f:
-            basic_info = json.load(f)
-        with open(f'{folder_prefix}/balance.json', 'r') as f:
-            balance_info = json.load(f)
-        with open(f'{folder_prefix}/othertoken.json', 'r') as f:
-            other_token_info = json.load(f)
-        with open(f'{folder_prefix}/decoded_trace/trace_{tx_hash}.json', 'r') as f:
-            decoded_trace = json.load(f)
-        with open(f'{folder_prefix}/decoded_event/{tx_hash}_logs.json', 'r') as f:
-            decoded_event = json.load(f)
-        results = {
-            'basic_info': basic_info,
-            'balance_info': balance_info,
-            'other_token_info': other_token_info,
-            'other_data' : {
-                'decoded_trace': decoded_trace,
-                'decoded_event': decoded_event,
-            }
+    basic_info = try_read_as_json(f'{folder_prefix}/basic_info.json') or {}
+    balance_info = try_read_as_json(f'{folder_prefix}/balance.json') or {}
+    other_token_info = try_read_as_json(f'{folder_prefix}/othertoken.json') or {}
+    decoded_trace = try_read_as_json(f'{folder_prefix}/decoded_trace/trace_{tx_hash}.json') or {}
+    decoded_event = try_read_as_json(f'{folder_prefix}/decoded_event/{tx_hash}_logs.json') or {}
+    results = {
+        'basic_info': basic_info,
+        'balance_info': balance_info,
+        'other_token_info': other_token_info,
+        'other_data' : {
+            'decoded_trace': decoded_trace,
+            'decoded_event': decoded_event,
         }
-        return results
-    except Exception as e:
-        return {"error": str(e)}
+    }
+    return results
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -83,4 +84,3 @@ def process():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=os.environ.get('PORT', 5000))
-
