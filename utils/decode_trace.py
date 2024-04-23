@@ -118,7 +118,7 @@ def decode_trace_json(folder_prefix="result"):
                         new_trace["input"] = decode_input(func_dict[func_hash], input_hash)
                     else:
                         api_url = f"{base_url}{func_hash}/1"
-                        response = requests.get(api_url)
+                        response = requests.get(api_url, verify=False)
                         if response.status_code == 200:
                             result = response.json()
                             event_text = result['items'][0]['text']
@@ -127,6 +127,7 @@ def decode_trace_json(folder_prefix="result"):
                             new_trace["input"] = decode_input(func_dict[func_hash], input_hash)
                         else:
                             new_trace["function"] = func_hash
+                            new_trace["input"] = decode_input(func_hash, chunks)
                             func_dict[func_hash] = func_hash
             traces.append(new_trace)
         with open(json_file_path + i, 'w') as jsonfile:
