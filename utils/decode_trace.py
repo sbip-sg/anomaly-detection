@@ -62,9 +62,9 @@ def decode_input(event_text, input_hash):
             for line in chunks:
                 count_of_zeros = len(line) - len(line.lstrip('0'))
                 if count_of_zeros >= 24 and count_of_zeros < 30:
-                    input_list.append(decode(['address'], bytes.fromhex(line)))
+                    input_list.append(decode(['address'], bytes.fromhex(line))[0])
                 elif count_of_zeros >= 30 and count_of_zeros < 60:
-                    input_list.append(decode(['uint256'], bytes.fromhex(line)))
+                    input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
     return input_list
 
 # Function to convert bytes to base64 encoded string
@@ -110,9 +110,6 @@ def decode_trace_json(folder_prefix="result"):
                     func_hash = trace["action"]['input'][2:10]
                     input_hash = trace["action"]['input'][10:]
 
-                    # Split input_hash into 64-character strings
-                    chunks = [input_hash[i:i + 64] for i in range(0, len(input_hash), 64)]
-
                     if func_hash in func_dict.keys():
                         new_trace["function"] = func_dict[func_hash]
                         new_trace["input"] = decode_input(func_dict[func_hash], input_hash)
@@ -127,7 +124,7 @@ def decode_trace_json(folder_prefix="result"):
                             new_trace["input"] = decode_input(func_dict[func_hash], input_hash)
                         else:
                             new_trace["function"] = func_hash
-                            new_trace["input"] = decode_input(func_hash, chunks)
+                            new_trace["input"] = decode_input(func_hash, input_hash)
                             func_dict[func_hash] = func_hash
             traces.append(new_trace)
         with open(json_file_path + i, 'w') as jsonfile:
