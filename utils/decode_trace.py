@@ -118,14 +118,23 @@ def decode_trace_json(folder_prefix="result"):
                         new_trace["input"] = decode_input(func_dict[func_hash], input_hash)
                     else:
                         api_url = f"{base_url}{func_hash}/1"
-                        response = requests.get(api_url)
-                        if response.status_code == 200:
-                            result = response.json()
-                            event_text = result['items'][0]['text']
-                            new_trace["function"] = event_text
-                            func_dict[func_hash] = event_text
-                            new_trace["input"] = decode_input(func_dict[func_hash], input_hash)
-                        else:
+                        try:
+                            response = requests.get(api_url)
+                            response.raise_for_status()  # Raises an exception for HTTP errors (status code >= 400)
+
+                            if response.status_code == 200:
+                                result = response.json()
+                                event_text = result['items'][0]['text']
+                                new_trace["function"] = event_text
+                                func_dict[func_hash] = event_text
+                                new_trace["input"] = decode_input(func_dict[func_hash], input_hash)
+
+                            else:
+                                new_trace["function"] = func_hash
+                                func_dict[func_hash] = func_hash
+
+                        except requests.exceptions.RequestException as e:
+
                             new_trace["function"] = func_hash
                             func_dict[func_hash] = func_hash
             traces.append(new_trace)
