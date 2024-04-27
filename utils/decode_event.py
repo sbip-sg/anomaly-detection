@@ -58,7 +58,7 @@ def decode_event_json(folder_prefix="result"):
                 else:
                     # Get event name from Etherface API
                     api_url = f"{base_url}{func_hash}/1"
-                    response = requests.get(api_url)
+                    response = requests.get(api_url, verify=False)
                     if response.status_code == 200:
                         result = response.json()
                         event_text = result['items'][0]['text']
