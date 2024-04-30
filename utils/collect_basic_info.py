@@ -47,6 +47,7 @@ def collectinfo(raw_list, folder_prefix="result"):
 			timestamps_dict[transaction_hash] = timestamp
 		except Exception as e:
 			current_timestamp = datetime.now().timestamp()
+			timestamp = current_timestamp - 3600
 			timestamps_dict[transaction_hash] = current_timestamp - 3600
 
 
