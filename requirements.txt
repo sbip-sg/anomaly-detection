@@ -3,3 +3,5 @@ requests
 web3==5.31.4
 eth-abi==2.2.0
 ccxt==4.2.45
+flask
+flask-cors

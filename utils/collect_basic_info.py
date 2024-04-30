@@ -59,7 +59,7 @@ def collectinfo(raw_list, folder_prefix="result"):
 			'from': sender,
 			'to': recipient,
 			'gasUsed': receipt['gasUsed'],  # Get gas used from transaction receipt
-			'timestamp': datetime.datetime.fromtimestamp(timestamp).strftime('%d-%m-%y %H:%M:%S')
+			'timestamp': timestamp
 		}
 
 		# Append transaction data to the DataFrame

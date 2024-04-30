@@ -3,8 +3,16 @@
 Anomaly detection for transaction logs on ETH-family blockchains.
 
 ## Install dependencies
+Tested on Python 3.10, other versions may work but are not guaranteed. To use anaconda, you can create a new environment and install dependencies:
+
+``` bash
+conda create -n anomaly python=3.10
+conda activate anomaly
 
 pip install -r requirements.txt
+```
+
+
 
 ## How to set input data?
 
