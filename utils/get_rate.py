@@ -17,7 +17,7 @@ def to_available(timestamp):
 	if time_difference > 8 * 3600:
 		return timestamp
 	else:
-		return int(current_timestamp - 8 * 3600)
+		return int(current_timestamp - 12 * 3600)
 
 def get_rate(time_stamp, currency):
 	exchange = ccxt.binance()

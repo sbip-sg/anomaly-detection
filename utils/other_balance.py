@@ -164,14 +164,14 @@ def collect_token(timestamp_dict, folder_prefix="result"):
 					amount = decode_input(eventname, log['data'][2:])[0]
 					summary_dict = othertransfer(summary_dict, currency, currency, to_address, amount/pow(10,decimal), flow)
 		# Store summary dictionary for each transaction
-		time_stamp = timestamp_dict[tx[0]["transactionHash"]]
-		for address in summary_dict.keys():
-			address_balance = summary_dict[address]
-			for token in address_balance:
-				value = address_balance[token]
-				rate = get_rate(time_stamp, token)
-				address_balance[token] = [value, value*rate]
 		if len(tx) > 0:
+			time_stamp = timestamp_dict[tx[0]["transactionHash"]]
+			for address in summary_dict.keys():
+				address_balance = summary_dict[address]
+				for token in address_balance:
+					value = address_balance[token]
+					rate = get_rate(time_stamp, token)
+					address_balance[token] = [value, value*rate]
 			total_dict[tx[0]["transactionHash"]] = summary_dict
 
 	# Write total summaries to a JSON file

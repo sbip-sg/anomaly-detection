@@ -124,27 +124,28 @@ def collect_eth(total_dict, timestamp_dict, flow, folder_prefix="result"):
         summary_dict = {}
         file = open(folder_prefix + '/trace_json/' + i)
         tx = json.load(file)
-        if tx[0]["transactionHash"] in dict1.keys():
-            new_dict = dict1[tx[0]["transactionHash"]]
-        else:
-            dict1[tx[0]["transactionHash"]] = {}
-            new_dict = dict1[tx[0]["transactionHash"]]
-        for trace in tx:
-            if 'error' not in trace.keys():
-                if trace['type'] == 'call' and trace["action"]["callType"] != "delegatecall" and int(
-                        trace["action"]["value"][2:], 16) != 0:
-                    summary_dict = deal_ethtransfer(summary_dict, trace, flow)
-                elif trace['type'] == 'create' and int(trace["action"]["value"][2:], 16) != 0:
-                    summary_dict = deal_create(summary_dict, trace, flow)
-                elif trace['type'] == 'suicide' and int(trace["action"]["balance"][2:], 16) != 0:
-                    summary_dict = deal_selfdestruct(summary_dict, trace, flow)
-        time_stamp = timestamp_dict[tx[0]["transactionHash"]]
-        rate = get_rate(time_stamp, 'ETH')
-        for user in summary_dict.keys():
-            if summary_dict[user]['ETH'] != 0:
-                if user not in new_dict.keys():
-                    new_dict[user] = {}
-                new_dict[user]['ETH'] = [summary_dict[user]['ETH'],summary_dict[user]['ETH']*rate]
+        if len(tx) > 0:
+            if tx[0]["transactionHash"] in dict1.keys():
+                new_dict = dict1[tx[0]["transactionHash"]]
+            else:
+                dict1[tx[0]["transactionHash"]] = {}
+                new_dict = dict1[tx[0]["transactionHash"]]
+            for trace in tx:
+                if 'error' not in trace.keys():
+                    if trace['type'] == 'call' and trace["action"]["callType"] != "delegatecall" and int(
+                            trace["action"]["value"][2:], 16) != 0:
+                        summary_dict = deal_ethtransfer(summary_dict, trace, flow)
+                    elif trace['type'] == 'create' and int(trace["action"]["value"][2:], 16) != 0:
+                        summary_dict = deal_create(summary_dict, trace, flow)
+                    elif trace['type'] == 'suicide' and int(trace["action"]["balance"][2:], 16) != 0:
+                        summary_dict = deal_selfdestruct(summary_dict, trace, flow)
+            time_stamp = timestamp_dict[tx[0]["transactionHash"]]
+            rate = get_rate(time_stamp, 'ETH')
+            for user in summary_dict.keys():
+                if summary_dict[user]['ETH'] != 0:
+                    if user not in new_dict.keys():
+                        new_dict[user] = {}
+                    new_dict[user]['ETH'] = [summary_dict[user]['ETH'],summary_dict[user]['ETH']*rate]
     for key1 in dict1.keys():
         for key2 in dict1[key1].keys():
             keys_to_delete = [key for key, value in dict1[key1][key2].items() if value == 0]

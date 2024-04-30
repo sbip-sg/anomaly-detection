@@ -3,7 +3,7 @@ from web3 import Web3
 import os
 import json
 from web3.middleware import geth_poa_middleware
-import datetime
+from datetime import datetime
 
 # Initialize Web3 instance with the RPC provider
 w3 = Web3(Web3.HTTPProvider('https://eth.llamarpc.com'))
@@ -42,8 +42,13 @@ def collectinfo(raw_list, folder_prefix="result"):
 		transaction = w3.eth.get_transaction(transaction_hash)
 		# Get transaction receipt
 		receipt = w3.eth.get_transaction_receipt(transaction_hash)
-		timestamp = w3.eth.get_block(transaction['blockNumber'])['timestamp']
-		timestamps_dict[transaction_hash] = timestamp
+		try:
+			timestamp = w3.eth.get_block(transaction['blockNumber'])['timestamp']
+			timestamps_dict[transaction_hash] = timestamp
+		except Exception as e:
+			current_timestamp = datetime.now().timestamp()
+			timestamps_dict[transaction_hash] = current_timestamp - 3600
+
 
 		# Extract sender and recipient addresses, converting to lowercase for consistency
 		sender = transaction['from'].lower()
