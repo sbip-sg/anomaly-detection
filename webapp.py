@@ -30,10 +30,12 @@ def get_results(tx_hash, overwrite):
     other_token_info = try_read_as_json(f'{folder_prefix}/othertoken.json') or {}
     decoded_trace = try_read_as_json(f'{folder_prefix}/decoded_trace/trace_{tx_hash}.json') or {}
     decoded_event = try_read_as_json(f'{folder_prefix}/decoded_event/{tx_hash}_logs.json') or {}
+    token_flow = try_read_as_json(f'{folder_prefix}/tokenflow.json') or {}
     results = {
         'basic_info': basic_info,
         'balance_info': balance_info,
         'other_token_info': other_token_info,
+        'token_flow': token_flow,
         'other_data' : {
             'decoded_trace': decoded_trace,
             'decoded_event': decoded_event,

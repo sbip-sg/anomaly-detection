@@ -157,4 +157,4 @@ def collect_eth(total_dict, timestamp_dict, flow, folder_prefix="result"):
     with open(folder_prefix + '/balance.json', 'w') as json_file:
         json.dump(dict1, json_file, indent=2)
 
-    flow.to_json(folder_prefix + '/tokenflow.json', orient='records', lines=True)
+    flow.to_json(folder_prefix + '/tokenflow.json', orient='records')
