@@ -139,7 +139,11 @@ def collect_token(timestamp_dict, folder_prefix="result"):
 			# Process different types of events
 			if len(eventname.split('(')) != 1:
 				if eventname.split('(')[0].lower() == 'transfer':
-					currency, decimal = get_currency(log["address"].lower())
+					try:
+						currency, decimal = get_currency(log["address"].lower())
+					except Exception as e:
+						print(e)
+						currency, decimal = log["address"].lower(), 1
 					from_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					to_address = decode(['address'], bytes.fromhex(log['topics'][2][2:]))[0]
 					if len(log['topics'][1:]) == 3:
