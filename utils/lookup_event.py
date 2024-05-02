@@ -26,7 +26,7 @@ def get_event_db_signature(function_hash: str):
     if function_hash.startswith('0x'):
         function_hash = function_hash[2:]
     try:
-        signatures = db.Get(function_hash.encode()).decode()
+        signatures = get_db().Get(function_hash.encode()).decode()
     except KeyError:
         return None
     return signatures
