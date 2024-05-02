@@ -6,7 +6,7 @@ from web3 import Web3
 from utils.get_rate import get_rate
 
 w3 = Web3(Web3.HTTPProvider('https://eth.llamarpc.com'))
-abi_file = open("erc20.abi.json")
+abi_file = open("utils/erc20.abi.json")
 abi = json.load(abi_file)
 # Read event dictionary CSV file and convert it to a dictionary
 hash_file = pd.read_csv('dictionary/event_dict.csv')
