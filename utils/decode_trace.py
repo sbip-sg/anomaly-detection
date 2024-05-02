@@ -4,7 +4,10 @@ from os import listdir
 from eth_abi import decode
 import base64
 import os
-from lookup_function import get_function_signature
+try:
+    from .lookup_function import get_function_signature
+except ImportError:
+    from lookup_function import get_function_signature
 
 # Function to check if parentheses are balanced in a string
 def are_parentheses_balanced(s):

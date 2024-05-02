@@ -1,5 +1,14 @@
 import leveldb
-function_db = leveldb.LevelDB('../db/event_db')
+import os
+
+db_path = os.environ.get('EVENT_DB_PATH', './db')
+db = None
+def get_db():
+    global db
+    if db is None:
+        db = leveldb.LevelDB(f'{db_path}/event_db')
+    return db
+
 
 
 def get_event_db_signature(function_hash: str):
@@ -17,7 +26,7 @@ def get_event_db_signature(function_hash: str):
     if function_hash.startswith('0x'):
         function_hash = function_hash[2:]
     try:
-        signatures = function_db.Get(function_hash.encode()).decode()
+        signatures = db.Get(function_hash.encode()).decode()
     except KeyError:
         return None
     return signatures

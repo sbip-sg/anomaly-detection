@@ -3,7 +3,11 @@ import os
 from os import listdir
 from eth_abi import decode
 import base64
-from lookup_event import get_event_db_signature
+try:
+    from .lookup_event import get_event_db_signature
+except ImportError:
+    from lookup_event import get_event_db_signature
+
 
 # Function to decode input data based on its type
 def decode_input(chunks):
@@ -57,4 +61,3 @@ def decode_event_json(folder_prefix="result"):
         with open(json_file_path + i, 'w') as jsonfile:
             json.dump(events, jsonfile, default=convert_bytes_to_string, indent=2)
         print('decode_event_finished', i)
-
