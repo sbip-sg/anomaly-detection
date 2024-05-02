@@ -1,20 +1,10 @@
-import pandas as pd
 import requests
 import json
 from os import listdir
 from eth_abi import decode
 import base64
 import os
-
-# Read the CSV file containing function hash mappings
-func_df = pd.read_csv('dictionary/function_dict.csv')
-
-# Convert DataFrame to dictionary for easy lookup
-func_dict = func_df.set_index('hash')['function'].to_dict()
-
-# Base URL for Etherface API
-base_url = "https://api.etherface.io/v1/signatures/hash/all/"
-
+from lookup_function import get_function_signature
 
 # Function to check if parentheses are balanced in a string
 def are_parentheses_balanced(s):
@@ -109,23 +99,14 @@ def decode_trace_json(folder_prefix="result"):
                 else:
                     func_hash = trace["action"]['input'][2:10]
                     input_hash = trace["action"]['input'][10:]
+                    func_name = get_function_signature(func_hash)
 
-                    if func_hash in func_dict.keys():
-                        new_trace["function"] = func_dict[func_hash]
-                        new_trace["input"] = decode_input(func_dict[func_hash], input_hash)
+                    if func_name:
+                        new_trace["function"] = func_name
+                        new_trace["input"] = decode_input(func_name, input_hash)
                     else:
-                        api_url = f"{base_url}{func_hash}/1"
-                        response = requests.get(api_url, verify=False)
-                        if response.status_code == 200:
-                            result = response.json()
-                            event_text = result['items'][0]['text']
-                            new_trace["function"] = event_text
-                            func_dict[func_hash] = event_text
-                            new_trace["input"] = decode_input(func_dict[func_hash], input_hash)
-                        else:
-                            new_trace["function"] = func_hash
-                            new_trace["input"] = decode_input(func_hash, input_hash)
-                            func_dict[func_hash] = func_hash
+                        new_trace["function"] = func_hash
+                        new_trace["input"] = decode_input(func_hash, input_hash)
             traces.append(new_trace)
         with open(json_file_path + i, 'w') as jsonfile:
             json.dump(traces, jsonfile, default=convert_bytes_to_string, indent=2)
