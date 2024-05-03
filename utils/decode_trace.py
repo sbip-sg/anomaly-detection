@@ -92,6 +92,8 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["subtype"] = trace['error']
             if trace["result"]:
                 new_trace["gasUsed"] = int(trace["result"]["gasUsed"][2:], 16)
+            if "action" in trace.keys() and "value" in trace["action"].keys():
+                new_trace["value"] = int(trace["action"]["value"][2:], 16)
             if trace['type'] == 'call' and trace["action"]["callType"] == "delegatecall":
                 trace['calltype'] = "delegatecall"
             new_trace["subtraces"] = trace["subtraces"]
@@ -105,9 +107,8 @@ def decode_trace_json(folder_prefix="result"):
             if trace['type'] == 'call':
                 new_trace["from"] = trace["action"]["from"]
                 new_trace["to"] = trace["action"]["to"]
-                new_trace["value"] = int(trace["action"]["value"][2:], 16)
                 if len(trace["action"]['input']) == 2:
-                    new_trace["type"] = 'fallback'
+                    new_trace["calltype"] = 'fallback'
                 else:
                     func_hash = trace["action"]['input'][2:10]
                     input_hash = trace["action"]['input'][10:]
