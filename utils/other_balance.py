@@ -8,9 +8,6 @@ from utils.get_rate import get_rate
 w3 = Web3(Web3.HTTPProvider('https://eth.llamarpc.com'))
 abi_file = open("dictionary/erc20.abi.json")
 abi = json.load(abi_file)
-# Read event dictionary CSV file and convert it to a dictionary
-hash_file = pd.read_csv('dictionary/event_dict.csv')
-hashdict = hash_file.set_index('hash')['event'].to_dict()
 
 currencydict = {}
 def get_currency(hash):
@@ -129,12 +126,14 @@ def collect_token(timestamp_dict, folder_prefix="result"):
 		file = open(folder_prefix + '/event_json/' + i)
 		summary_dict = {}
 		tx = json.load(file)
-		for log in tx:
+		decoded_file = open(folder_prefix + '/decoded_event/decode_' + i)
+		decoded = json.load(decoded_file)
+		for log, decoded_log in zip(tx, decoded):
 			# Determine event name
-			if log['topics'][0][2:] in hashdict.keys():
-				eventname = hashdict[log['topics'][0][2:]]
+			if "eventname" in decoded_log.keys():
+				eventname = decoded_log["eventname"]
 			else:
-				eventname = log['topics'][0][2:7]
+				eventname = ""
 
 			# Process different types of events
 			if len(eventname.split('(')) != 1:
