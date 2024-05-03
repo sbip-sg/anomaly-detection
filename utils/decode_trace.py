@@ -84,6 +84,8 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["subtype"] = trace['error']
             if trace["result"]:
                 new_trace["gasUsed"] = int(trace["result"]["gasUsed"][2:], 16)
+            if trace['type'] == 'call' and trace["action"]["callType"] == "delegatecall":
+                trace['calltype'] = "delegatecall"
             new_trace["subtraces"] = trace["subtraces"]
             new_trace["traceAddress"] = trace["traceAddress"]
             if trace['type'] == 'create':
@@ -110,6 +112,6 @@ def decode_trace_json(folder_prefix="result"):
                         new_trace["function"] = func_hash
                         new_trace["input"] = decode_input(func_hash, input_hash)
             traces.append(new_trace)
-        with open(json_file_path + i, 'w') as jsonfile:
+        with open(json_file_path + 'decode_' + i, 'w') as jsonfile:
             json.dump(traces, jsonfile, default=convert_bytes_to_string, indent=2)
         print('decode_trace_finished', i)

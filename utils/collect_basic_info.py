@@ -82,7 +82,7 @@ def collectinfo(raw_list, folder_prefix="result"):
 			logs_dicts.append(log_dict)
 
 		# Define the filename for the JSON file
-		filename = f"{transaction_hash}_logs.json"
+		filename = f"events_{transaction_hash}.json"
 
 		# Save logs as JSON
 		with open(folder_prefix+'/event_json/' + filename, 'w') as file:
