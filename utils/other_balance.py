@@ -5,18 +5,11 @@ from eth_abi import decode
 from web3 import Web3
 from utils.get_rate import get_rate
 
-try:
-	from .lookup_event import get_event_db_signature
-except ImportError:
-	from lookup_event import get_event_db_signature
-
 w3 = Web3(Web3.HTTPProvider('https://eth.llamarpc.com'))
 abi_file = open("utils/erc20.abi.json")
 abi = json.load(abi_file)
 
 currencydict = {}
-
-
 def get_currency(hash):
 	if hash not in currencydict.keys():
 		address = Web3.to_checksum_address(hash)
@@ -119,11 +112,13 @@ def othertransfer(summary, currency, from_address, to_address, amount, flow):
 	return summary
 
 
+
 # Function to collect token transaction details
 def collect_token(timestamp_dict, folder_prefix="result"):
 	# Initialize dictionary to store total summaries
 	total_dict = {}
 	flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
+
 
 	# Get list of JSON files in event_json directory
 	jsonlist = listdir(folder_prefix + '/event_json')
@@ -131,11 +126,14 @@ def collect_token(timestamp_dict, folder_prefix="result"):
 		file = open(folder_prefix + '/event_json/' + i)
 		summary_dict = {}
 		tx = json.load(file)
-		for log in tx:
-			eventname = get_event_db_signature(log['topics'][0][2:])
+		decoded_file = open(folder_prefix + '/decoded_event/decode_' + i)
+		decoded = json.load(decoded_file)
+		for log, decoded_log in zip(tx, decoded):
 			# Determine event name
-			if not eventname:
-				eventname = log['topics'][0][2:7]
+			if "eventname" in decoded_log.keys():
+				eventname = decoded_log["eventname"]
+			else:
+				eventname = ""
 
 			# Process different types of events
 			if len(eventname.split('(')) != 1:
@@ -151,8 +149,7 @@ def collect_token(timestamp_dict, folder_prefix="result"):
 						amount = decode(['uint256'], bytes.fromhex(log['topics'][3][2:]))[0]
 					else:
 						amount = decode(['uint256'], bytes.fromhex(log['data'][2:]))[0]
-					summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
-					                             amount / pow(10, decimal), flow)
+					summary_dict = othertransfer(summary_dict, currency, from_address, to_address, amount/pow(10,decimal), flow)
 				if eventname.split('(')[0].lower() == 'withdrawal' and log[
 					"address"].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
 					currency, decimal = get_currency(log["address"].lower())
