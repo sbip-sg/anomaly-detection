@@ -164,7 +164,7 @@ def collect_token(timestamp_dict, folder_prefix="result"):
 					amount = decode_input(eventname, log['data'][2:])[0]
 					summary_dict = othertransfer(summary_dict, currency, currency, to_address, amount/pow(10,decimal), flow)
 		# Store summary dictionary for each transaction
-		if len(tx) > 0:
+		if len(tx) != 0:
 			time_stamp = timestamp_dict[tx[0]["transactionHash"]]
 			for address in summary_dict.keys():
 				address_balance = summary_dict[address]

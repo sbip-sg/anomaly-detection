@@ -124,7 +124,7 @@ def collect_eth(total_dict, timestamp_dict, flow, folder_prefix="result"):
         summary_dict = {}
         file = open(folder_prefix + '/trace_json/' + i)
         tx = json.load(file)
-        if len(tx) > 0:
+        if len(tx) != 0:
             if tx[0]["transactionHash"] in dict1.keys():
                 new_dict = dict1[tx[0]["transactionHash"]]
             else:
