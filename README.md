@@ -12,7 +12,7 @@ conda activate anomaly
 pip install -r requirements.txt
 ```
 
-
+This project needs a signature db to decode the events and functions. Please copy the db folder from here. https://github.com/sbip-sg/evm-signature-database. *Currently only works on Linux.*
 
 ## How to set input data?
 

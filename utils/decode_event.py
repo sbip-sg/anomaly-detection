@@ -1,19 +1,13 @@
-import pandas as pd
-import requests
 import json
 import os
 from os import listdir
 from eth_abi import decode
 import base64
+try:
+    from .lookup_event import get_event_db_signature
+except ImportError:
+    from lookup_event import get_event_db_signature
 
-# Read the CSV file containing event hash mappings
-hash_df = pd.read_csv('dictionary/event_dict.csv')
-
-# Convert DataFrame to dictionary for easy lookup
-hash_dict = hash_df.set_index('hash')['event'].to_dict()
-
-# Base URL for Etherface API
-base_url = "https://api.etherface.io/v1/signatures/hash/all/"
 
 # Function to decode input data based on its type
 def decode_input(chunks):
@@ -52,22 +46,11 @@ def decode_event_json(folder_prefix="result"):
             if len(event["topics"]) != 0:
                 func_hash = event["topics"][0][2:]  # Remove '0x' prefix
                 # Check if func_hash exists in hash_dict
-                if func_hash in hash_dict.keys():
-                    new_event["eventname"] = hash_dict[func_hash]
-                    new_event["topics"] = decode_input(event["topics"][1:])
+                event_name= get_event_db_signature(func_hash)
+                if event_name:
+                    new_event["eventname"] = event_name
                 else:
-                    # Get event name from Etherface API
-                    api_url = f"{base_url}{func_hash}/1"
-                    response = requests.get(api_url, verify=False)
-                    if response.status_code == 200:
-                        result = response.json()
-                        event_text = result['items'][0]['text']
-                        new_event["eventname"] = event_text
-                        hash_dict[func_hash] = event_text
-                    else:
-                        # Use func_hash as event name if API call fails
-                        new_event["eventname"] = func_hash
-                        hash_dict[func_hash] = func_hash
+                    new_event["eventname"] = func_hash
             # Decode topics and data
             new_event["topics"] = decode_input(event["topics"][1:])
             new_event["data"] = decode_input([event["data"]])
@@ -78,4 +61,3 @@ def decode_event_json(folder_prefix="result"):
         with open(json_file_path + 'decode_' + i, 'w') as jsonfile:
             json.dump(events, jsonfile, default=convert_bytes_to_string, indent=2)
         print('decode_event_finished', i)
-

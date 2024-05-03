@@ -5,14 +5,18 @@ from eth_abi import decode
 from web3 import Web3
 from utils.get_rate import get_rate
 
+try:
+	from .lookup_event import get_event_db_signature
+except ImportError:
+	from lookup_event import get_event_db_signature
+
 w3 = Web3(Web3.HTTPProvider('https://eth.llamarpc.com'))
-abi_file = open("dictionary/erc20.abi.json")
+abi_file = open("utils/erc20.abi.json")
 abi = json.load(abi_file)
-# Read event dictionary CSV file and convert it to a dictionary
-hash_file = pd.read_csv('dictionary/event_dict.csv')
-hashdict = hash_file.set_index('hash')['event'].to_dict()
 
 currencydict = {}
+
+
 def get_currency(hash):
 	if hash not in currencydict.keys():
 		address = Web3.to_checksum_address(hash)
@@ -115,13 +119,11 @@ def othertransfer(summary, currency, from_address, to_address, amount, flow):
 	return summary
 
 
-
 # Function to collect token transaction details
 def collect_token(timestamp_dict, folder_prefix="result"):
 	# Initialize dictionary to store total summaries
 	total_dict = {}
 	flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
-
 
 	# Get list of JSON files in event_json directory
 	jsonlist = listdir(folder_prefix + '/event_json')
@@ -130,10 +132,9 @@ def collect_token(timestamp_dict, folder_prefix="result"):
 		summary_dict = {}
 		tx = json.load(file)
 		for log in tx:
+			eventname = get_event_db_signature(log['topics'][0][2:])
 			# Determine event name
-			if log['topics'][0][2:] in hashdict.keys():
-				eventname = hashdict[log['topics'][0][2:]]
-			else:
+			if not eventname:
 				eventname = log['topics'][0][2:7]
 
 			# Process different types of events
@@ -150,19 +151,22 @@ def collect_token(timestamp_dict, folder_prefix="result"):
 						amount = decode(['uint256'], bytes.fromhex(log['topics'][3][2:]))[0]
 					else:
 						amount = decode(['uint256'], bytes.fromhex(log['data'][2:]))[0]
-					summary_dict = othertransfer(summary_dict, currency, from_address, to_address, amount/pow(10,decimal), flow)
+					summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
+					                             amount / pow(10, decimal), flow)
 				if eventname.split('(')[0].lower() == 'withdrawal' and log[
 					"address"].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
 					currency, decimal = get_currency(log["address"].lower())
 					from_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					amount = decode_input(eventname, log['data'][2:])[0]
-					summary_dict = othertransfer(summary_dict, currency, from_address, currency, amount/pow(10,decimal),flow)
+					summary_dict = othertransfer(summary_dict, currency, from_address, currency,
+					                             amount / pow(10, decimal), flow)
 				if eventname.split('(')[0].lower() == 'deposit' and log[
 					"address"].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
 					currency, decimal = get_currency(log["address"].lower())
 					to_address = decode(['address'], bytes.fromhex(log['topics'][1][2:]))[0]
 					amount = decode_input(eventname, log['data'][2:])[0]
-					summary_dict = othertransfer(summary_dict, currency, currency, to_address, amount/pow(10,decimal), flow)
+					summary_dict = othertransfer(summary_dict, currency, currency, to_address,
+					                             amount / pow(10, decimal), flow)
 		# Store summary dictionary for each transaction
 		if len(tx) != 0:
 			time_stamp = timestamp_dict[tx[0]["transactionHash"]]
@@ -171,7 +175,7 @@ def collect_token(timestamp_dict, folder_prefix="result"):
 				for token in address_balance:
 					value = address_balance[token]
 					rate = get_rate(time_stamp, token)
-					address_balance[token] = [value, value*rate]
+					address_balance[token] = [value, value * rate]
 			total_dict[tx[0]["transactionHash"]] = summary_dict
 
 	# Write total summaries to a JSON file
