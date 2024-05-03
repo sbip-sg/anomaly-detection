@@ -46,10 +46,8 @@ def collectinfo(raw_list, folder_prefix="result"):
 			timestamp = w3.eth.get_block(transaction['blockNumber'])['timestamp']
 			timestamps_dict[transaction_hash] = timestamp
 		except Exception as e:
-			print('Can not find time Stamp due to the block is not is not recorded.')
-			current_timestamp = datetime.now().timestamp()
-			timestamp = None
-			timestamps_dict[transaction_hash] = current_timestamp - 3600
+			print(e)
+			raise ValueError("Can not find timestamp because the block is not recorded.")
 
 
 		# Extract sender and recipient addresses, converting to lowercase for consistency
