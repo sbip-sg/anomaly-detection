@@ -8,6 +8,11 @@ try:
 except ImportError:
     from lookup_function import get_function_signature
 
+try:
+    from .lookup_event import get_event_db_signature
+except ImportError:
+    from lookup_event import get_event_db_signature
+
 # Function to check if parentheses are balanced in a string
 def are_parentheses_balanced(s):
     stack = []
@@ -48,7 +53,11 @@ def decode_input(event_text, input_hash):
                 parameters = split_parameters(raw_parameters)
                 values = decode(parameters, bytes.fromhex(input_hash))
                 for value in values:
-                    input_list.append(value)
+                    if isinstance(value, bytes):
+                        transformed_value = value.hex()
+                        input_list.append(transformed_value)
+                    else:
+                        input_list.append(value)
         elif len(input_hash) != 0:
             chunks = [input_hash[i:i + 64] for i in range(0, len(input_hash), 64)]
             for line in chunks:
@@ -65,6 +74,20 @@ def convert_bytes_to_string(obj):
         return base64.b64encode(obj).decode('utf-8')
     raise TypeError("Object of type {} not serializable".format(type(obj)))
 
+def decode_input_events(chunks, data = False):
+    input_list = []
+    if data:
+        raw = chunks[2:]
+        chunks = ['0x'+ raw[i:i + 64] for i in range(0, len(raw), 64)]
+    for line in chunks:
+        line = line[2:]  # Remove '0x' prefix
+        count_of_zeros = len(line) - len(line.lstrip('0'))  # Count leading zeros
+        if count_of_zeros >= 24 and count_of_zeros < 30:  # Address type
+            input_list.append(decode(['address'], bytes.fromhex(line))[0])
+        elif count_of_zeros >= 30 and count_of_zeros < 64:  # uint256 type
+            input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
+    return input_list
+
 # Function to decode trace JSON files
 def decode_trace_json(folder_prefix="result"):
     json_file_path = folder_prefix + '/decoded_trace/'
@@ -74,9 +97,8 @@ def decode_trace_json(folder_prefix="result"):
     jsonlist = listdir(folder_prefix + '/trace_json')
     for i in jsonlist:
         file = open(folder_prefix + '/trace_json/' + i)
-        traces = []
+        invocation_tree = []
         tx = json.load(file)
-        traces = []
         for trace in tx:
             new_trace = {}
             new_trace["type"] = trace['kind'].lower()
@@ -109,9 +131,21 @@ def decode_trace_json(folder_prefix="result"):
                         new_trace["function"] = func_hash
                         new_trace["input"] = decode_input(func_hash, input_hash)
 
-            if new_trace['type'] != 'event':
-                traces.append(new_trace)
+            if trace['kind'].lower() == 'event':
+                new_trace["address"] = trace["from"]
+                if trace['decoded']:
+                    new_trace["function"] = trace['decoded']['name']
+                elif len(trace['raw']['topics']) != 0:
+                    func_hash = trace['raw']['topics'][0][2:]
+                    event_name = get_event_db_signature(func_hash)
+                    if event_name:
+                        new_trace["function"] = event_name
+                    else:
+                        new_trace["function"] = func_hash
+                new_trace["input"] = decode_input_events(trace['raw']['topics'][1:])
+                new_trace['data'] = decode_input_events(trace['raw']['data'], data=True)
+            invocation_tree.append(new_trace)
                 
         with open(json_file_path + 'decode_' + i, 'w') as jsonfile:
-            json.dump(traces, jsonfile, default=convert_bytes_to_string, indent=2)
-        print('decode_trace_finished', i)
+            json.dump(invocation_tree, jsonfile, default=convert_bytes_to_string, indent=2)
+        print('decode_invocation_tree_finished', i)

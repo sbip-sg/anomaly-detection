@@ -2,7 +2,6 @@ import os
 import argparse
 from utils.collect_basic_info import collectinfo
 from utils.get_traces import collect_trace
-from utils.decode_event import decode_event_json
 from utils.decode_trace import decode_trace_json
 from utils.other_balance import collect_token
 from utils.eth_balance import collect_eth
@@ -23,9 +22,6 @@ def main(tx_hash, overwrite=False):
 
 	# Collect traces
 	collect_trace(tx_hash,folder_prefix)
-
-	# Decode event JSON
-	decode_event_json(folder_prefix)
 
 	# Decode trace JSON
 	decode_trace_json(folder_prefix)
