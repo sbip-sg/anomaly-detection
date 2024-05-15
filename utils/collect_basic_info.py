@@ -5,10 +5,6 @@ import json
 from web3.middleware import geth_poa_middleware
 from datetime import datetime
 
-# Initialize Web3 instance with the RPC provider
-w3 = Web3(Web3.HTTPProvider('https://eth.llamarpc.com'))
-w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-
 # Function to recursively convert bytes to hexadecimal, lists, and dictionaries
 def convert(obj):
 	if isinstance(obj, bytes):
@@ -37,7 +33,10 @@ def collectinfo(raw_list, folder_prefix="result"):
 	timestamps_dict = {}
 
 	# Loop through each transaction hash in the input list
-	for transaction_hash in raw_list:
+	for transaction_hash, rpc in raw_list:
+		# Initialize Web3 instance with the RPC provider
+		w3 = Web3(Web3.HTTPProvider(rpc))
+		w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 		# Get transaction details
 		transaction = w3.eth.get_transaction(transaction_hash)
 		# Get transaction receipt
@@ -69,22 +68,6 @@ def collectinfo(raw_list, folder_prefix="result"):
 
 		# Append transaction data to the DataFrame
 		new_dataframe.loc[len(new_dataframe)] = transaction_data
-
-		logs = receipt['logs']
-		logs_dicts = []
-		# Convert logs to dictionaries and append to a list
-		for log_entry in logs:
-			log_dict = {}
-			for key, value in log_entry.items():
-				log_dict[key] = convert(value)
-			logs_dicts.append(log_dict)
-
-		# Define the filename for the JSON file
-		filename = f"events_{transaction_hash}.json"
-
-		# Save logs as JSON
-		with open(folder_prefix+'/event_json/' + filename, 'w') as file:
-			json.dump(logs_dicts, file, indent=2)
 
 	# Return the DataFrame containing transaction information
 	return new_dataframe, timestamps_dict

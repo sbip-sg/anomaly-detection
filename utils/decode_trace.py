@@ -94,9 +94,9 @@ def decode_trace_json(folder_prefix="result"):
     os.makedirs(json_file_path, exist_ok=True)
 
     # Get list of JSON files in trace_json directory
-    jsonlist = listdir(folder_prefix + '/trace_json')
+    jsonlist = listdir(folder_prefix + '/invocation_tree')
     for i in jsonlist:
-        file = open(folder_prefix + '/trace_json/' + i)
+        file = open(folder_prefix + '/invocation_tree/' + i)
         invocation_tree = []
         tx = json.load(file)
         for trace in tx:
