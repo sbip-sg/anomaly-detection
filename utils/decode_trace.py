@@ -76,33 +76,30 @@ def decode_trace_json(folder_prefix="result"):
         file = open(folder_prefix + '/trace_json/' + i)
         traces = []
         tx = json.load(file)
+        traces = []
         for trace in tx:
             new_trace = {}
-            new_trace["type"] = trace['type']
-            if 'error' in trace.keys():
-                new_trace["type"] = 'error'
-                new_trace["subtype"] = trace['error']
-            if trace["result"]:
-                new_trace["gasUsed"] = int(trace["result"]["gasUsed"][2:], 16)
-            if trace['type'] == 'call' and trace["action"]["callType"] == "delegatecall":
-                trace['calltype'] = "delegatecall"
-            new_trace["subtraces"] = trace["subtraces"]
-            new_trace["traceAddress"] = trace["traceAddress"]
-            if trace['type'] == 'create':
-                new_trace["address"] = trace["result"]["address"]
-            elif trace['type'] == 'suicide':
-                new_trace["address"] = trace["action"]["address"]
-                new_trace["balance"] = int(trace["action"]["balance"][2:], 16)
-                new_trace["refundAddress"] = trace["action"]["refundAddress"]
-            if trace['type'] == 'call':
-                new_trace["from"] = trace["action"]["from"]
-                new_trace["to"] = trace["action"]["to"]
-                new_trace["value"] = int(trace["action"]["value"][2:], 16)
-                if len(trace["action"]['input']) == 2:
-                    new_trace["type"] = 'fallback'
+            new_trace["type"] = trace['kind'].lower()
+            if 'gas_used' in trace.keys():
+                new_trace["gasUsed"] = trace["gas_used"]
+            if 'value' in trace.keys():
+                new_trace["value"] = int(trace["value"][2:], 16)
+            # if trace['type'] == 'create':
+            # new_trace["address"] = trace["result"]["address"]
+            # if trace['type'] == 'suicide':
+            #   new_trace["address"] = trace["action"]["address"]
+            #   new_trace["balance"] = int(trace["action"]["balance"][2:], 16)
+            #   new_trace["refundAddress"] = trace["action"]["refundAddress"]
+            if trace['kind'].lower() == 'call' or trace['kind'].lower() == 'delegatecall' or trace[
+                'kind'].lower() == 'staticcall':
+                new_trace["from"] = trace["from"]
+                new_trace["to"] = trace["to"]
+                if trace['decoded']['func']:
+                    new_trace["function"] = trace['decoded']['func']['signature']
+                    new_trace["input"] = decode_input(new_trace["function"], trace['data'][8:])
                 else:
-                    func_hash = trace["action"]['input'][2:10]
-                    input_hash = trace["action"]['input'][10:]
+                    func_hash = trace['data'][:8]
+                    input_hash = trace['data'][8:]
                     func_name = get_function_signature(func_hash)
 
                     if func_name:
@@ -111,7 +108,10 @@ def decode_trace_json(folder_prefix="result"):
                     else:
                         new_trace["function"] = func_hash
                         new_trace["input"] = decode_input(func_hash, input_hash)
-            traces.append(new_trace)
+
+            if new_trace['type'] != 'event':
+                traces.append(new_trace)
+                
         with open(json_file_path + 'decode_' + i, 'w') as jsonfile:
             json.dump(traces, jsonfile, default=convert_bytes_to_string, indent=2)
         print('decode_trace_finished', i)
