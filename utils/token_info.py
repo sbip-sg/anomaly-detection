@@ -87,7 +87,7 @@ def collect_token(timestamp_dict, token, rpc, folder_prefix="result"):
 	jsonlist = listdir(folder_prefix + '/invocation_tree')
 	w3 = Web3(Web3.HTTPProvider(rpc))
 	for i in jsonlist:
-		file = open(folder_prefix + '/event_json/' + i)
+		file = open(folder_prefix + '/invocation_tree/' + i)
 		summary_dict = {}
 		traces = json.load(file)
 		for trace in traces:
@@ -134,7 +134,7 @@ def collect_token(timestamp_dict, token, rpc, folder_prefix="result"):
 				elif trace['type'] == 'suicide' and trace["value"] != 0:
 					summary_dict = deal_selfdestruct(summary_dict, token, trace, flow)
 		if len(traces) != 0:
-			transaction_hash = i.split("_")[1].split(".")[0]
+			transaction_hash = i.split("_")[2].split(".")[0]
 			time_stamp = timestamp_dict[transaction_hash]
 			for address in summary_dict.keys():
 				address_balance = summary_dict[address]
