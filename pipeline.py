@@ -54,4 +54,4 @@ if __name__ == "__main__":
 	# overwrite existing result
 	parser.add_argument("-o", "--overwrite", action="store_true", help="Overwrite existing result")
 	args = parser.parse_args()
-	main(args.tx_hash, args.overwrite)
+	main(args.tx_hash, args.chain, args.overwrite)
