@@ -7,7 +7,7 @@ from utils.other_balance import collect_token
 from utils.eth_balance import collect_eth
 
 rpc_endpoints = {
-    "mainnet": "https://rpc.ankr.com/eth",
+    "eth": "https://rpc.ankr.com/eth",
     "optimism": "https://opt-mainnet.g.alchemy.com/v2/demo",
     "fantom": "https://rpc.ankr.com/fantom",
     "arbitrum": "https://rpc.ankr.com/arbitrum",

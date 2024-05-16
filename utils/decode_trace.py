@@ -1,7 +1,6 @@
 import json
 from os import listdir
 from eth_abi import decode
-import base64
 import os
 try:
     from .lookup_function import get_function_signature
@@ -71,7 +70,7 @@ def decode_input(event_text, input_hash):
 # Function to convert bytes to base64 encoded string
 def convert_bytes_to_string(obj):
     if isinstance(obj, bytes):
-        return base64.b64encode(obj).decode('utf-8')
+        return obj.hex()
     raise TypeError("Object of type {} not serializable".format(type(obj)))
 
 def decode_input_events(chunks, data = False):
