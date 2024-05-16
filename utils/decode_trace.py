@@ -52,11 +52,7 @@ def decode_input(event_text, input_hash):
                 parameters = split_parameters(raw_parameters)
                 values = decode(parameters, bytes.fromhex(input_hash))
                 for value in values:
-                    if isinstance(value, bytes):
-                        transformed_value = value.hex()
-                        input_list.append(transformed_value)
-                    else:
-                        input_list.append(value)
+                    input_list.append(value)
         elif len(input_hash) != 0:
             chunks = [input_hash[i:i + 64] for i in range(0, len(input_hash), 64)]
             for line in chunks:
