@@ -7,18 +7,17 @@ from utils.other_balance import collect_token
 from utils.eth_balance import collect_eth
 
 rpc_endpoints = {
-    "Arbitrum": "https://rpc.ankr.com/arbitrum ",
-    "Avalanche C-Chain": "https://1rpc.io/avax/c",
-    "Base": "https://base-pokt.nodies.app",
-    "BNB": "https://bsc-dataseed.binance.org/",
-    "Ethereum": "https://eth.llamarpc.com",
-    "Fantom Opera": "https://endpoints.omniatech.io/v1/fantom/mainnet/public",
-    "Fuse Mainnet": "https://fuse-pokt.nodies.app",
-    "Gnosis": "https://gnosis.drpc.org",
-    "Moonriver": "https://rpc.moonriver.moonbeam.network",
-    "OP Mainnet": "https://endpoints.omniatech.io/v1/op/mainnet/public",
-    "Polygon": "https://1rpc.io/matic",
-    "zkSync": "https://mainnet.era.zksync.io"
+    "mainnet": "https://rpc.ankr.com/eth",
+    "optimism": "https://opt-mainnet.g.alchemy.com/v2/demo",
+    "fantom": "https://rpc.ankr.com/fantom",
+    "arbitrum": "https://rpc.ankr.com/arbitrum",
+    "bsc": "https://rpc.ankr.com/bsc",
+    "moonriver": "https://moonriver.public.blastapi.io",
+    "gnosis": "https://rpc.ankr.com/gnosis",
+    "Avalanche": "https://rpc.ankr.com/avalanche",
+    "polygon": "https://rpc.ankr.com/polygon",
+    "celo": "https://rpc.ankr.com/celo",
+    "Base": "https://developer-access-mainnet.base.org"
 }
 
 def main(tx_hash, chain, overwrite=False):

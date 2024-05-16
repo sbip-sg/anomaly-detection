@@ -90,13 +90,13 @@ def decode_input_events(chunks, data = False):
 
 # Function to decode trace JSON files
 def decode_trace_json(folder_prefix="result"):
-    json_file_path = folder_prefix + '/decoded_trace/'
+    json_file_path = folder_prefix + '/invocation_tree/'
     os.makedirs(json_file_path, exist_ok=True)
 
     # Get list of JSON files in trace_json directory
-    jsonlist = listdir(folder_prefix + '/invocation_tree')
+    jsonlist = listdir(folder_prefix + '/trace_json')
     for i in jsonlist:
-        file = open(folder_prefix + '/invocation_tree/' + i)
+        file = open(folder_prefix + '/trace_json/' + i)
         invocation_tree = []
         tx = json.load(file)
         for trace in tx:
