@@ -101,12 +101,8 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["gasUsed"] = trace["gas_used"]
             if 'value' in trace.keys():
                 new_trace["value"] = int(trace["value"][2:], 16)
-            # if trace['type'] == 'create':
-            # new_trace["address"] = trace["result"]["address"]
-            # if trace['type'] == 'suicide':
-            #   new_trace["address"] = trace["action"]["address"]
-            #   new_trace["balance"] = int(trace["action"]["balance"][2:], 16)
-            #   new_trace["refundAddress"] = trace["action"]["refundAddress"]
+            if 'status' in trace.keys():
+                new_trace["status"] = trace['status']
             if trace['kind'].lower() == 'call' or trace['kind'].lower() == 'delegatecall' or trace[
                 'kind'].lower() == 'staticcall':
                 new_trace["from"] = trace["from"]
