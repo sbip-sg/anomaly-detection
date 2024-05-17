@@ -129,10 +129,6 @@ def collect_token(timestamp_dict, token, rpc, folder_prefix="result"):
 			else:
 				if trace['type'] == 'call' or trace['type'] == 'staticcall' and trace["value"] != 0:
 					summary_dict = deal_transfer(summary_dict, token, trace, flow)
-				elif trace['type'] == 'create' and trace["value"] != 0:
-					summary_dict = deal_create(summary_dict, token, trace, flow)
-				elif trace['type'] == 'suicide' and trace["value"] != 0:
-					summary_dict = deal_selfdestruct(summary_dict, token, trace, flow)
 		if len(traces) != 0:
 			transaction_hash = i.split("_")[2].split(".")[0]
 			time_stamp = timestamp_dict[transaction_hash]
