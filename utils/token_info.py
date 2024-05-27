@@ -39,7 +39,8 @@ def update_summary(summary, address, currency, amount):
 def othertransfer(summary, currency, from_address, to_address, amount, flow):
 	summary = update_summary(summary, from_address, currency, -amount)
 	summary = update_summary(summary, to_address, currency, amount)
-	flow.loc[len(flow)] = [from_address, to_address, currency, amount]
+	if amount != 0:
+		flow.loc[len(flow)] = [from_address, to_address, currency, amount]
 
 	return summary
 
@@ -52,23 +53,10 @@ def deal_transfer(summary, currency, trace, flow):
 
 	summary = update_summary(summary, from_address, currency, -amount)
 	summary = update_summary(summary, to_address, currency, amount)
-	flow.loc[len(flow)] = [from_address, to_address, currency, amount / 1e18]
+	if amount != 0:
+		flow.loc[len(flow)] = [from_address, to_address, currency, amount]
 
 	return summary
-
-
-# Function to deal with contract creation transactions
-def deal_create(summary, currency, trace, flow):
-	from_address = trace["from"]
-	to_address = trace["to"]
-	amount = trace["value"]
-
-	summary = update_summary(summary, from_address, currency, -amount)
-	summary = update_summary(summary, to_address, currency, amount)
-	flow.loc[len(flow)] = [from_address, to_address, currency, amount / 1e18]
-
-	return summary
-
 
 # Function to deal with selfdestruct transactions
 def deal_selfdestruct(summary, currency, trace, flow):
@@ -78,7 +66,8 @@ def deal_selfdestruct(summary, currency, trace, flow):
 
 	summary = update_summary(summary, from_address, currency, -amount)
 	summary = update_summary(summary, to_address, currency, amount)
-	flow.loc[len(flow)] = [from_address, to_address, currency, amount / 1e18]
+	if amount != 0:
+		flow.loc[len(flow)] = [from_address, to_address, currency, amount]
 
 	return summary
 def collect_token(timestamp_dict, token, rpc, folder_prefix="result"):
