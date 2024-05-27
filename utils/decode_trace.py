@@ -50,9 +50,18 @@ def decode_input(event_text, input_hash):
             raw_parameters = event_text[start_index + 1:end_index]
             if len(raw_parameters) != 0:
                 parameters = split_parameters(raw_parameters)
-                values = decode(parameters, bytes.fromhex(input_hash))
-                for value in values:
-                    input_list.append(value)
+                try:
+                    values = decode(parameters, bytes.fromhex(input_hash))
+                    for value in values:
+                        input_list.append(value)
+                except Exception as e:
+                    chunks = [input_hash[i:i + 64] for i in range(0, len(input_hash), 64)]
+                    for line in chunks:
+                        count_of_zeros = len(line) - len(line.lstrip('0'))
+                        if count_of_zeros >= 24 and count_of_zeros < 30:
+                            input_list.append(decode(['address'], bytes.fromhex(line))[0])
+                        elif count_of_zeros >= 30 and count_of_zeros < 60:
+                            input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
         elif len(input_hash) != 0:
             chunks = [input_hash[i:i + 64] for i in range(0, len(input_hash), 64)]
             for line in chunks:
