@@ -49,7 +49,7 @@ def othertransfer(summary, currency, from_address, to_address, amount, flow):
 def deal_transfer(summary, currency, trace, flow):
 	from_address = trace["from"]
 	to_address = trace["to"]
-	amount = trace["value"]
+	amount = trace["value"]/1e18
 
 	summary = update_summary(summary, from_address, currency, -amount)
 	summary = update_summary(summary, to_address, currency, amount)
@@ -62,7 +62,7 @@ def deal_transfer(summary, currency, trace, flow):
 def deal_selfdestruct(summary, currency, trace, flow):
 	from_address = trace["from"]
 	to_address = trace["refundAddress"]
-	amount = trace["balance"]
+	amount = trace["balance"]/1e18
 
 	summary = update_summary(summary, from_address, currency, -amount)
 	summary = update_summary(summary, to_address, currency, amount)
@@ -94,28 +94,41 @@ def collect_token(timestamp_dict, token, rpc, folder_prefix="result"):
 					if len(input) > 2:
 						to_address = input[1]
 						amount = input[2]
-					elif len(input) == 2:
+					elif len(input) == 2 and trace['data']:
 						amount = trace['data'][0]
 						to_address = input[1]
-					else:
+					elif trace['data']:
 						amount = trace['data'][0]
+						to_address = '0x' + '0' * 40
+					else:
+						amount = 0
 						to_address = '0x' + '0' * 40
 					summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
 					                             amount / pow(10, decimal), flow)
 				elif eventname.lower() == 'withdrawal':
-					currency, decimal = get_currency(trace['address'].lower(), w3)
+					try:
+						currency, decimal = get_currency(last_call_to.lower(), w3)
+					except Exception as e:
+						print(e)
+						currency, decimal = input[0].lower(), 0
 					from_address = input[0]
 					amount = trace['data'][0]
-					summary_dict = othertransfer(summary_dict, currency, from_address, currency,
+					summary_dict = othertransfer(summary_dict, currency, from_address, last_call_to,
 					                             amount / pow(10, decimal), flow)
 				elif eventname.lower() == 'deposit':
-					currency, decimal = get_currency(trace['address'].lower(), w3)
+					try:
+						currency, decimal = get_currency(last_call_to.lower(), w3)
+					except Exception as e:
+						print(e)
+						currency, decimal = last_call_to, 0
 					to_address = input[0]
 					amount = trace['data'][0]
 					summary_dict = othertransfer(summary_dict, currency, currency, to_address,
 					                             amount / pow(10, decimal), flow)
 			else:
-				if trace['type'] == 'call':
+				if trace['type'] == 'call' and ('transfer' in trace["function"].lower() or
+				                                'withdraw' in trace["function"].lower() or
+				                                'deposit' in trace["function"].lower()):
 					last_call_to = trace["to"]
 				if trace['type'] == 'call' or trace['type'] == 'staticcall' and trace["value"] != 0:
 					summary_dict = deal_transfer(summary_dict, token, trace, flow)
@@ -131,7 +144,7 @@ def collect_token(timestamp_dict, token, rpc, folder_prefix="result"):
 			total_dict[transaction_hash] = summary_dict
 	for key1 in total_dict.keys():
 		for key2 in total_dict[key1].keys():
-			keys_to_delete = [key for key, value in total_dict[key1][key2].items() if value == 0]
+			keys_to_delete = [key for key, value in total_dict[key1][key2].items() if value[0] == 0]
 			for key3 in keys_to_delete:
 				del total_dict[key1][key2][key3]
 	for key1 in total_dict.keys():
