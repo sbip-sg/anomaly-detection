@@ -79,16 +79,17 @@ def collect_token(timestamp_dict, token, rpc, folder_prefix="result"):
 		file = open(folder_prefix + '/invocation_tree/' + i)
 		summary_dict = {}
 		traces = json.load(file)
+		last_call_to = None
 		for trace in traces:
 			if trace['type'] == 'event':
 				eventname = trace["function"]
 				input = trace['input']
 				if eventname.lower() == 'transfer':
 					try:
-						currency, decimal = get_currency(trace['address'].lower(), w3)
+						currency, decimal = get_currency(last_call_to.lower(), w3)
 					except Exception as e:
 						print(e)
-						currency, decimal = trace['address'].lower(), 0
+						currency, decimal = last_call_to, 0
 					from_address = input[0]
 					if len(input) > 2:
 						to_address = input[1]
@@ -101,21 +102,21 @@ def collect_token(timestamp_dict, token, rpc, folder_prefix="result"):
 						to_address = '0x' + '0' * 40
 					summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
 					                             amount / pow(10, decimal), flow)
-				elif eventname.lower() == 'withdrawal' and trace[
-					"address"].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
+				elif eventname.lower() == 'withdrawal':
 					currency, decimal = get_currency(trace['address'].lower(), w3)
 					from_address = input[0]
 					amount = trace['data'][0]
 					summary_dict = othertransfer(summary_dict, currency, from_address, currency,
 					                             amount / pow(10, decimal), flow)
-				elif eventname.lower() == 'deposit' and trace[
-					"address"].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
+				elif eventname.lower() == 'deposit':
 					currency, decimal = get_currency(trace['address'].lower(), w3)
 					to_address = input[0]
 					amount = trace['data'][0]
 					summary_dict = othertransfer(summary_dict, currency, currency, to_address,
 					                             amount / pow(10, decimal), flow)
 			else:
+				if trace['type'] == 'call':
+					last_call_to = trace["to"]
 				if trace['type'] == 'call' or trace['type'] == 'staticcall' and trace["value"] != 0:
 					summary_dict = deal_transfer(summary_dict, token, trace, flow)
 		if len(traces) != 0:
