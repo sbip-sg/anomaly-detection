@@ -10,7 +10,7 @@ rpc_endpoints = {
     "optimism": "https://opt-mainnet.g.alchemy.com/v2/demo",
     "fantom": "https://rpc.ankr.com/fantom",
     "arbitrum": "https://rpc.ankr.com/arbitrum",
-    "bsc": "https://rpc.ankr.com/bsc",
+    "bsc": "https://bscrpc.com",
     "moonriver": "https://moonriver.public.blastapi.io",
     "gnosis": "https://rpc.ankr.com/gnosis",
     "Avalanche": "https://rpc.ankr.com/avalanche",
