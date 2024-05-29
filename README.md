@@ -22,7 +22,7 @@ Data structure should be like a file in which each line is a transaction hash.
 
 ## How to process?
 ``` bash
-python pipeline.py <yourfile> <chain> -o
+python pipeline.py <txhash> <chain> -o
 ```
 It will process the hash in your file. Make sure that there is no result folder.
 
