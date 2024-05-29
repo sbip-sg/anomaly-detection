@@ -21,8 +21,10 @@ The input data is transaction hash starting with "0x".
 Data structure should be like a file in which each line is a transaction hash.
 
 ## How to process?
-
-python pipeline.py <yourfile>. It will process the hash in your file. Make sure that there is no result folder.
+``` bash
+python pipeline.py <yourfile> <chain> -o
+```
+It will process the hash in your file. Make sure that there is no result folder.
 
 ## How to collect result?
 
