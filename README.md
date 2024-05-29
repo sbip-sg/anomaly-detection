@@ -18,8 +18,6 @@ This project needs a signature db to decode the events and functions. Please cop
 
 The input data is transaction hash starting with "0x".
 
-Data structure should be like a file in which each line is a transaction hash.
-
 ## How to process?
 ``` bash
 python pipeline.py <txhash> <chain> -o
