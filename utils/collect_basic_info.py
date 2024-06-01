@@ -21,8 +21,6 @@ def convert(obj):
 # Function to collect transaction information and return as a DataFrame
 def collectinfo(raw_list, folder_prefix="result"):
 	# Define output directory for JSON files
-	output_directory = folder_prefix+'/event_json'
-	os.makedirs(output_directory, exist_ok=True)
 	if type(raw_list) == tuple:
 		raw_list = [raw_list]
 	# Define columns for the new DataFrame
