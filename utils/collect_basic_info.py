@@ -19,7 +19,7 @@ def convert(obj):
 
 
 # Function to collect transaction information and return as a DataFrame
-def collectinfo(raw_list, folder_prefix="result"):
+def collectinfo(raw_list):
 	# Define output directory for JSON files
 	if type(raw_list) == tuple:
 		raw_list = [raw_list]

@@ -11,10 +11,10 @@ def collect(token, time):
     url = ('https://api.coingecko.com/api/v3/coins/' + token + '/history?date='+time+'&localization=false')
 
     try:
-        get = requests.get(url).text
-        get = json.loads(get)
-        return get['market_data']['current_price']['usd']
-    except:
+        data = requests.get(url).json()
+        return data['market_data']['current_price']['usd']
+    except Exception as e:
+        print(f"Error: Unable to fetch data from Coingecko {e}")
         return 0
 
 def get_rate(time_stamp, currency):

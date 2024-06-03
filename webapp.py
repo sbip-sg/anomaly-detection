@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_cors import CORS
 import os
 import json
+import traceback
 
 app = Flask(__name__)
 CORS(app)
@@ -12,11 +13,12 @@ def try_read_as_json(path):
     try:
         with open(path, 'r') as f:
             return json.load(f)
-    except Exception as e:
-        import traceback
+    except Exception:
         traceback.print_exc()
         return None
 
+def should_overwrite(request):
+    return request.values.get('overwrite', 'false').lower() in {'on', 'true', '1', 't', 'y', 'yes'}
 
 @app.template_filter('formatjson')
 def formatjson_filter(data):
@@ -24,13 +26,20 @@ def formatjson_filter(data):
 
 def get_results(tx_hash, chain, overwrite):
     folder_prefix = f'result/{tx_hash}_{chain}'
-    try:
-        process_request(tx_hash, chain, overwrite)
-    except Exception as e:
-        import shutil
-        shutil.rmtree(folder_prefix, ignore_errors=True)
-        print(f'Error processing request: {e}\n Removing dirty files... ')
-        return {"error": str(e)}
+    endpoint_idx = 0
+    while True:
+        try:
+            process_request(tx_hash, chain, overwrite, endpoint_idx)
+            break
+        except ValueError as e:
+            traceback.print_exc()
+            import shutil
+            shutil.rmtree(folder_prefix, ignore_errors=True)
+            print(f'Error processing request: {e}\n Removing dirty files... ')
+            return {"error": str(e)}
+        except Exception as e:
+            endpoint_idx += 1
+            print(f'Error processing request: {e}\n retry ... ')
     basic_info = try_read_as_json(f'{folder_prefix}/basic_info.json') or {}
     balance_info = try_read_as_json(f'{folder_prefix}/balance.json') or {}
     decoded_trace = try_read_as_json(f'{folder_prefix}/invocation_tree/decode_trace_{tx_hash}.json') or {}
@@ -45,15 +54,16 @@ def get_results(tx_hash, chain, overwrite):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-
+    chain = 'eth'
+    overwrite = should_overwrite(request)
     if request.method == 'POST':
         tx_hash = request.form.get('txhash')
         chain = request.form.get('chain')
-        overwrite = request.form.get('overwrite', 'false').lower() in ['true', '1', 't', 'y', 'yes']
+
     elif request.method == 'GET':
         tx_hash = request.args.get('txhash')
         chain = request.form.get('chain')
-        overwrite = request.args.get('overwrite', 'false').lower() in ['true', '1', 't', 'y', 'yes']
+
 
     results = get_results(tx_hash, chain, overwrite) if tx_hash else {}
 
@@ -63,14 +73,14 @@ def index():
 @app.route('/process', methods=['GET'])
 def process():
     tx_hash = request.args.get('txhash')
-    overwrite = request.args.get('overwrite', 'false').lower() in ['true', '1', 't', 'y', 'yes']
+    overwrite = should_overwrite(request)
     if not tx_hash:
         return jsonify({"error": "Transaction hash is required"}), 400
 
-    results = get_results(tx_hash, overwrite)
+    results = get_results(tx_hash, 'eth', overwrite)
     if "error" in results:
         return jsonify(results), 500
     return jsonify(results)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=os.environ.get('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
