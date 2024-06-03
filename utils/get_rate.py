@@ -28,7 +28,8 @@ def get_rate(time_stamp, currency):
             formatted_date = date_time.strftime('%d-%m-%Y')
 
             exchange_rate = collect(token, formatted_date)
-        except:
+        except Exception as e:
+            print(f"Error: Unknown Token")
             exchange_rate = 0
 
         currency_dict[currency] = exchange_rate

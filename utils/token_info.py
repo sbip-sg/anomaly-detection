@@ -104,7 +104,7 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix="result"):
 						try:
 							currency, decimal = get_currency(last_call_to.lower(), w3)
 						except Exception as e:
-							print(e)
+							print('Error: can not get transfer currency',input[0].lower())
 							currency, decimal = last_call_to, 0
 						from_address = input[0]
 						if len(input) > 2:
@@ -126,7 +126,7 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix="result"):
 						try:
 							currency, decimal = get_currency(last_withdraw.lower(), w3)
 						except Exception as e:
-							print(e)
+							print('Error: can not get withdraw currency', input[0].lower())
 							currency, decimal = input[0].lower(), 0
 						from_address = input[0]
 						amount = trace['data'][0]
@@ -136,7 +136,7 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix="result"):
 						try:
 							currency, decimal = get_currency(last_call_to.lower(), w3)
 						except Exception as e:
-							print(e)
+							print('Error: can not get deposit currency', input[0].lower())
 							currency, decimal = last_call_to, 0
 						to_address = input[0]
 						amount = trace['data'][0]

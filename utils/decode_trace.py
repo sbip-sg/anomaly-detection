@@ -55,6 +55,7 @@ def decode_input(event_text, input_hash):
                     for value in values:
                         input_list.append(value)
                 except Exception as e:
+                    print("Error: input hash can not be decoded")
                     chunks = [input_hash[i:i + 64] for i in range(0, len(input_hash), 64)]
                     for line in chunks:
                         count_of_zeros = len(line) - len(line.lstrip('0'))

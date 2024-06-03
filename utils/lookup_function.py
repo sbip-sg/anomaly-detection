@@ -28,5 +28,6 @@ def get_function_signature(function_hash: str):
     try:
         signatures = get_db().Get(function_hash.encode()).decode()
     except KeyError:
+        print('Error: function not in database')
         return None
     return signatures
