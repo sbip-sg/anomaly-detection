@@ -7,11 +7,24 @@ from utils.get_rate import get_rate
 abi_file = open("utils/erc20.abi.json")
 abi = json.load(abi_file)
 
-currencydict = {}
-
+currency_dict = {}
+chain_dict = {
+	"arbitrum": "ETH",
+	"Avalanche": "AVAX",
+	"Base": "ETH",
+	"bsc": "BNB",
+	"eth": "ETH",
+	"fantom": "FTM",
+	"Fuse Mainnet": "FUSE",
+	"gnosis": "XDAI",
+	"moonriver": "MOVR",
+	"optimism": "ETH",
+	"polygon": "MATIC",
+	"celo": "CELO"
+}
 
 def get_currency(hash, w3):
-	if hash not in currencydict.keys():
+	if hash not in currency_dict.keys():
 		address = Web3.to_checksum_address(hash)
 		contract = w3.eth.contract(
 			address=address,
@@ -19,9 +32,9 @@ def get_currency(hash, w3):
 		)
 		currency = contract.functions.symbol().call()
 		decimal = contract.functions.decimals().call()
-		currencydict[hash] = (currency, decimal)
+		currency_dict[hash] = (currency, decimal)
 	else:
-		(currency, decimal) = currencydict[hash]
+		(currency, decimal) = currency_dict[hash]
 	return currency, decimal
 
 
@@ -69,8 +82,9 @@ def deal_selfdestruct(summary, currency, trace, flow):
 		flow.loc[len(flow)] = [from_address, to_address, currency, amount]
 
 	return summary
-def collect_token(timestamp_dict, token, rpc, folder_prefix="result"):
+def collect_token(timestamp_dict, chain, rpc, folder_prefix="result"):
 	total_dict = {}
+	token = chain_dict[chain]
 	flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
 	jsonlist = listdir(folder_prefix + '/invocation_tree')
 	w3 = Web3(Web3.HTTPProvider(rpc))
