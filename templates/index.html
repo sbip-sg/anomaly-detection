@@ -67,7 +67,7 @@
                         {% for token, (change, change_in_usd) in tokens.items() %}
                         <tr>
                             <td>{{ account }}</td>
-                            <td>{{ token_names.get(token.lower(), token) }}</td>
+                            <td>{{ token }}</td>
                             <td class="{% if change < 0 %}negative{% else %}positive{% endif %}">{{ change|float | round(6) }} / {{ change_in_usd | float | round(2) }} USD</sup</td>
                         </tr>
                         {% endfor %}

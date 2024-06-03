@@ -23,7 +23,7 @@ def formatjson_filter(data):
     return json.dumps(data, indent=4)
 
 def get_results(tx_hash, chain, overwrite):
-    folder_prefix = f'result/{tx_hash}_eth'
+    folder_prefix = f'result/{tx_hash}_{chain}'
     try:
         process_request(tx_hash, chain, overwrite)
     except Exception as e:
