@@ -1,36 +1,39 @@
-import ccxt
 from datetime import datetime
+import requests
+import json
 
-coin_dict = {
-	'WETH': 'ETH',
-	'imBTC': 'BTC'
-}
+currency_dict = {}
 
-def to_available(timestamp):
-	# Get the current timestamp
-	current_timestamp = datetime.now().timestamp()
+file = open("utils/token.json")
+transform = json.load(file)
 
-	# Calculate the difference between current timestamp and old timestamp
-	time_difference = current_timestamp - timestamp
+def collect(token, time):
+    url = ('https://api.coingecko.com/api/v3/coins/' + token + '/history?date='+time+'&localization=false')
 
-	# Check if the difference is more than 12 hours
-	if time_difference > 8 * 3600:
-		return timestamp
-	else:
-		return int(current_timestamp - 12 * 3600)
+    try:
+        get = requests.get(url).text
+        get = json.loads(get)
+        return get['market_data']['current_price']['usd']
+    except:
+        return 0
 
 def get_rate(time_stamp, currency):
-	exchange = ccxt.binance()
-	if currency in coin_dict.keys():
-		currency = coin_dict[currency]
-	if exchange.has['fetchOHLCV']:
-		try:
-			# Example 'BTC/USDT'
-			ohlcv = exchange.fetch_ohlcv(currency + '/USDT', '1d', since=to_available(time_stamp) * 1000, limit=1)
-			exchange_rate = ohlcv[0][4]
-		except Exception as e:
-			exchange_rate = 0
-	else:
-		exchange_rate = 0
+    if currency not in currency_dict.keys():
+        try:
+            token = transform[currency.lower()][0]
+            # Convert timestamp to datetime object
+            date_time = datetime.fromtimestamp(time_stamp)
 
-	return exchange_rate
+            # Format datetime object to dd-mm-yyyy
+            formatted_date = date_time.strftime('%d-%m-%Y')
+
+            exchange_rate = collect(token, formatted_date)
+        except:
+            exchange_rate = 0
+
+        currency_dict[currency] = exchange_rate
+
+    else:
+        exchange_rate = currency_dict[currency]
+
+    return exchange_rate

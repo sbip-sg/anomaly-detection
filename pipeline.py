@@ -6,7 +6,7 @@ from utils.decode_trace import decode_trace_json
 from utils.token_info import collect_token
 
 rpc_endpoints = {
-    "eth": "https://rpc.ankr.com/eth",
+    "eth": "https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134",
     "optimism": "https://opt-mainnet.g.alchemy.com/v2/demo",
     "fantom": "https://rpc.ankr.com/fantom",
     "arbitrum": "https://rpc.ankr.com/arbitrum",

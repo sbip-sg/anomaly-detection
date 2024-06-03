@@ -23,4 +23,3 @@ def collect_trace(raw_list, folder_prefix="result"):
 		filename = os.path.join(output_directory, f"trace_{transaction_hash}.json")
 		cast_run(rpc, transaction_hash, filename)
 		print('trace_finished', transaction_hash)
-
