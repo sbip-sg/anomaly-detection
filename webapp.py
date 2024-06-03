@@ -54,7 +54,7 @@ def get_results(tx_hash, chain, overwrite):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    chain = 'eth'
+    chain = request.values.get('chain', 'eth')
     overwrite = should_overwrite(request)
     if request.method == 'POST':
         tx_hash = request.form.get('txhash')
@@ -72,12 +72,13 @@ def index():
 
 @app.route('/process', methods=['GET'])
 def process():
+    chain = request.values.get('chain', 'eth')
     tx_hash = request.args.get('txhash')
     overwrite = should_overwrite(request)
     if not tx_hash:
         return jsonify({"error": "Transaction hash is required"}), 400
 
-    results = get_results(tx_hash, 'eth', overwrite)
+    results = get_results(tx_hash, chain, overwrite)
     if "error" in results:
         return jsonify(results), 500
     return jsonify(results)
