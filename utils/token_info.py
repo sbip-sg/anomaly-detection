@@ -70,7 +70,7 @@ def deal_transfer(summary, currency, trace, flow):
 
 	return summary
 
-# Function to deal with selfdestruct transactions
+# Function to deal with self-destruct transactions
 def deal_selfdestruct(summary, currency, trace, flow):
 	from_address = trace["from"]
 	to_address = trace["refundAddress"]
@@ -82,6 +82,51 @@ def deal_selfdestruct(summary, currency, trace, flow):
 		flow.loc[len(flow)] = [from_address, to_address, currency, amount]
 
 	return summary
+
+def find_address_transfer_event(trace, input):
+	from_address = input[0]
+	if len(input) > 2:
+		to_address = input[1]
+		amount = input[2]
+	elif len(input) == 2 and trace['data']:
+		amount = trace['data'][0]
+		to_address = input[1]
+	elif trace['data']:
+		amount = trace['data'][0]
+		from_address = '0x' + '0' * 40
+		to_address = input[0]
+	else:
+		amount = 0
+		to_address = '0x' + '0' * 40
+	return from_address, to_address, amount
+
+def update_memory(trace, memory):
+	if trace['type'] == 'call':
+		memory['last_call_to'] = trace["to"]
+	if trace['type'] == 'call' and 'withdraw' in trace["function"].lower():
+		memory['last_withdraw'] = trace["to"]
+	return memory
+
+def remove_zeros(total_dict):
+	for key1 in total_dict.keys():
+		for key2 in total_dict[key1].keys():
+			keys_to_delete = [key for key, value in total_dict[key1][key2].items() if value[0] == 0]
+			for key3 in keys_to_delete:
+				del total_dict[key1][key2][key3]
+	for key1 in total_dict.keys():
+		keys_to_delete = [key for key, value in total_dict[key1].items() if value == {}]
+		for key2 in keys_to_delete:
+			del total_dict[key1][key2]
+	return total_dict
+
+def address_to_currency(address, w3):
+	try:
+		currency, decimal = get_currency(address.lower(), w3)
+	except Exception as e:
+		print('Error: can not get transfer currency', input[0].lower())
+		currency, decimal = address, 0
+	return currency, decimal
+
 def collect_token(timestamp_dict, chain, rpc, folder_prefix="result"):
 	total_dict = {}
 	token = chain_dict[chain]
@@ -92,65 +137,39 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix="result"):
 		file = open(folder_prefix + '/invocation_tree/' + i)
 		summary_dict = {}
 		traces = json.load(file)
-		last_call_to = None
-		last_withdraw = None
-		out_of_gas = False
+		memory ={
+		"last_call_to" : '',
+		"last_withdraw" : '',
+		"out_of_gas" : False
+		}
 		for trace in traces:
-			if not out_of_gas:
+			if not memory['out_of_gas']:
 				if trace['type'] == 'event':
 					eventname = trace["function"]
 					input = trace['input']
 					if eventname.lower() == 'transfer':
-						try:
-							currency, decimal = get_currency(last_call_to.lower(), w3)
-						except Exception as e:
-							print('Error: can not get transfer currency',input[0].lower())
-							currency, decimal = last_call_to, 0
-						from_address = input[0]
-						if len(input) > 2:
-							to_address = input[1]
-							amount = input[2]
-						elif len(input) == 2 and trace['data']:
-							amount = trace['data'][0]
-							to_address = input[1]
-						elif trace['data']:
-							amount = trace['data'][0]
-							from_address = '0x' + '0' * 40
-							to_address = input[0]
-						else:
-							amount = 0
-							to_address = '0x' + '0' * 40
+						currency, decimal = address_to_currency(memory['last_call_to'], w3)
+						from_address, to_address, amount =  find_address_transfer_event(trace, input)
 						summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
 						                             amount / pow(10, decimal), flow)
 					elif eventname.lower() == 'withdrawal':
-						try:
-							currency, decimal = get_currency(last_withdraw.lower(), w3)
-						except Exception as e:
-							print('Error: can not get withdraw currency', input[0].lower())
-							currency, decimal = input[0].lower(), 0
+						currency, decimal = address_to_currency(memory['last_withdraw'], w3)
 						from_address = input[0]
 						amount = trace['data'][0]
-						summary_dict = othertransfer(summary_dict, currency, from_address, last_withdraw,
+						summary_dict = othertransfer(summary_dict, currency, from_address,memory['last_withdraw'],
 						                             amount / pow(10, decimal), flow)
 					elif eventname.lower() == 'deposit':
-						try:
-							currency, decimal = get_currency(last_call_to.lower(), w3)
-						except Exception as e:
-							print('Error: can not get deposit currency', input[0].lower())
-							currency, decimal = last_call_to, 0
+						currency, decimal = address_to_currency(memory['last_call_to'], w3)
 						to_address = input[0]
 						amount = trace['data'][0]
-						summary_dict = othertransfer(summary_dict, currency, last_call_to, to_address,
+						summary_dict = othertransfer(summary_dict, currency, memory['last_call_to'], to_address,
 						                             amount / pow(10, decimal), flow)
 				else:
-					if trace['type'] == 'call':
-						last_call_to = trace["to"]
-					if trace['type'] == 'call' and 'withdraw' in trace["function"].lower():
-						last_withdraw = trace["to"]
+					memory = update_memory(trace, memory)
 					if trace['type'] == 'call' or trace['type'] == 'staticcall' and trace["value"] != 0:
 						summary_dict = deal_transfer(summary_dict, token, trace, flow)
 			if trace['type'] == 'call' and trace['status'] == "OutOfGas":
-				out_of_gas = not out_of_gas
+				memory['out_of_gas'] = not memory['out_of_gas']
 		if len(traces) != 0:
 			transaction_hash = i.split("_")[2].split(".")[0]
 			time_stamp = timestamp_dict[transaction_hash]
@@ -161,15 +180,7 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix="result"):
 					rate = get_rate(time_stamp, token)
 					address_balance[token] = [value, value * rate]
 			total_dict[transaction_hash] = summary_dict
-	for key1 in total_dict.keys():
-		for key2 in total_dict[key1].keys():
-			keys_to_delete = [key for key, value in total_dict[key1][key2].items() if value[0] == 0]
-			for key3 in keys_to_delete:
-				del total_dict[key1][key2][key3]
-	for key1 in total_dict.keys():
-		keys_to_delete = [key for key, value in total_dict[key1].items() if value == {}]
-		for key2 in keys_to_delete:
-			del total_dict[key1][key2]
+	total_dict = remove_zeros(total_dict)
 	with open(folder_prefix + '/balance.json', 'w') as json_file:
 		json.dump(total_dict, json_file, indent=2)
 	flow.to_json(folder_prefix + '/tokenflow.json', orient='records')
