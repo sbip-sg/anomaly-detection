@@ -1,6 +1,7 @@
 from datetime import datetime
 import requests
 import json
+import time
 
 # Record collected cryptocurrency to avoid extra requests.
 currency_dict = {}
@@ -10,13 +11,14 @@ file = open("utils/token.json")
 transform = json.load(file)
 
 # Request coingecko api to get token exchange rate to usd (This function is not stable when calling too frequently)
-def collect(token, time):
+def collect(token, date):
 
     # Can only get exchange rates since one year ago.
-    url = ('https://api.coingecko.com/api/v3/coins/' + token + '/history?date='+time+'&localization=false')
+    url = ('https://api.coingecko.com/api/v3/coins/' + token + '/history?date='+date+'&localization=false')
 
     try:
         data = requests.get(url).json()
+        time.sleep(13)
         return data['market_data']['current_price']['usd']
     except Exception as e:
         print(f"Error: Unable to fetch data from Coingecko {e}")

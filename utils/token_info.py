@@ -240,8 +240,7 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 				address_balance = summary_dict[address]
 				for token in address_balance:
 					value = address_balance[token]
-					# rate = get_rate(time_stamp, token)
-					rate = 0
+					rate = get_rate(time_stamp, token)
 					address_balance[token] = [value, value * rate]
 			total_dict[transaction_hash] = summary_dict
 
