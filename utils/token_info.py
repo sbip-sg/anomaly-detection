@@ -217,13 +217,12 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 						amount = trace['data'][0]
 						summary_dict = othertransfer(summary_dict, currency, memory['last_call_to'], to_address,
 						                             amount / pow(10, decimal), flow)
-			else:
-				if trace['status'] != "OutOfGas":
-					memory = update_memory(trace, memory)
+			if trace['type'] == 'call' and trace['status'] != "OutOfGas":
+				memory = update_memory(trace, memory)
 
 					# for local token flow, there mostly is a trace with non-zero value
-					if trace['type'] == 'call' or trace['type'] == 'staticcall' and trace["value"] != 0:
-						summary_dict = deal_transfer(summary_dict, token, trace, flow)
+				if trace['type'] == 'call' or trace['type'] == 'staticcall' and trace["value"] != 0:
+					summary_dict = deal_transfer(summary_dict, token, trace, flow)
 
 			# Call is out of gas, so the following events are not available
 			if trace['type'] == 'call' and trace['status'] == "OutOfGas":

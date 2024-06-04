@@ -7,8 +7,10 @@ cast_bin = os.environ.get('CAST_BIN', 'cast')
 
 
 def cast_run(rpc_url, txhash, output):
+        print('Foundry Start')
         r = subprocess.run([cast_bin, 'run', '-q', '-r', rpc_url, txhash, '--output', output], stdout=subprocess.DEVNULL,
                        stderr=subprocess.DEVNULL, text=True, check=True)
+        print('Foundry End')
         r.check_returncode()
         return json.load(open(output))
 
