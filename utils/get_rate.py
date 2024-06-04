@@ -2,12 +2,17 @@ from datetime import datetime
 import requests
 import json
 
+# Record collected cryptocurrency to avoid extra requests.
 currency_dict = {}
 
+# Inputs are token symbols and coingecko api needs token's id. Collected top 300 tokens in ethereum environment.
 file = open("utils/token.json")
 transform = json.load(file)
 
+# Request coingecko api to get token exchange rate to usd (This function is not stable when calling too frequently)
 def collect(token, time):
+
+    # Can only get exchange rates since one year ago.
     url = ('https://api.coingecko.com/api/v3/coins/' + token + '/history?date='+time+'&localization=false')
 
     try:
@@ -17,6 +22,10 @@ def collect(token, time):
         print(f"Error: Unable to fetch data from Coingecko {e}")
         return 0
 
+# Get exchange rate of cryptocurrency
+# Plans:
+#   1, Find more stable api
+#   2, Build an exchange rate database and maintain it everyday
 def get_rate(time_stamp, currency):
     if currency not in currency_dict.keys():
         try:
@@ -26,7 +35,6 @@ def get_rate(time_stamp, currency):
 
             # Format datetime object to dd-mm-yyyy
             formatted_date = date_time.strftime('%d-%m-%Y')
-
             exchange_rate = collect(token, formatted_date)
         except Exception as e:
             print(f"Error: Unknown Token")

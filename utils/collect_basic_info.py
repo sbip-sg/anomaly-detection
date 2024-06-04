@@ -1,9 +1,6 @@
 import pandas as pd
 from web3 import Web3
-import os
-import json
 from web3.middleware import geth_poa_middleware
-from datetime import datetime
 
 # Function to recursively convert bytes to hexadecimal, lists, and dictionaries
 def convert(obj):

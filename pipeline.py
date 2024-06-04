@@ -5,6 +5,11 @@ from utils.get_traces import collect_trace
 from utils.decode_trace import decode_trace_json
 from utils.token_info import collect_token
 
+# Choose endpoint according to transaction chain
+# Plans:
+#   1, Because this one can be set for only getting basic information and token symbol, we only need stable endpoints.
+#   For foundry, we can choose multi-endpoints.
+#   2, For rare chains, we need more testing.
 RPC_ENDPOINTS = {
     "eth": [
             "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
@@ -29,6 +34,7 @@ def endpoint_by_chain(chain, endpoint_idx=0):
                 raise ValueError('No more endpoint available for this chain: ' + chain)
         return endpoints[endpoint_idx]
 
+# Get transaction information by hash
 def main(tx_hash, chain, overwrite=False, endpoint_idx=0):
         folder_prefix = f'result/{tx_hash}_{chain}'
         # Create result directory if it doesn't exist
@@ -39,20 +45,22 @@ def main(tx_hash, chain, overwrite=False, endpoint_idx=0):
         os.makedirs('result', exist_ok=True)
 
         os.makedirs(folder_prefix, exist_ok=True)
-        # Collect basic information
 
+        # Collect basic information
+        # Time stamp is for getting exchange rate
         raw = (tx_hash, endpoint_by_chain(chain, endpoint_idx))
         basic_info, time_stamp_dict = collectinfo(raw)
-        # basic_info.to_csv('result/basic_info.csv')
+
+        # Save basic information
         basic_info.to_json(folder_prefix + '/basic_info.json', orient='records', lines=True)
 
-        # Collect traces
-        collect_trace(raw,folder_prefix)
+        # Collect traces (raw invocation tree)
+        collect_trace(raw, folder_prefix)
 
-        # Decode trace JSON
+        # Decode trace JSON and extract information from invocation tree
         decode_trace_json(folder_prefix)
 
-        # Collect token balances
+        # According to the decoded invocation tree, get token flow and balance changes.
         collect_token(time_stamp_dict, chain, endpoint_by_chain(chain, endpoint_idx), folder_prefix)
 
 if __name__ == "__main__":

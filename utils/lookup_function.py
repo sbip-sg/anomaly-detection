@@ -1,7 +1,7 @@
 import leveldb
 import os
-db_path = os.environ.get('EVENT_DB_PATH', './db')
 
+db_path = os.environ.get('EVENT_DB_PATH', './db')
 db = None
 def get_db():
     global db
