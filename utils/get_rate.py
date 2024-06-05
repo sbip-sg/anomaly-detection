@@ -22,6 +22,7 @@ def collect(token, date):
         return data['market_data']['current_price']['usd']
     except Exception as e:
         print(f"Error: Unable to fetch data from Coingecko {e}")
+        time.sleep(13)
         return 0
 
 # Get exchange rate of cryptocurrency

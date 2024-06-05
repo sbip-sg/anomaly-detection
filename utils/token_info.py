@@ -95,7 +95,7 @@ def deal_transfer(summary, currency, trace, flow):
 
 # This function is from observation and would be less reliable
 # Function to find the address and amount from an event
-def find_address_transfer_event(trace, input):
+def find_address_transfer_event(trace, input, memory):
 	# from address is normally the first of the inputs
 	from_address = input[0]
 
@@ -112,8 +112,12 @@ def find_address_transfer_event(trace, input):
 	# If an event have less than 2 inputs and have data, this transfer may be from null.
 	elif trace['data']:
 		amount = trace['data'][0]
-		from_address = '0x' + '0' * 40
-		to_address = input[0]
+		if memory['last_is_deposit']:
+			from_address = memory['last_call_to']
+			to_address = input[0]
+		else:
+			to_address = memory['last_withdraw']
+			from_address = input[0]
 
 	# if have no information, ignore it.
 	else:
@@ -131,6 +135,9 @@ def update_memory(trace, memory):
 	# For withdraw, the last withdraw trace's to address is the contract of the token.
 	if trace['type'] == 'call' and 'withdraw' in trace["function"].lower():
 		memory['last_withdraw'] = trace["to"]
+		memory['last_is_deposit'] = False
+	if trace['type'] == 'call' and 'deposit' in trace["function"].lower():
+		memory['last_is_deposit'] = True
 	return memory
 
 # For the output dict, remove zero values and empty values
@@ -184,11 +191,16 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 		memory ={
 		"last_call_to" : '',
 		"last_withdraw" : '',
-		"out_of_gas" : False
+		'last_is_deposit' : True,
+		"out_of_gas" : False,
+		'reverted': False
 		}
 		
 		for trace in traces:
-			# starting with out-of-gas check
+			# starting with reverted and out-of-gas check
+			if trace['type'] == 'call' and trace['status'] == "Revert":
+				memory['reverted'] = True
+				break
 			# event does not show successful status, only to see whether last call is successful 
 			if not memory['out_of_gas']:
 				if trace['type'] == 'event':
@@ -198,7 +210,7 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 					# event name as transfer refers to token transfer
 					if event_name.lower() == 'transfer':
 						currency, decimal = get_currency(memory['last_call_to'], w3)
-						from_address, to_address, amount =  find_address_transfer_event(trace, input)
+						from_address, to_address, amount =  find_address_transfer_event(trace, input, memory)
 						summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
 						                             amount / pow(10, decimal), flow)
 
