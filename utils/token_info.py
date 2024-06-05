@@ -15,8 +15,8 @@ currency_dict = {}
 # getting the default currency is by value, so we need prior knowledge of tokens
 chain_dict = {
 	"arbitrum": "ETH",
-	"Avalanche": "AVAX",
-	"Base": "ETH",
+	"avalanche": "AVAX",
+	"base": "ETH",
 	"bsc": "BNB",
 	"eth": "ETH",
 	"fantom": "FTM",
@@ -108,7 +108,10 @@ def find_address_transfer_event(trace, input, memory):
 	elif len(input) == 2 and trace['data']:
 		amount = trace['data'][0]
 		to_address = input[1]
-
+	elif len(input) == 2:
+		from_address = '0x' + '0' * 40
+		to_address = input[0]
+		amount = 1
 	# If an event have less than 2 inputs and have data, this transfer may be from null.
 	elif trace['data']:
 		amount = trace['data'][0]
@@ -196,7 +199,7 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 		}
 		
 		for trace in traces:
-			# starting with out-of-gas check
+			# starting with reverted and out-of-gas check
 			# event does not show successful status, only to see whether last call is successful 
 			if not memory['out_of_gas']:
 				if trace['type'] == 'event':

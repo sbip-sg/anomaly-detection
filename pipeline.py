@@ -15,16 +15,16 @@ RPC_ENDPOINTS = {
             "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
             "https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134",
     ],
-    "optimism": "https://opt-mainnet.g.alchemy.com/v2/demo",
-    "fantom": "https://rpc.ankr.com/fantom",
+    "optimism": "https://op-pokt.nodies.app",
+    "fantom": "https://rpc.ftm.tools",
     "arbitrum": "https://rpc.ankr.com/arbitrum",
     "bsc": "https://bscrpc.com",
     "moonriver": "https://moonriver.public.blastapi.io",
-    "gnosis": "https://rpc.ankr.com/gnosis",
-    "Avalanche": "https://rpc.ankr.com/avalanche",
-    "polygon": "https://rpc.ankr.com/polygon",
-    "celo": "https://rpc.ankr.com/celo",
-    "Base": "https://developer-access-mainnet.base.org"
+    "gnosis": "https://gnosis-rpc.publicnode.com",
+    "avalanche": "https://avalanche.drpc.org",
+    "polygon": "https://polygon.meowrpc.com",
+    "celo": "https://1rpc.io/celo",
+    "base": "https://developer-access-mainnet.base.org"
 }
 
 def endpoint_by_chain(chain, endpoint_idx=0):
