@@ -192,15 +192,11 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 		"last_call_to" : '',
 		"last_withdraw" : '',
 		'last_is_deposit' : True,
-		"out_of_gas" : False,
-		'reverted': False
+		"out_of_gas" : False
 		}
 		
 		for trace in traces:
-			# starting with reverted and out-of-gas check
-			if trace['type'] == 'call' and trace['status'] == "Revert":
-				memory['reverted'] = True
-				break
+			# starting with out-of-gas check
 			# event does not show successful status, only to see whether last call is successful 
 			if not memory['out_of_gas']:
 				if trace['type'] == 'event':
