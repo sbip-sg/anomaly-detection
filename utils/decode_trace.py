@@ -97,6 +97,9 @@ def decode_unknown_input(chunks, data = False, event = True):
         # Normally most numbers are no bigger than 1e15
         elif count_of_zeros >= 35 and count_of_zeros < 64:  # uint256 type
             input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
+        # null address
+        elif count_of_zeros == 64:  # Address type
+            input_list.append(decode(['address'], bytes.fromhex(line))[0])
     return input_list
 
 # Function to decode trace JSON files
