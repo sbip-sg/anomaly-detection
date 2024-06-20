@@ -54,13 +54,13 @@ def main(tx_hash, chain, overwrite=False, endpoint_idx=0):
         # Save basic information
         basic_info.to_json(folder_prefix + '/basic_info.json', orient='records', lines=True)
 
-        # Collect traces (raw invocation tree)
+        # Collect traces (raw invocation flow)
         collect_trace(raw, folder_prefix)
 
-        # Decode trace JSON and extract information from invocation tree
+        # Decode trace JSON and extract information from invocation flow
         decode_trace_json(folder_prefix)
 
-        # According to the decoded invocation tree, get token flow and balance changes.
+        # According to the decoded invocation flow, get token flow and balance changes.
         collect_token(time_stamp_dict, chain, endpoint_by_chain(chain, endpoint_idx), folder_prefix)
 
 if __name__ == "__main__":

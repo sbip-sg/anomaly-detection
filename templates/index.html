@@ -79,8 +79,8 @@
         {% endif %}
 
         <h2>Other Information:</h2>
-        {% if results.get('invocation_tree') %}
-            <textarea readonly>{{ results.invocation_tree|formatjson }}</textarea>
+        {% if results.get('invocation_flow') %}
+            <textarea readonly>{{ results.invocation_flow|formatjson }}</textarea>
         {% else %}
             <p class="error">No other information available.</p>
         {% endif %}

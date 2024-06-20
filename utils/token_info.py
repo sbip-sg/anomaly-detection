@@ -169,7 +169,7 @@ def remove_zeros(total_dict):
 			del total_dict[key1][key2]
 	return total_dict
 
-# collect tokens from decoded invocation tree
+# collect tokens from decoded invocation flow
 def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 	
 	# collect balance change of each transaction
@@ -181,10 +181,10 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 	# collect token flows of each transaction
 	flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
 	
-	jsonlist = listdir(folder_prefix + '/invocation_tree')
+	jsonlist = listdir(folder_prefix + '/invocation_flow')
 	w3 = Web3(Web3.HTTPProvider(rpc))
 	for i in jsonlist:
-		file = open(folder_prefix + '/invocation_tree/' + i)
+		file = open(folder_prefix + '/invocation_flow/' + i)
 
 		# summary dict for this transaction
 		summary_dict = {}

@@ -105,15 +105,15 @@ def decode_unknown_input(chunks, data = False, event = True):
 # Function to decode trace JSON files
 def decode_trace_json(folder_prefix="result"):
 
-    # dumping decoded traces and event to invocation_tree folder
-    json_file_path = folder_prefix + '/invocation_tree/'
+    # dumping decoded traces and event to invocation_flow folder
+    json_file_path = folder_prefix + '/invocation_flow/'
     os.makedirs(json_file_path, exist_ok=True)
 
     # Get list of JSON files in trace_json directory with raw traces
     jsonlist = listdir(folder_prefix + '/trace_json')
     for i in jsonlist:
         file = open(folder_prefix + '/trace_json/' + i)
-        invocation_tree = []
+        invocation_flow = []
         tx = json.load(file)
         for trace in tx:
             new_trace = {}
@@ -174,9 +174,9 @@ def decode_trace_json(folder_prefix="result"):
                 # For events, foundry do not give significant parameters
                 new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:])
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
-            invocation_tree.append(new_trace)
+            invocation_flow.append(new_trace)
 
-        # Dump the decoded invocation tree to a json file
+        # Dump the decoded invocation flow to a json file
         with open(json_file_path + 'decode_' + i, 'w') as jsonfile:
-            json.dump(invocation_tree, jsonfile, default=convert_bytes_to_string, indent=2)
-        print('decode_invocation_tree_finished', i)
+            json.dump(invocation_flow, jsonfile, default=convert_bytes_to_string, indent=2)
+        print('decode_invocation_flow_finished', i)
