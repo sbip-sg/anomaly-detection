@@ -1,7 +1,7 @@
 import json
 from os import listdir
 import os
-def collect_token(folder_prefix):
+def transform_tree(folder_prefix):
 
     # dumping decoded tree to invocation_tree folder
     json_file_path = folder_prefix + '/invocation_tree/'

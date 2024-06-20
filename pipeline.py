@@ -3,6 +3,7 @@ import argparse
 from utils.collect_basic_info import collectinfo
 from utils.get_traces import collect_trace
 from utils.decode_trace import decode_trace_json
+from utils.flow_tree import transform_tree
 from utils.token_info import collect_token
 
 # Choose endpoint according to transaction chain
@@ -59,6 +60,9 @@ def main(tx_hash, chain, overwrite=False, endpoint_idx=0):
 
         # Decode trace JSON and extract information from invocation flow
         decode_trace_json(folder_prefix)
+
+        # transform invocation flow to invocation tree
+        transform_tree(folder_prefix)
 
         # According to the decoded invocation flow, get token flow and balance changes.
         collect_token(time_stamp_dict, chain, endpoint_by_chain(chain, endpoint_idx), folder_prefix)
