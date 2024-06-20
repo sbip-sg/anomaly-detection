@@ -134,6 +134,8 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
 
+                new_trace["depth"] = trace["depth"]
+
                 # When foundry can decode it.
                 if trace['decoded']['func']:
                     new_trace["function"] = trace['decoded']['func']['signature']

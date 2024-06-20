@@ -191,7 +191,7 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 		traces = json.load(file)
 
 		# See update_memory(trace, memory) function
-		memory ={
+		memory = {
 		"last_call_to" : '',
 		"last_withdraw" : '',
 		'last_is_deposit' : True,
