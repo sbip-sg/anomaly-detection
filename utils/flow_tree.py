@@ -51,3 +51,4 @@ def transform_tree(folder_prefix):
         # save tree to file
         with open(folder_prefix + '/invocation_tree/tree' + i, 'w') as jsonfile:
             json.dump(zero_list, jsonfile, indent=2)
+        print('rearrange_invocation_tree_finished', i)

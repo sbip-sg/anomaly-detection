@@ -43,12 +43,14 @@ def get_results(tx_hash, chain, overwrite):
     basic_info = try_read_as_json(f'{folder_prefix}/basic_info.json') or {}
     balance_info = try_read_as_json(f'{folder_prefix}/balance.json') or {}
     decoded_trace = try_read_as_json(f'{folder_prefix}/invocation_flow/decode_trace_{tx_hash}.json') or {}
+    invocation_tree = try_read_as_json(f'{folder_prefix}/invocation_tree/tree_decode_trace_{tx_hash}.json') or {}
     token_flow = try_read_as_json(f'{folder_prefix}/tokenflow.json') or {}
     results = {
         'basic_info': basic_info,
         'balance_info': balance_info,
         'token_flow': token_flow,
-        'invocation_flow': decoded_trace
+        'invocation_flow': decoded_trace,
+        'invocation_tree': invocation_tree
     }
     return results
 
