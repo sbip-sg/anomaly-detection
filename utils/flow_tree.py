@@ -19,6 +19,7 @@ def transform_tree(folder_prefix):
         traces = json.load(file)
         # remember the current working list of all depths
         memory = {}
+        memory = {}
         for trace in traces:
             if (trace['type'].lower() == 'call' or
                     trace['type'].lower() == 'delegatecall' or
@@ -26,8 +27,8 @@ def transform_tree(folder_prefix):
                 # add children
                 trace['children'] = []
                 # new depth
-                if trace['depth'] not in memory.keys():
-                    memory[trace['depth']] = [trace['from'], current_list[-1]]
+                if trace['depth'] + 1 not in memory.keys():
+                    memory[trace['depth'] + 1] = [trace['from'], current_list[-1]]
                 # if trace is in the current depth
                 if trace['depth'] == current_depth:
                     current_list[-1].append(trace)
@@ -36,8 +37,8 @@ def transform_tree(folder_prefix):
                     memory[current_depth] = [trace['from'], current_list[-1]]
                 # if not
                 else:
-                    memory[trace['depth']][1].append(trace)
-                    memory[trace['depth']] = [trace['from'], memory[trace['depth']][1]]
+                    memory[trace['depth'] + 1][1].append(trace)
+                    memory[trace['depth'] + 1] = [trace['from'], memory[trace['depth'] + 1][1]]
                     current_list.append(trace['children'])
                     current_depth = trace['depth'] + 1
                     memory[current_depth] = [trace['from'], current_list[-1]]
@@ -45,8 +46,8 @@ def transform_tree(folder_prefix):
             if trace['type'].lower() == 'event':
                 max = 0
                 for i in range(len(memory)):
-                    if memory[i][0] == trace['address']:
-                        max = i
+                    if memory[i + 1][0] == trace['address']:
+                        max = i + 1
                 memory[max][1].append(trace)
         # save tree to file
 
