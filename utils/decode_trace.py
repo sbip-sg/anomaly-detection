@@ -102,6 +102,15 @@ def decode_unknown_input(chunks, data = False, event = True):
             input_list.append(decode(['address'], bytes.fromhex(line))[0])
     return input_list
 
+#find the deepest trace with same address as event's address
+def find_depth(address, memory):
+    temp = 0
+    for key in memory.keys():
+        if memory[key] == address and key > temp:
+            temp = key
+    return temp + 1
+
+
 # Function to decode trace JSON files
 def decode_trace_json(folder_prefix="result"):
 
@@ -136,11 +145,6 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
                 new_trace["depth"] = trace["depth"]
-                if new_trace['depth'] + 1 >= len(locations):
-                    while len(locations) < new_trace['depth']:
-                        locations.append(-1)
-                locations[new_trace["depth"]] += 1
-                new_trace['location'] = locations
 
                 # When foundry can decode it.
                 if trace['decoded']['func']:
@@ -165,6 +169,9 @@ def decode_trace_json(folder_prefix="result"):
             elif trace['kind'].lower() == 'event':
                 new_trace["address"] = trace["from"]
 
+                new_trace["depth"] = find_depth(new_trace["address"], memory)
+
+
                 # When foundry can decode it.
                 if trace['decoded']:
                     new_trace["function"] = trace['decoded']['name']
@@ -182,6 +189,16 @@ def decode_trace_json(folder_prefix="result"):
                 # For events, foundry do not give significant parameters
                 new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:])
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
+                
+            # according to the depth of trace, find its location
+            if new_trace['depth'] + 1 >= len(locations):
+                while len(locations) < new_trace['depth']:
+                    locations.append(-1)
+            if new_trace['depth'] not in memory.keys():
+                memory[new_trace['depth']] = new_trace["from"]
+            locations[new_trace["depth"]] += 1
+            new_trace['location'] = locations[:new_trace["depth"] + 1]
+
             invocation_tree.append(new_trace)
 
         # Dump the decoded invocation tree to a json file
