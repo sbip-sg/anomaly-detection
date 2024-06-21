@@ -18,8 +18,7 @@ def transform_tree(folder_prefix):
         file = open(folder_prefix + '/invocation_flow/' + filename)
         traces = json.load(file)
         # remember the current working list of all depths
-        memory = {}
-        memory = {}
+        memory = {0: ['', zero_list]}
         for trace in traces:
             if (trace['type'].lower() == 'call' or
                     trace['type'].lower() == 'delegatecall' or
@@ -28,7 +27,7 @@ def transform_tree(folder_prefix):
                 trace['children'] = []
                 # new depth
                 if trace['depth'] + 1 not in memory.keys():
-                    memory[trace['depth'] + 1] = [trace['from'], current_list[-1]]
+                    memory[trace['depth'] + 1] = [trace['from'], trace['children']]
                 # if trace is in the current depth
                 if trace['depth'] == current_depth:
                     current_list[-1].append(trace)
@@ -37,8 +36,7 @@ def transform_tree(folder_prefix):
                     memory[current_depth] = [trace['from'], current_list[-1]]
                 # if not
                 else:
-                    memory[trace['depth'] + 1][1].append(trace)
-                    memory[trace['depth'] + 1] = [trace['from'], memory[trace['depth'] + 1][1]]
+                    memory[trace['depth']][1].append(trace)
                     current_list.append(trace['children'])
                     current_depth = trace['depth'] + 1
                     memory[current_depth] = [trace['from'], current_list[-1]]
@@ -46,11 +44,11 @@ def transform_tree(folder_prefix):
             if trace['type'].lower() == 'event':
                 max = 0
                 for i in range(len(memory)):
-                    if memory[i + 1][0] == trace['address']:
-                        max = i + 1
+                    if memory[i][0] == trace['address']:
+                        max = i
                 memory[max][1].append(trace)
-        # save tree to file
 
+        # save tree to file
         with open(folder_prefix + '/invocation_tree/tree_' + filename, 'w') as jsonfile:
             json.dump(zero_list, jsonfile, indent=2)
         print('rearrange_invocation_tree_finished', filename)
