@@ -8,14 +8,14 @@ def transform_tree(folder_prefix):
     os.makedirs(json_file_path, exist_ok=True)
     # list all files
     jsonlist = listdir(folder_prefix + '/invocation_flow')
-    for i in jsonlist:
+    for filename in jsonlist:
         # root of the tree
         zero_list = []
         # a list of history dealing list
         current_list = [zero_list]
         # record the depth of current event
         current_depth = 0
-        file = open(folder_prefix + '/invocation_flow/' + i)
+        file = open(folder_prefix + '/invocation_flow/' + filename)
         traces = json.load(file)
         # remember the current working list of all depths
         memory = {}
@@ -49,6 +49,7 @@ def transform_tree(folder_prefix):
                         max = i
                 memory[max][1].append(trace)
         # save tree to file
-        with open(folder_prefix + '/invocation_tree/tree' + i, 'w') as jsonfile:
+
+        with open(folder_prefix + '/invocation_tree/tree_' + filename, 'w') as jsonfile:
             json.dump(zero_list, jsonfile, indent=2)
-        print('rearrange_invocation_tree_finished', i)
+        print('rearrange_invocation_tree_finished', filename)
