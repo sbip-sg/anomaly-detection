@@ -115,6 +115,8 @@ def decode_trace_json(folder_prefix="result"):
         file = open(folder_prefix + '/trace_json/' + i)
         invocation_tree = []
         tx = json.load(file)
+        locations = [-1]
+        memory = {}
         for trace in tx:
             new_trace = {}
             # extract all kinds of information
@@ -133,6 +135,12 @@ def decode_trace_json(folder_prefix="result"):
                 'kind'].lower() == 'staticcall':
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
+                new_trace["depth"] = trace["depth"]
+                if new_trace['depth'] + 1 >= len(locations):
+                    while len(locations) < new_trace['depth']:
+                        locations.append(-1)
+                locations[new_trace["depth"]] += 1
+                new_trace['location'] = locations
 
                 # When foundry can decode it.
                 if trace['decoded']['func']:
