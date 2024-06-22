@@ -97,7 +97,11 @@ def deal_transfer(summary, currency, trace, flow):
 # Function to find the address and amount from an event
 def find_address_transfer_event(trace, input, memory):
 	# from address is normally the first of the inputs
-	from_address = input[0]
+	if (trace['address'] == '0x82af49447d8a07e3bd95bd0d56f35241523fbab1' and
+			input[0] == '0x0000000000000000000000000000000000000000'):
+		from_address = trace['address']
+	else:
+		from_address = input[0]
 
 	# If an event have more than 2 inputs, the second would be to address and the third would be amount
 	if len(input) > 2:
