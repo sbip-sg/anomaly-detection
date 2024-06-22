@@ -103,10 +103,10 @@ def decode_unknown_input(chunks, data = False, event = True):
     return input_list
 
 #find the deepest trace with same address as event's address
-def find_depth(address, memory):
+def find_depth(address,last_call , memory):
     temp = 0
     for key in memory.keys():
-        if memory[key] == address and key > temp:
+        if memory[key] == address and key > temp and key <= last_call:
             temp = key
     return temp + 1
 
@@ -145,6 +145,7 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
                 new_trace["depth"] = trace["depth"]
+                last_call_depth = new_trace["depth"]
                 if new_trace['depth'] not in memory.keys():
                     memory[new_trace['depth']] = new_trace["from"]
 
@@ -171,7 +172,7 @@ def decode_trace_json(folder_prefix="result"):
             elif trace['kind'].lower() == 'event':
                 new_trace["address"] = trace["from"]
 
-                new_trace["depth"] = find_depth(new_trace["address"], memory)
+                new_trace["depth"] = find_depth(new_trace["address"], last_call_depth, memory)
 
 
                 # When foundry can decode it.
@@ -198,7 +199,7 @@ def decode_trace_json(folder_prefix="result"):
                     locations.append(-1)
             locations[new_trace["depth"]] += 1
             for position in range(new_trace["depth"]+1, len(locations)):
-                locations[position] = 0
+                locations[position] = -1
             new_trace['location'] = locations[:new_trace["depth"] + 1]
 
             invocation_tree.append(new_trace)
