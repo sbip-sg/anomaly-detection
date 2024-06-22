@@ -197,6 +197,8 @@ def decode_trace_json(folder_prefix="result"):
                 while len(locations) <= new_trace['depth']:
                     locations.append(-1)
             locations[new_trace["depth"]] += 1
+            for position in range(new_trace["depth"]+1, len(locations)):
+                locations[position] = 0
             new_trace['location'] = locations[:new_trace["depth"] + 1]
 
             invocation_tree.append(new_trace)
