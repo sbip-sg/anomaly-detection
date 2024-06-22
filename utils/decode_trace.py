@@ -145,6 +145,8 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
                 new_trace["depth"] = trace["depth"]
+                if new_trace['depth'] not in memory.keys():
+                    memory[new_trace['depth']] = new_trace["from"]
 
                 # When foundry can decode it.
                 if trace['decoded']['func']:
@@ -192,10 +194,8 @@ def decode_trace_json(folder_prefix="result"):
                 
             # according to the depth of trace, find its location
             if new_trace['depth'] + 1 >= len(locations):
-                while len(locations) < new_trace['depth']:
+                while len(locations) <= new_trace['depth']:
                     locations.append(-1)
-            if new_trace['depth'] not in memory.keys():
-                memory[new_trace['depth']] = new_trace["from"]
             locations[new_trace["depth"]] += 1
             new_trace['location'] = locations[:new_trace["depth"] + 1]
 
