@@ -22,7 +22,7 @@ RPC_ENDPOINTS = {
     "moonriver": "https://moonriver.public.blastapi.io",
     "gnosis": "https://gnosis-rpc.publicnode.com",
     "avalanche": "https://avalanche.drpc.org",
-    "polygon": "https://polygon-mainnet.public.blastapi.io",
+    "polygon": "https://rpc.ankr.com/polygon",
     "celo": "https://1rpc.io/celo",
     "base": "https://developer-access-mainnet.base.org"
 }

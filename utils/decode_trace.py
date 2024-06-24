@@ -102,15 +102,6 @@ def decode_unknown_input(chunks, data = False, event = True):
             input_list.append(decode(['address'], bytes.fromhex(line))[0])
     return input_list
 
-#find the deepest trace with same address as event's address
-def find_depth(address,last_call , memory):
-    temp = 0
-    for key in memory.keys():
-        if memory[key] == address and key > temp and key <= last_call:
-            temp = key
-    return temp + 1
-
-
 # Function to decode trace JSON files
 def decode_trace_json(folder_prefix="result"):
 
@@ -125,7 +116,6 @@ def decode_trace_json(folder_prefix="result"):
         invocation_tree = []
         tx = json.load(file)
         locations = [-1]
-        memory = {}
         for trace in tx:
             new_trace = {}
             # extract all kinds of information
@@ -145,9 +135,6 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
                 new_trace["depth"] = trace["depth"]
-                last_call_depth = new_trace["depth"]
-                if new_trace['depth'] not in memory.keys():
-                    memory[new_trace['depth']] = new_trace["from"]
 
                 # When foundry can decode it.
                 if trace['decoded']['func']:
@@ -172,7 +159,7 @@ def decode_trace_json(folder_prefix="result"):
             elif trace['kind'].lower() == 'event':
                 new_trace["address"] = trace["from"]
 
-                new_trace["depth"] = find_depth(new_trace["address"], last_call_depth, memory)
+                new_trace["depth"] = trace["depth"] + 1
 
 
                 # When foundry can decode it.
