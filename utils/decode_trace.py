@@ -115,6 +115,7 @@ def decode_trace_json(folder_prefix="result"):
         file = open(folder_prefix + '/trace_json/' + i)
         invocation_tree = []
         tx = json.load(file)
+        locations = [-1]
         for trace in tx:
             new_trace = {}
             # extract all kinds of information
@@ -133,6 +134,7 @@ def decode_trace_json(folder_prefix="result"):
                 'kind'].lower() == 'staticcall':
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
+                new_trace["depth"] = trace["depth"]
 
                 # When foundry can decode it.
                 if trace['decoded']['func']:
@@ -157,6 +159,9 @@ def decode_trace_json(folder_prefix="result"):
             elif trace['kind'].lower() == 'event':
                 new_trace["address"] = trace["from"]
 
+                new_trace["depth"] = trace["depth"] + 1
+
+
                 # When foundry can decode it.
                 if trace['decoded']:
                     new_trace["function"] = trace['decoded']['name']
@@ -174,6 +179,16 @@ def decode_trace_json(folder_prefix="result"):
                 # For events, foundry do not give significant parameters
                 new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:])
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
+                
+            # according to the depth of trace, find its location
+            if new_trace['depth'] + 1 >= len(locations):
+                while len(locations) <= new_trace['depth']:
+                    locations.append(-1)
+            locations[new_trace["depth"]] += 1
+            for position in range(new_trace["depth"]+1, len(locations)):
+                locations[position] = -1
+            new_trace['location'] = locations[:new_trace["depth"] + 1]
+
             invocation_tree.append(new_trace)
 
         # Dump the decoded invocation tree to a json file
