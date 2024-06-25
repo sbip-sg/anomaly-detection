@@ -138,6 +138,7 @@ def update_memory(trace, memory):
 	# For transfer and deposit, the last trace's to address is the contract of the token.
 	if trace['type'] == 'call':
 		memory['last_call_to'] = trace["to"]
+		memory['last_call_from'] = trace["from"]
 
 	# For withdraw, the last withdraw trace's to address is the contract of the token.
 	if trace['type'] == 'call' and 'withdraw' in trace["function"].lower():
@@ -197,6 +198,7 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 		# See update_memory(trace, memory) function
 		memory ={
 		"last_call_to" : '',
+		'last_call_from': '',
 		"last_withdraw" : '',
 		'last_is_deposit' : True,
 		"out_of_gas" : False
@@ -213,6 +215,10 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 					# event name as transfer refers to token transfer
 					if event_name.lower() == 'transfer':
 						currency, decimal = get_currency(memory['last_call_to'], w3)
+						if currency == memory['last_call_to']:
+							currency, decimal = get_currency(memory['last_call_from'], w3)
+						if currency == memory['last_call_from']:
+							currency, decimal = get_currency(memory['last_call_to'], w3)
 						from_address, to_address, amount =  find_address_transfer_event(trace, input, memory)
 						summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
 						                             amount / pow(10, decimal), flow)
