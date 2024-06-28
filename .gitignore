@@ -12,3 +12,4 @@ htmlcov/
 .tox/
 docs/_build/
 result/
+/build/
