@@ -179,6 +179,14 @@ def decode_trace_json(folder_prefix="result"):
                 # For events, foundry do not give significant parameters
                 new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:])
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
+
+            # If trace is a create log
+            elif trace['kind'].lower() == 'create':
+
+                new_trace["from"] = trace["from"]
+                new_trace["to"] = trace["to"]
+                new_trace["depth"] = trace["depth"]
+                new_trace['data'] = trace['data']
                 
             # according to the depth of trace, find its location
             if new_trace['depth'] + 1 >= len(locations):

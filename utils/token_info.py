@@ -220,14 +220,18 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 						if currency == memory['last_call_from']:
 							currency, decimal = get_currency(memory['last_call_to'], w3)
 						from_address, to_address, amount =  find_address_transfer_event(trace, input, memory)
+						value = amount/pow(10, decimal)
 						summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
-						                             amount / pow(10, decimal), flow)
+						                             value, flow)
 
 					# event name as withdrawal refers to token withdraw
 					elif event_name.lower() == 'withdrawal':
 						currency, decimal = get_currency(memory['last_withdraw'], w3)
 						from_address = input[0]
-						amount = trace['data'][0]
+						if len(trace['data']) == 2:
+							amount = trace['data'][1]
+						else:
+							amount = trace['data'][0]
 						summary_dict = othertransfer(summary_dict, currency, from_address,memory['last_withdraw'],
 						                             amount / pow(10, decimal), flow)
 
@@ -235,7 +239,10 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 					elif event_name.lower() == 'deposit':
 						currency, decimal = get_currency(memory['last_call_to'], w3)
 						to_address = input[0]
-						amount = trace['data'][0]
+						if len(trace['data']) == 2:
+							amount = trace['data'][1]
+						else:
+							amount = trace['data'][0]
 						summary_dict = othertransfer(summary_dict, currency, memory['last_call_to'], to_address,
 						                             amount / pow(10, decimal), flow)
 			if trace['type'] == 'call' and trace['status'] != "OutOfGas":
