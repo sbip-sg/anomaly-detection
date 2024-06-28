@@ -4,6 +4,9 @@ import os
 import json
 import traceback
 import werkzeug
+import logging
+import sys
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__, static_folder='build')
 CORS(app)
@@ -36,11 +39,12 @@ def get_results(tx_hash, chain, overwrite):
             traceback.print_exc()
             import shutil
             shutil.rmtree(folder_prefix, ignore_errors=True)
-            print(f'Error processing request: {e}\n Removing dirty files... ')
+            print(f'Error processing request: {e}\n Removing dirty files... ', file=sys.stderr)
             return {"error": str(e)}
         except Exception as e:
             endpoint_idx += 1
-            print(f'Error processing request: {e}\n retry ... ')
+            traceback.print_exc()
+            print(f'Error processing request: {e}\n retry ... ', file=sys.stderr)
     basic_info = try_read_as_json(f'{folder_prefix}/basic_info.json') or {}
     balance_info = try_read_as_json(f'{folder_prefix}/balance.json') or {}
     decoded_trace = try_read_as_json(f'{folder_prefix}/invocation_tree/decode_trace_{tx_hash}.json') or {}
