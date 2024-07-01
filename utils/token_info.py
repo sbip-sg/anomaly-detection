@@ -30,10 +30,10 @@ chain_dict = {
 }
 
 # Get the currency symbol and decimals by the contract
-def get_currency(hash, chain):
+def get_currency(hash, chain, endpoint_idx):
 	hash = hash.lower()
 	if hash not in currency_dict.keys():
-		rpc = endpoint_by_chain(chain)
+		rpc = endpoint_by_chain(chain, endpoint_idx)
 		w3 = Web3(Web3.HTTPProvider(rpc))
 		try:
 			address = Web3.to_checksum_address(hash)
@@ -178,7 +178,7 @@ def remove_zeros(total_dict):
 	return total_dict
 
 # collect tokens from decoded invocation tree
-def collect_token(time_stamp, chain, folder_prefix):
+def collect_token(time_stamp, chain, endpoint_idx, folder_prefix):
 	
 	# collect balance change of each transaction
 	total_dict = {}
@@ -216,11 +216,11 @@ def collect_token(time_stamp, chain, folder_prefix):
 
 					# event name as transfer refers to token transfer
 					if event_name.lower() == 'transfer':
-						currency, decimal = get_currency(memory['last_call_to'], chain)
+						currency, decimal = get_currency(memory['last_call_to'], chain, endpoint_idx)
 						if currency == memory['last_call_to']:
-							currency, decimal = get_currency(memory['last_call_from'], chain)
+							currency, decimal = get_currency(memory['last_call_from'], chain, endpoint_idx)
 						if currency == memory['last_call_from']:
-							currency, decimal = get_currency(memory['last_call_to'], chain)
+							currency, decimal = get_currency(memory['last_call_to'], chain, endpoint_idx)
 						from_address, to_address, amount =  find_address_transfer_event(trace, input, memory)
 						value = amount/pow(10, decimal)
 						summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
@@ -228,7 +228,7 @@ def collect_token(time_stamp, chain, folder_prefix):
 
 					# event name as withdrawal refers to token withdraw
 					elif event_name.lower() == 'withdrawal':
-						currency, decimal = get_currency(memory['last_withdraw'], chain)
+						currency, decimal = get_currency(memory['last_withdraw'], chain, endpoint_idx)
 						from_address = input[0]
 						if len(trace['data']) == 2:
 							amount = trace['data'][1]
@@ -239,7 +239,7 @@ def collect_token(time_stamp, chain, folder_prefix):
 
 					# event name as deposit refers to token deposit
 					elif event_name.lower() == 'deposit' and len(input) < 3:
-						currency, decimal = get_currency(memory['last_call_to'], chain)
+						currency, decimal = get_currency(memory['last_call_to'], chain, endpoint_idx)
 						to_address = input[0]
 						if len(trace['data']) == 2:
 							amount = trace['data'][1]

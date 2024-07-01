@@ -18,22 +18,23 @@ def main(tx_hash, chain, overwrite=False):
 
         os.makedirs(folder_prefix, exist_ok=True)
 
+        endpoint_idx = 0
         # Collect basic information
         # Time stamp is for getting exchange rate
-        basic_info, time_stamp = collect_info(tx_hash, chain)
+        basic_info, time_stamp, endpoint_idx = collect_info(tx_hash, chain, endpoint_idx)
 
         # Save basic information
         with open(folder_prefix + '/basic_info.json', 'w') as jsonfile:
             json.dump(basic_info, jsonfile, indent=2)
 
         # Collect traces (raw invocation tree)
-        collect_trace(tx_hash, chain, folder_prefix)
+        endpoint_idx = collect_trace(tx_hash, chain, endpoint_idx, folder_prefix)
 
         # Decode trace JSON and extract information from invocation tree
         decode_trace_json(folder_prefix)
 
         # According to the decoded invocation tree, get token flow and balance changes.
-        collect_token(time_stamp, chain, folder_prefix)
+        endpoint_idx = collect_token(time_stamp, chain, endpoint_idx, folder_prefix)
 
 if __name__ == "__main__":
         parser = argparse.ArgumentParser()

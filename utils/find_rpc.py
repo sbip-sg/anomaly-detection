@@ -20,10 +20,7 @@ RPC_ENDPOINTS = {
     "base": "https://developer-access-mainnet.base.org"
 }
 
-endpoint_idx = 0
-
-def endpoint_by_chain(chain):
-    global endpoint_idx
+def endpoint_by_chain(chain, endpoint_idx):
     if chain in RPC_ENDPOINTS.keys():
         endpoint = RPC_ENDPOINTS[chain]
     else:
@@ -31,13 +28,12 @@ def endpoint_by_chain(chain):
     endpoints = endpoint if type(endpoint) == list else [endpoint]
     if endpoint_idx >= len(endpoints):
         raise ValueError('No more endpoint available for this chain: ' + chain)
-    return endpoints[endpoint_idx]
+    return endpoints[endpoint_idx], endpoint_idx
 
-def handle_error(chain):
-    global endpoint_idx
+def handle_error(chain, endpoint_idx):
     endpoint = RPC_ENDPOINTS[chain]
     if endpoint_idx +1 < len(endpoint):
         endpoint_idx += 1
-        return True
+        return endpoint_idx
     else:
         raise ValueError('No more endpoint available for this chain: ' + chain)

@@ -15,17 +15,18 @@ def cast_run(rpc_url, txhash, output):
         r.check_returncode()
         return json.load(open(output))
 
-def collect_trace(transaction_hash, chain, folder_prefix="result"):
+def collect_trace(transaction_hash, chain, endpoint_idx, folder_prefix="result"):
         # Create a directory if it doesn't exist
         output_directory = folder_prefix + '/trace_json'
         os.makedirs(output_directory, exist_ok=True)
         filename = os.path.join(output_directory, f"trace_{transaction_hash}.json")
-        rpc = endpoint_by_chain(chain)
+        rpc = endpoint_by_chain(chain, endpoint_idx)
         try:
                 # Initialize Web3 instance with the RPC provider
                 cast_run(rpc, transaction_hash, filename)
         except Exception as e:
-                handle_error(chain)
-                rpc = endpoint_by_chain(chain)
+                endpoint_idx = handle_error(chain, endpoint_idx)
+                rpc = endpoint_by_chain(chain, endpoint_idx)
                 print(f'Error processing request: {e}\n retry ... ')
         print('trace_finished', transaction_hash)
+        return endpoint_idx

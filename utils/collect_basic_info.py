@@ -17,8 +17,8 @@ def convert(obj):
 
 
 # Function to collect transaction information and return as a DataFrame
-def collect_info(transaction_hash, chain):
-	rpc = endpoint_by_chain(chain)
+def collect_info(transaction_hash, chain, endpoint_idx):
+	rpc, endpoint_idx = endpoint_by_chain(chain, endpoint_idx)
 	while True:
 		try:
 			# Initialize Web3 instance with the RPC provider
@@ -31,8 +31,8 @@ def collect_info(transaction_hash, chain):
 			break
 
 		except Exception as e:
-			handle_error(chain)
-			rpc = endpoint_by_chain(chain)
+			endpoint_idx = handle_error(chain, endpoint_idx)
+			rpc = endpoint_by_chain(chain, endpoint_idx)
 			print(f'Error processing request: {e}\n retry ... ')
 
 	try:
