@@ -236,7 +236,7 @@ def collect_token(timestamp_dict, chain, rpc, folder_prefix):
 						                             amount / pow(10, decimal), flow)
 
 					# event name as deposit refers to token deposit
-					elif event_name.lower() == 'deposit':
+					elif event_name.lower() == 'deposit' and len(input) < 3:
 						currency, decimal = get_currency(memory['last_call_to'], w3)
 						to_address = input[0]
 						if len(trace['data']) == 2:
