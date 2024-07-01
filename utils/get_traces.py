@@ -20,13 +20,15 @@ def collect_trace(transaction_hash, chain, endpoint_idx, folder_prefix="result")
         output_directory = folder_prefix + '/trace_json'
         os.makedirs(output_directory, exist_ok=True)
         filename = os.path.join(output_directory, f"trace_{transaction_hash}.json")
-        rpc = endpoint_by_chain(chain, endpoint_idx)
-        try:
-                # Initialize Web3 instance with the RPC provider
-                cast_run(rpc, transaction_hash, filename)
-        except Exception as e:
-                endpoint_idx = handle_error(chain, endpoint_idx)
-                rpc = endpoint_by_chain(chain, endpoint_idx)
-                print(f'Error processing request: {e}\n retry ... ')
-        print('trace_finished', transaction_hash)
+        rpc, endpoint_idx = endpoint_by_chain(chain, endpoint_idx)
+        while True:
+                try:
+                        # Initialize Web3 instance with the RPC provider
+                        cast_run(rpc, transaction_hash, filename)
+                        break
+                except Exception as e:
+                        endpoint_idx = handle_error(chain, endpoint_idx)
+                        rpc, endpoint_idx = endpoint_by_chain(chain, endpoint_idx)
+                        print(f'Error processing request: {e}\n retry ... ')
+                print('trace_finished', transaction_hash)
         return endpoint_idx

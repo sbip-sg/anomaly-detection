@@ -32,9 +32,15 @@ def collect_info(transaction_hash, chain, endpoint_idx):
 
 		except Exception as e:
 			endpoint_idx = handle_error(chain, endpoint_idx)
-			rpc = endpoint_by_chain(chain, endpoint_idx)
+			rpc, endpoint_idx = endpoint_by_chain(chain, endpoint_idx)
 			print(f'Error processing request: {e}\n retry ... ')
-
+	# Initialize Web3 instance with the RPC provider
+	w3 = Web3(Web3.HTTPProvider(rpc))
+	w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+	# Get transaction details
+	transaction = w3.eth.get_transaction(transaction_hash)
+	# Get transaction receipt
+	receipt = w3.eth.get_transaction_receipt(transaction_hash)
 	try:
 		timestamp = w3.eth.get_block(transaction['blockNumber'])['timestamp']
 	except Exception as e:
@@ -60,4 +66,4 @@ def collect_info(transaction_hash, chain, endpoint_idx):
 	}
 
 	# Return the DataFrame containing transaction information
-	return transaction_data, timestamp
+	return transaction_data, timestamp, endpoint_idx

@@ -33,7 +33,7 @@ chain_dict = {
 def get_currency(hash, chain, endpoint_idx):
 	hash = hash.lower()
 	if hash not in currency_dict.keys():
-		rpc = endpoint_by_chain(chain, endpoint_idx)
+		rpc, endpoint_idx = endpoint_by_chain(chain, endpoint_idx)
 		w3 = Web3(Web3.HTTPProvider(rpc))
 		try:
 			address = Web3.to_checksum_address(hash)
