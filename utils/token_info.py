@@ -3,7 +3,6 @@ import pandas as pd
 from os import listdir
 from web3 import Web3
 from utils.get_rate import get_rate
-from utils.find_rpc import endpoint_by_chain
 
 # Abi file to call contract for symbol and decimals
 abi_file = open("utils/erc20.abi.json")
@@ -30,10 +29,9 @@ chain_dict = {
 }
 
 # Get the currency symbol and decimals by the contract
-def get_currency(hash, chain, endpoint_idx):
+def get_currency(hash, rpc):
 	hash = hash.lower()
-	if hash not in currency_dict.keys():
-		rpc, endpoint_idx, loop = endpoint_by_chain(chain, endpoint_idx, False)
+	if hash not in currency_dict:
 		w3 = Web3(Web3.HTTPProvider(rpc))
 		try:
 			address = Web3.to_checksum_address(hash)
@@ -178,17 +176,17 @@ def remove_zeros(total_dict):
 	return total_dict
 
 # collect tokens from decoded invocation tree
-def collect_token(time_stamp, chain, endpoint_idx, folder_prefix):
+def collect_token(time_stamp, edpool, folder_prefix):
 	
 	# collect balance change of each transaction
 	total_dict = {}
 
 	# get the default token name
-	token = chain_dict[chain]
+	token = chain_dict[edpool.chain]
 
 	# collect token flows of each transaction
 	flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
-	
+	rpc = edpool.endpoint_by_chain()
 	jsonlist = listdir(folder_prefix + '/invocation_tree')
 	for i in jsonlist:
 		file = open(folder_prefix + '/invocation_tree/' + i)
@@ -216,11 +214,11 @@ def collect_token(time_stamp, chain, endpoint_idx, folder_prefix):
 
 					# event name as transfer refers to token transfer
 					if event_name.lower() == 'transfer':
-						currency, decimal = get_currency(memory['last_call_to'], chain, endpoint_idx)
+						currency, decimal = get_currency(memory['last_call_to'], rpc)
 						if currency == memory['last_call_to']:
-							currency, decimal = get_currency(memory['last_call_from'], chain, endpoint_idx)
+							currency, decimal = get_currency(memory['last_call_from'], rpc)
 						if currency == memory['last_call_from']:
-							currency, decimal = get_currency(memory['last_call_to'], chain, endpoint_idx)
+							currency, decimal = get_currency(memory['last_call_to'], rpc)
 						from_address, to_address, amount =  find_address_transfer_event(trace, input, memory)
 						value = amount/pow(10, decimal)
 						summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
@@ -228,7 +226,7 @@ def collect_token(time_stamp, chain, endpoint_idx, folder_prefix):
 
 					# event name as withdrawal refers to token withdraw
 					elif event_name.lower() == 'withdrawal':
-						currency, decimal = get_currency(memory['last_withdraw'], chain, endpoint_idx)
+						currency, decimal = get_currency(memory['last_withdraw'], rpc)
 						from_address = input[0]
 						if len(trace['data']) == 2:
 							amount = trace['data'][1]
@@ -239,7 +237,7 @@ def collect_token(time_stamp, chain, endpoint_idx, folder_prefix):
 
 					# event name as deposit refers to token deposit
 					elif event_name.lower() == 'deposit' and len(input) < 3:
-						currency, decimal = get_currency(memory['last_call_to'], chain, endpoint_idx)
+						currency, decimal = get_currency(memory['last_call_to'], rpc)
 						to_address = input[0]
 						if len(trace['data']) == 2:
 							amount = trace['data'][1]

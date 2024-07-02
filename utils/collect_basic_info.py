@@ -1,7 +1,6 @@
 from requests.exceptions import HTTPError
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
-from utils.find_rpc import endpoint_by_chain, handle_error
 
 # Function to recursively convert bytes to hexadecimal, lists, and dictionaries
 def convert(obj):
@@ -17,8 +16,8 @@ def convert(obj):
 
 
 # Function to collect transaction information and return as a DataFrame
-def collect_info(transaction_hash, chain, endpoint_idx):
-	rpc, endpoint_idx, loop = endpoint_by_chain(chain, endpoint_idx, False)
+def collect_info(transaction_hash, edpool):
+	rpc = edpool.endpoint_by_chain()
 	while True:
 		try:
 			# Initialize Web3 instance with the RPC provider
@@ -31,14 +30,13 @@ def collect_info(transaction_hash, chain, endpoint_idx):
 			break
 
 		except HTTPError as e:
-			endpoint_idx = handle_error(chain, endpoint_idx)
-			rpc, endpoint_idx,loop = endpoint_by_chain(chain, endpoint_idx, loop)
-			print(f'Error processing request: {e}\n retry ... ')
 			# Handle HTTP errors
+			rpc = edpool.mark_endpoint_broken(rpc)
+			print(f'Error processing request: {e}\n retry ... ')
 
 		except Exception as e:
-			raise RuntimeError(f"An unexpected error occurred: {e}")
 			# Handle other unexpected exceptions
+			raise RuntimeError(f"An unexpected error occurred: {e}")
 	try:
 		timestamp = w3.eth.get_block(transaction['blockNumber'])['timestamp']
 	except Exception as e:
@@ -64,4 +62,4 @@ def collect_info(transaction_hash, chain, endpoint_idx):
 	}
 
 	# Return the DataFrame containing transaction information
-	return transaction_data, timestamp, endpoint_idx
+	return transaction_data, timestamp
