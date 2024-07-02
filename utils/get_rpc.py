@@ -1,0 +1,60 @@
+# Choose endpoint according to transaction chain
+# Plans:
+#   1, Because this one can be set for only getting basic information and token symbol, we only need stable endpoints.
+#   For foundry, we can choose multi-endpoints.
+#   2, For rare chains, we need more testing.
+import time
+
+
+class EndpointPool:
+    cooldown_time_secs = 60
+    # a dict from chain -> a set of endpoints
+    usable_endpoints = {
+        "eth": [
+            "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+            "https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134",
+        ],
+        "optimism": "https://op-pokt.nodies.app",
+        "fantom": "https://rpc.ftm.tools",
+        "arbitrum": "https://rpc.ankr.com/arbitrum",
+        "bsc": "https://bscrpc.com",
+        "moonriver": "https://moonriver.public.blastapi.io",
+        "gnosis": "https://gnosis-rpc.publicnode.com",
+        "avalanche": "https://avalanche.drpc.org",
+        "polygon": "https://rpc.ankr.com/polygon",
+        "celo": "https://1rpc.io/celo",
+        "base": "https://developer-access-mainnet.base.org"
+    }
+
+    reloaded = False
+
+    broken_endpoints = {}
+    def __init__(self, chain):
+        self.chain = chain
+        endpoint = self.usable_endpoints.get(chain, {})
+        self.endpoints = endpoint if type(endpoint) == list else [endpoint]
+        self.broken_endpoints[chain] = []
+    def mark_endpoint_broken(self, endpoint):
+        '''Mark the endpoint as broken at the current timestamp.'''
+        self.endpoints.remove(endpoint)
+        self.broken_endpoints[self.chain].append(endpoint)
+
+        return self.endpoint_by_chain()
+
+
+    def reload_endpoint(self):
+        '''Put the broken endpoints back to the usable endpoint, if the cooldown time has passed'''
+        if self.reloaded:
+            raise ValueError('No more endpoint available for this chain: ' + self.chain)
+        else:
+            self.endpoints = self.usable_endpoints.get(self.chain, {})
+            self.reloaded = True
+            time.sleep(self.cooldown_time_secs)
+
+    def endpoint_by_chain(self):
+
+        '''Get first available endpoint to use, or raise `FindEndpointException` if no more usable endpoint available'''
+        if not self.endpoints:
+            self.reload_endpoint()
+
+        return next(iter(self.endpoints))
