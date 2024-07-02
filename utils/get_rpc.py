@@ -4,6 +4,7 @@
 #   For foundry, we can choose multi-endpoints.
 #   2, For rare chains, we need more testing.
 import time
+import random
 
 
 class EndpointPool:
@@ -53,8 +54,6 @@ class EndpointPool:
             if now - self.broken_endpoints[self.chain][endpoint] > self.cooldown_time_secs:
                 self.endpoints.append(endpoint)
 
-        return True
-
     def endpoint_by_chain(self):
         
         '''Get first available endpoint to use, or raise `FindEndpointException` if no more usable endpoint available'''
@@ -63,4 +62,4 @@ class EndpointPool:
             if not self.endpoints:
                 raise ValueError('no more endpoint available for this chain: ' + self.chain)
 
-        return next(iter(self.endpoints))
+        return random.choice(self.endpoints)
