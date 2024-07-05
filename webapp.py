@@ -1,8 +1,14 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask import Flask, Request, Response, request, jsonify, render_template, redirect, url_for
 from flask_cors import CORS
+import requests
+from dotenv import load_dotenv
 import os
 import json
 import traceback
+
+load_dotenv()
+
+TURNSTILE_SECRET_KEY = os.environ['TURNSTILE_SECRET_KEY']
 
 app = Flask(__name__)
 CORS(app)
@@ -19,6 +25,31 @@ def try_read_as_json(path):
 
 def should_overwrite(request):
     return request.values.get('overwrite', 'false').lower() in {'on', 'true', '1', 't', 'y', 'yes'}
+
+
+def validate_turnstile(request: Request):
+    '''Returns a response if the Turnstile token is invalid. Otherwise, returns None.'''
+    token = request.values.get('cf-turnstile-response')
+    ip = request.headers.get('CF-Connecting-IP')
+
+    print(f'Validating Turnstile token {token} from IP {ip}')
+
+    # Validate the token by calling the "/siteverify" API.
+    form_data = {
+        'secret': TURNSTILE_SECRET_KEY,
+        'response': token,
+        'remoteip': ip
+    }
+
+    result = requests.post('https://challenges.cloudflare.com/turnstile/v0/siteverify', data=form_data)
+    outcome = result.json()
+
+    if not outcome.get('success'):
+        print(f'The provided Turnstile token {token} was not valid! \n{outcome} \n {request}')
+        return Response('The provided Turnstile token was not valid! \n' + str(outcome), status=403)
+
+    return None
+
 
 @app.template_filter('formatjson')
 def formatjson_filter(data):
@@ -57,10 +88,14 @@ def index():
     return render_template('index.html', results=results)
 
 
-@app.route('/process', methods=['GET'])
+@app.route('/process', methods=['GET', 'POST'])
 def process():
+    err = validate_turnstile(request)
+    if err:
+        return err
+
     chain = request.values.get('chain', 'eth')
-    tx_hash = request.args.get('txhash')
+    tx_hash = request.values.get('txhash')
     overwrite = should_overwrite(request)
     if not tx_hash:
         return jsonify({"error": "Transaction hash is required"}), 400

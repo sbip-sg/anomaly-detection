@@ -14,6 +14,14 @@ pip install -r requirements.txt
 
 This project needs a signature db to decode the events and functions. Please copy the db folder from here. https://github.com/sbip-sg/evm-signature-database. *Currently only works on Linux.*
 
+## Start backend server
+
+``` bash
+# Copy and edit the env file
+cp env-example .env
+python webapp.py
+```
+
 ## How to set input data?
 
 The input data is transaction hash starting with "0x".

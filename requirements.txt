@@ -6,3 +6,4 @@ ccxt==4.2.45
 flask
 flask-cors
 leveldb
+python-dotenv
