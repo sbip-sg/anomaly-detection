@@ -22,6 +22,23 @@ cp env-example .env
 python webapp.py
 ```
 
+## Turnstile configuration
+
+Configure the following to make the turnstile work properly.
+
+From the CloudFlare dashboard:
+
+- allowed domain(s): https://developers.cloudflare.com/turnstile/concepts/domain-management/
+- Widge mode is set to `Invisible`
+- Get the siteKey and secret
+
+
+Set the following,
+
+- `siteKey` in the frontend
+- `secret` in the backend, to be used for validating the request
+
+
 ## How to set input data?
 
 The input data is transaction hash starting with "0x".
