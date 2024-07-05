@@ -1,3 +1,8 @@
-web3
-eth-utils
+pandas==2.2.0
+requests
+web3==5.31.4
+eth-abi==2.2.0
+ccxt==4.2.45
+flask
+flask-cors
 leveldb
