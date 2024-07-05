@@ -2,6 +2,7 @@
 
 Anomaly detection for transaction logs on ETH-family blockchains.
 
+
 ## Install dependencies
 Tested on Python 3.10, other versions may work but are not guaranteed. To use anaconda, you can create a new environment and install dependencies:
 
@@ -31,3 +32,4 @@ Open result folder. Basic_info.csv is the basic information of transactions.
 Folder event_json stores json files containing raw event data. Folder decoded_eventstores json files containing decoded event data. For traces, they are similarly stored.
 
 File balance.json stores balance changes of transactions in a dictionary. Keys are transaction hash, values are dictionary storing balance changes of each address. File othertoken.json is a intermediate product and you can delete it.
+
