@@ -1,0 +1,14 @@
+db/
+.idea/
+.vscode/
+.venv*/
+venv*/
+__pycache__/
+**/__pycache__/
+*.pyc
+dist/
+.coverage*
+htmlcov/
+.tox/
+docs/_build/
+result/
