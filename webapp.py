@@ -1,16 +1,17 @@
-from flask import Flask, Request, Response, request, jsonify, render_template, redirect, url_for
+from flask import Flask, Request, Response, request, jsonify, render_template, send_from_directory, render_template
 from flask_cors import CORS
 import requests
 from dotenv import load_dotenv
 import os
 import json
 import traceback
+import werkzeug
 
 load_dotenv()
 
 TURNSTILE_SECRET_KEY = os.environ['TURNSTILE_SECRET_KEY']
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='build')
 CORS(app)
 
 from pipeline import main as process_request
@@ -70,8 +71,9 @@ def get_results(tx_hash, chain, overwrite):
     }
     return results
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
+
+@app.route('/debug', methods=['GET', 'POST'])
+def debug_handler():
     chain = request.values.get('chain', 'eth')
     overwrite = should_overwrite(request)
     if request.method == 'POST':
@@ -104,6 +106,19 @@ def process():
     if "error" in results:
         return jsonify(results), 500
     return jsonify(results)
+
+
+
+@app.route('/')
+def index_handler():
+    return send_from_directory('build', 'index.html')
+
+@app.route('/<path:filename>')
+def static_files(filename):
+    try:
+        return send_from_directory('build', filename)
+    except werkzeug.exceptions.NotFound:
+        return send_from_directory('build', 'index.html')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
