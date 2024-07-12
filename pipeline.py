@@ -2,10 +2,13 @@ import os
 import argparse
 from utils.collect_basic_info import collect_info
 from utils.get_traces import collect_trace
+from utils.get_debug_traces import collect_debug_trace
 from utils.decode_trace import decode_trace_json
 from utils.token_info import collect_token
 from utils.get_rpc import EndpointPool
 import json
+
+debug_available = []
 
 # Get transaction information by hash
 def main(tx_hash, chain, overwrite=False):
@@ -26,10 +29,13 @@ def main(tx_hash, chain, overwrite=False):
 
         # Save basic information
         with open(folder_prefix + '/basic_info.json', 'w') as jsonfile:
-            json.dump(basic_info, jsonfile, indent=2)
+                json.dump(basic_info, jsonfile, indent=2)
 
-        # Collect traces (raw invocation tree)
-        collect_trace(tx_hash, edpool, folder_prefix)
+        if chain in debug_available:
+                # Collect traces (raw invocation tree)
+                collect_debug_trace(tx_hash, edpool, folder_prefix)
+        else:
+                collect_trace(tx_hash, edpool, folder_prefix)
 
         # Decode trace JSON and extract information from invocation tree
         decode_trace_json(folder_prefix)
