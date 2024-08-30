@@ -19,7 +19,7 @@ api_profile = '/api/v1/onchain/tx/profile'
 
 # parse command-line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('outfile', type=str, help='CSV file to write created contract addresses', required=True)
+parser.add_argument('outfile', type=str, help='CSV file to write created contract addresses')
 parser.add_argument('--web3-provider-url', type=str, help='Web3 provider url', required=True)
 args = parser.parse_args()
 
