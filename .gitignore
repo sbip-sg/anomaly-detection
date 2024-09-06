@@ -14,4 +14,4 @@ docs/_build/
 result/
 /build/
 /db
-scripts/flashloan-test/.ipynb_checkpoints/detection-checkpoint.ipynb
+scripts/flashloan-test/.ipynb_checkpoints/**
