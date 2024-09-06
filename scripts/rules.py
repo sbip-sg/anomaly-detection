@@ -115,7 +115,9 @@ def has_flashloan(transaction):
             if function_name.lower() == 'flashLoan':
                 params = (f.get('decodedMethod') or {}).get('callParams', '')
                 for parameter in params:
-                    if 'recipient' in (parameter or {}).get('name', '').lower() or 'receiver' in (parameter or {}).get('name', '') or 'to' in (parameter or {}).get('name', '').lower():
+                    if ('recipient' in (parameter or {}).get('name', '').lower()
+                            or 'receiver' in (parameter or {}).get('name', '')
+                            or 'to' in (parameter or {}).get('name', '').lower()):
                         if  (parameter or {}).get('value', '') not in address_list:
                             # Assume param['value'] can be a single value or a list
                             value = (parameter or {}).get('value', '')
@@ -123,8 +125,7 @@ def has_flashloan(transaction):
                             # Check if the value is a list
                             if isinstance(value, list):
                                 # Append the first element of the list
-                                for v in value:
-                                    address_list.append(v)
+                                address_list.append(value[0])
                             else:
                                 # Append the value directly if it's not a list
                                 address_list.append(value)
