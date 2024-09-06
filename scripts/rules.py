@@ -103,8 +103,6 @@ def has_flashloan(transaction):
     data_map = trace['dataMap']
     ids = [int(id) for id in data_map.keys()]
     ids = sorted(ids)
-    possible_hack = False
-
 
     for id in ids:
         t = trace['dataMap'][str(id)]
@@ -113,16 +111,12 @@ def has_flashloan(transaction):
         elif 'invocation' in t:
             f = t['invocation']
             function_name = (f.get('decodedMethod') or {}).get('name', '')
-            if function_name.lower() == 'flashLoan':
-                possible_hack = True
-                break
+            if function_name.lower() == 'flashloan':
+                print(f'Flashloan detected in {txhash}')
+                return transaction
         else:
             print(f"Unknown trace type: {t}")
 
-
-    if possible_hack:
-        print(f'Flashloan detected in {txhash}')
-        return transaction
 
     return None
 
