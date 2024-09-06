@@ -5,6 +5,9 @@ import os
 import json
 from web3 import Web3
 
+SOCKS5_PORT = os.environ.get('USE_SOCKS5_PORT')
+
+
 def md5(string):
     md5_hash = hashlib.md5(string.encode())
     return md5_hash.hexdigest()
@@ -46,7 +49,14 @@ api_address_label = '/v1/onchain/tx/address-label'
 api_state_change = '/api/v1/onchain/tx/state-change'
 api_profile = '/api/v1/onchain/tx/profile'
 
-proxies = {}
+if SOCKS5_PORT:
+    proxies = {
+        'http': f'socks5h://localhost:{SOCKS5_PORT}',
+        'https': f'socks5h://localhost:{SOCKS5_PORT}'
+    }
+else:
+    proxies = {}
+
 
 @wrap_cache()
 def fetch_phalcon_data(txhash, uri, chain_id=1, data=None, timeout=10):
@@ -111,9 +121,10 @@ def has_flashloan(transaction):
 
 
     if possible_hack:
-        print(f'Flashload detected in {txhash}')
+        print(f'Flashloan detected in {txhash}')
+        return transaction
 
-    return transaction
+    return None
 
 def has_min_gas(transaction):
     assert transaction is not None
