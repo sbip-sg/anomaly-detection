@@ -91,7 +91,6 @@ def fetch_phalcon_data(txhash, uri, chain_id=1, data=None, timeout=10):
 def has_cyclic_calls(transaction):
     pass
 
-
 def has_flashloan(transaction):
     if transaction is None:
         return
@@ -104,7 +103,7 @@ def has_flashloan(transaction):
     data_map = trace['dataMap']
     ids = [int(id) for id in data_map.keys()]
     ids = sorted(ids)
-    address_list = []
+
     for id in ids:
         t = trace['dataMap'][str(id)]
         if 'event' in t:
@@ -112,57 +111,14 @@ def has_flashloan(transaction):
         elif 'invocation' in t:
             f = t['invocation']
             function_name = (f.get('decodedMethod') or {}).get('name', '')
-            if function_name.lower() == 'flashLoan':
-                params = (f.get('decodedMethod') or {}).get('callParams', '')
-                for parameter in params:
-                    if 'recipient' in (parameter or {}).get('name', '').lower() or 'receiver' in (parameter or {}).get('name', '') or 'to' in (parameter or {}).get('name', '').lower():
-                        if  (parameter or {}).get('value', '') not in address_list:
-                            # Assume param['value'] can be a single value or a list
-                            value = (parameter or {}).get('value', '')
-
-                            # Check if the value is a list
-                            if isinstance(value, list):
-                                # Append the first element of the list
-                                for v in value:
-                                    address_list.append(v)
-                            else:
-                                # Append the value directly if it's not a list
-                                address_list.append(value)
-
             if function_name.lower() == 'flashloan':
                 print(f'Flashloan detected in {txhash}')
                 return transaction
         else:
             print(f"Unknown trace type: {t}")
 
-    if len(address_list) != 0:
-        balance_change = fetch_phalcon_data(txhash, api_balance_change)
-        balance = (balance_change or {}).get('balanceChanges', '')
-        possiblelist = []
-        for accountdict in balance:
-            if (accountdict or {}).get('account', '') in address_list:
-                assets = (address_list or {}).get('assets', '')
-                possible = False
-                signs = []
-                for asset in assets:
-                    # sign means income(True) and outcome(False)
-                    sign = (asset or {}).get('sign', '')
-                    if sign not in signs:
-                        signs.append(sign)
-                if len(signs) == 1:
-                    possible = signs[0]
-                    # Possiblelist is the possibilities of all receiver accounts
-                possiblelist.append(possible)
-        possibility = 0
-        if len(possiblelist) != 0:
-            possibility = sum(possiblelist) / len(possiblelist)
-        if possibility > 0.5:
-            print(f'Flashloan detected in {txhash}')
-            return True
-        else:
-            return False
 
-    return False
+    return None
 
 def has_min_gas(transaction):
     assert transaction is not None
