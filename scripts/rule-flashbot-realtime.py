@@ -20,13 +20,6 @@ args = parser.parse_args()
 outfile = args.outfile
 WEB3_PROVIDER_URL = args.web3_provider_url
 
-# proxies = {
-#     'http': 'socks5h://localhost:9050',
-#     'https': 'socks5h://localhost:9050'
-# }
-
-proxies = None
-
 if not os.path.exists(outfile):
     print(f"Creating file {outfile}")
     output = open(args.outfile, 'a')
