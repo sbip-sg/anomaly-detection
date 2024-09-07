@@ -4,6 +4,7 @@ from pathlib import Path
 import os
 import json
 from web3 import Web3
+from itertools import chain
 
 SOCKS5_PORT = os.environ.get('USE_SOCKS5_PORT')
 
@@ -138,6 +139,75 @@ def has_min_gas(transaction):
         return transaction
 
     return None
+
+def get_address(transaction):
+    if transaction is None:
+        return
+    txhash = transaction['hash']
+    sender = transaction['from'].lower()
+    receiver = transaction['to'].lower()
+
+    if type(txhash) != str:
+        txhash = txhash.hex()
+
+    trace = fetch_phalcon_data(txhash, api_trace_uri)
+
+    data_map = trace['dataMap']
+    ids = [int(id) for id in data_map.keys()]
+    ids = sorted(ids)
+
+    address_list = [sender, receiver]
+
+    for id in ids:
+        t = trace['dataMap'][str(id)]
+        if 'event' in t:
+            pass # ignore event in this detector
+        elif 'invocation' in t:
+            f = t['invocation']
+            function_name = (f.get('decodedMethod') or {}).get('name', '')
+            if function_name.lower() == 'flashLoan':
+                params = (f.get('decodedMethod') or {}).get('callParams', '')
+                for parameter in params:
+                    if 'recipient' in (parameter or {}).get('name', '').lower() or 'receiver' in (parameter or {}).get(
+                            'name', '') or 'to' in (parameter or {}).get('name', '').lower():
+                        if (parameter or {}).get('value', '') not in address_list:
+                            # Assume param['value'] can be a single value or a list
+                            value = (parameter or {}).get('value', '')
+
+                            # Check if the value is a list
+                            if isinstance(value, list) and value[0] not in address_list:
+                                # Append the first element of the list
+                                address_list.append(value[0])
+                            elif value not in address_list:
+                                # Append the value directly if it's not a list
+                                address_list.append(value)
+    return address_list
+
+def check_addresslist(txhash, address_list):
+    balance_change = fetch_phalcon_data(txhash, api_balance_change)
+    balance_dict = {}
+    for address in address_list:
+        address_balance_change = [c['assets'] for c in balance_change['balanceChanges'] if c['account'] == address]
+        address_balance_change = list(chain.from_iterable(address_balance_change))  # flatten
+        address_usd_change = sum([(1 if c['sign'] else -1) * float(c['value'].replace(',', '') or 0) for c in
+                                 address_balance_change])  # ignores asset with unknown values
+        if address:
+            balance_dict[address] = address_usd_change
+
+    sender = address_list[0]
+    receiver = address_list[1]
+
+    if sender in balance_dict and balance_dict[sender] >= 10000:
+        return True
+    if receiver in balance_dict and balance_dict[receiver] >= 10000:
+        return True
+    for flashloanReceiver in address_list[2:]:
+        if flashloanReceiver in balance_dict and balance_dict[flashloanReceiver] >= 10000:
+            return True
+    return False
+
+
+
 
 @wrap_cache(keyfn=lambda _, x: x)
 def get_trancaction_by_hash(web3, txhash):
