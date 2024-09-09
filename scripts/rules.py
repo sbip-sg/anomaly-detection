@@ -145,7 +145,10 @@ def get_address(transaction):
         return
     txhash = transaction['hash']
     sender = transaction['from'].lower()
-    receiver = transaction['to'].lower()
+    if transaction['to']:
+        receiver = transaction['to'].lower()
+    else:
+        receiver = 'null'
 
     if type(txhash) != str:
         txhash = txhash.hex()
@@ -183,7 +186,9 @@ def get_address(transaction):
                                 address_list.append(value)
     return address_list
 
-def check_addresslist(txhash, address_list):
+def check_addresslist(transaction):
+    txhash = transaction['hash']
+    address_list = get_address(transaction)
     balance_change = fetch_phalcon_data(txhash, api_balance_change)
     balance_dict = {}
     for address in address_list:
