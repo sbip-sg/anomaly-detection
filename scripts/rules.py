@@ -8,7 +8,6 @@ from itertools import chain
 
 SOCKS5_PORT = os.environ.get('USE_SOCKS5_PORT')
 
-
 def md5(string):
     md5_hash = hashlib.md5(string.encode())
     return md5_hash.hexdigest()
@@ -140,7 +139,7 @@ def has_min_gas(transaction):
 
     return None
 
-def get_address(transaction):
+def get_sender_receiver(transaction):
     if transaction is None:
         return
     txhash = transaction['hash']
@@ -171,24 +170,25 @@ def get_address(transaction):
             if function_name.lower() == 'flashloan':
                 params = (f.get('decodedMethod') or {}).get('callParams', '')
                 for parameter in params:
-                    if 'recipient' in (parameter or {}).get('name', '').lower() or 'receiver' in (parameter or {}).get(
-                            'name', '') or 'to' in (parameter or {}).get('name', '').lower():
-                        if (parameter or {}).get('value', '') not in address_list:
+                    if not parameter:
+                        continue
+                    if 'recipient' in parameter['name'].lower() or 'receiver' in parameter[
+                            'name'] or 'to' in parameter['name'].lower():
+                        if parameter['value'] not in address_list:
                             # Assume param['value'] can be a single value or a list
-                            value = (parameter or {}).get('value', '')
+                            value = parameter['value']
 
                             # Check if the value is a list
-                            if isinstance(value, list) and value[0] not in address_list:
-                                # Append the first element of the list
-                                address_list.append(value[0])
-                            elif value not in address_list:
-                                # Append the value directly if it's not a list
-                                address_list.append(value)
+                            if not value:
+                                continue
+                            addresses = [value] if isinstance(value, str) else value
+                            address_list += [address for address in addresses if address not in address_list]
+
     return address_list
 
 def check_addresslist(transaction):
     txhash = transaction['hash']
-    address_list = get_address(transaction)
+    address_list = get_sender_receiver(transaction)
     balance_change = fetch_phalcon_data(txhash, api_balance_change)
     balance_dict = {}
     for address in address_list:
@@ -199,20 +199,7 @@ def check_addresslist(transaction):
         if address:
             balance_dict[address] = address_usd_change
 
-    sender = address_list[0]
-    receiver = address_list[1]
-
-    if sender in balance_dict and balance_dict[sender] >= 10000:
-        return True
-    if receiver in balance_dict and balance_dict[receiver] >= 10000:
-        return True
-    for flashloanReceiver in address_list[2:]:
-        if flashloanReceiver in balance_dict and balance_dict[flashloanReceiver] >= 10000:
-            return True
-    return False
-
-
-
+    return any(x >= 10000 for x in balance_dict.values())
 
 @wrap_cache(keyfn=lambda _, x: x)
 def get_trancaction_by_hash(web3, txhash):
