@@ -168,7 +168,7 @@ def get_address(transaction):
         elif 'invocation' in t:
             f = t['invocation']
             function_name = (f.get('decodedMethod') or {}).get('name', '')
-            if function_name.lower() == 'flashLoan':
+            if function_name.lower() == 'flashloan':
                 params = (f.get('decodedMethod') or {}).get('callParams', '')
                 for parameter in params:
                     if 'recipient' in (parameter or {}).get('name', '').lower() or 'receiver' in (parameter or {}).get(
