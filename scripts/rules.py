@@ -4,9 +4,9 @@ from pathlib import Path
 import os
 import json
 from web3 import Web3
+from itertools import chain
 
 SOCKS5_PORT = os.environ.get('USE_SOCKS5_PORT')
-
 
 def md5(string):
     md5_hash = hashlib.md5(string.encode())
@@ -138,6 +138,68 @@ def has_min_gas(transaction):
         return transaction
 
     return None
+
+def get_sender_receiver(transaction):
+    if transaction is None:
+        return
+    txhash = transaction['hash']
+    sender = transaction['from'].lower()
+    if transaction['to']:
+        receiver = transaction['to'].lower()
+    else:
+        receiver = 'null'
+
+    if type(txhash) != str:
+        txhash = txhash.hex()
+
+    trace = fetch_phalcon_data(txhash, api_trace_uri)
+
+    data_map = trace['dataMap']
+    ids = [int(id) for id in data_map.keys()]
+    ids = sorted(ids)
+
+    address_list = [sender, receiver]
+
+    for id in ids:
+        t = trace['dataMap'][str(id)]
+        if 'event' in t:
+            pass # ignore event in this detector
+        elif 'invocation' in t:
+            f = t['invocation']
+            function_name = (f.get('decodedMethod') or {}).get('name', '')
+            if function_name.lower() == 'flashloan':
+                params = (f.get('decodedMethod') or {}).get('callParams', '')
+                for parameter in params:
+                    if not parameter:
+                        continue
+                    if 'recipient' in parameter['name'].lower() or 'receiver' in parameter[
+                            'name'] or 'to' in parameter['name'].lower():
+                        if parameter['value'] not in address_list:
+                            # Assume param['value'] can be a single value or a list
+                            value = parameter['value']
+
+                            # Check if the value is a list
+                            if not value:
+                                continue
+                            addresses = [value] if isinstance(value, str) else value
+                            address_list += [address for address in addresses if address not in address_list]
+
+    return address_list
+
+def check_addresslist(transaction):
+    txhash = transaction['hash']
+    address_list = get_sender_receiver(transaction)
+    balance_change = fetch_phalcon_data(txhash, api_balance_change)
+    balance_dict = {}
+    for address in address_list:
+        address_balance_change = [c['assets'] for c in balance_change['balanceChanges'] if c['account'] == address]
+        address_balance_change = list(chain.from_iterable(address_balance_change))  # flatten
+        address_usd_change = sum([(1 if c['sign'] else -1) * float(c['value'].replace(',', '') or 0) for c in
+                                 address_balance_change])  # ignores asset with unknown values
+        if address:
+            balance_dict[address] = address_usd_change
+
+    return any(x >= 10000 for x in balance_dict.values())
 
 @wrap_cache(keyfn=lambda _, x: x)
 def get_trancaction_by_hash(web3, txhash):

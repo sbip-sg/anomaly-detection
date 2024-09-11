@@ -2,7 +2,7 @@ import argparse
 from web3 import Web3
 import os, sys
 sys.path.insert(0, os.path.abspath(".."))
-from rules import get_trancaction_by_hash, has_flashloan, has_min_gas
+from rules import check_addresslist, get_trancaction_by_hash, has_flashloan, has_min_gas
 
 
 
@@ -27,7 +27,8 @@ def handle_transactions(transactions):
     for (txhash, transaction) in transactions:
         try:
             if has_flashloan(has_min_gas(transaction)):
-                detected.append(txhash)
+                if check_addresslist(transaction):
+                    detected.append(txhash)
         except KeyboardInterrupt:
             break
         except Exception as e:
