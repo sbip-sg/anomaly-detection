@@ -7,12 +7,30 @@ cast_bin = os.environ.get('CAST_BIN', 'cast')
 
 
 def cast_run(rpc_url, txhash, output):
-        print('Foundry Start')
-        r = subprocess.run([cast_bin, 'run', '-q', '-r', rpc_url, txhash, '--output', output], stdout=subprocess.DEVNULL,
-                       stderr=subprocess.DEVNULL, text=True, check=True)
-        print('Foundry End')
-        r.check_returncode()
-        return json.load(open(output))
+    print('Foundry Start')
+    # Define the command
+    command = [
+        'cast', 'run', txhash,
+        '-r', rpc_url,
+        '-q', '--decode-internal', '--with-state-changes', '-j'
+    ]
+
+    # Run the command and capture the output
+    result = subprocess.run(command, capture_output=True, text=True, check=True)
+
+    # Skip the first line of the output
+    output_lines = result.stdout.strip().split('\n')[1:]  # Skip the first line
+    filtered_output = '\n'.join(output_lines)  # Join the remaining lines
+    json_output = json.loads(filtered_output)
+
+    # Write the filtered output to a file
+    with open(output, 'w') as json_file:
+        json.dump(json_output, json_file, indent = 2)
+
+    # Return the loaded JSON from the filtered output
+    print('Foundry Start')
+
+    return json_output
 
 def collect_trace(transaction_hash, edpool, folder_prefix="result"):
         # Create a directory if it doesn't exist
