@@ -18,8 +18,15 @@ def cast_run(rpc_url, txhash, output):
     # Run the command and capture the output
     result = subprocess.run(command, capture_output=True, text=True, check=True)
 
-    # Skip the first line of the output
-    output_lines = result.stdout.strip().split('\n')[1:]  # Skip the first line
+    lines = result.stdout.strip().split('\n')
+    traces_index = -1
+
+    for index, line in enumerate(lines):
+        if 'Traces:' in line:
+            traces_index = index
+            break
+    output_lines = lines[traces_index+1:]
+    
     filtered_output = '\n'.join(output_lines)  # Join the remaining lines
     json_output = json.loads(filtered_output)
 
