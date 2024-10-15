@@ -34,7 +34,7 @@ def cast_run(rpc_url, txhash, raw, output):
     with open(raw, 'w') as raw_file:
         json.dump(json_output, raw_file, indent = 2)
 
-    formal_result = original_json(json_output)
+    formal_result = original_json(json_output['arena'])
 
     # Write the filtered output to a file
     with open(output, 'w') as json_file:

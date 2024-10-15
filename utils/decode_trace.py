@@ -137,12 +137,12 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["depth"] = trace["depth"]
 
                 # When foundry can decode it.
-                if trace['decoded']['func']:
-                    new_trace["function"] = trace['decoded']['func']['signature']
-                    new_trace["input"] = decode_input(new_trace["function"], trace['data'][8:])
+                if trace['decoded']['call_data']:
+                    new_trace["function"] = trace['decoded']['call_data']['signature']
+                    new_trace["input"] = decode_input(new_trace["function"], trace['data'][10:])
                 else:
-                    func_hash = trace['data'][:8]
-                    input_hash = trace['data'][8:]
+                    func_hash = trace['data'][2:10]
+                    input_hash = trace['data'][10:]
 
                     # Use function signature database to search for 4bytes
                     func_name = get_function_signature(func_hash)
