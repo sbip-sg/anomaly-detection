@@ -181,7 +181,7 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
 
             # If trace is a create log
-            elif trace['kind'].lower() == 'create':
+            elif trace['kind'].lower() == 'create' or trace['kind'].lower() == 'create2':
 
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]

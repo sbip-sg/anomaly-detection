@@ -31,8 +31,8 @@ def cast_run(rpc_url, txhash, raw, output):
     json_output = json.loads(filtered_output)
 
     # Write the filtered output to a file
-    with open(raw, 'w') as raw_file:
-        json.dump(json_output, raw_file, indent = 2)
+    #with open(raw, 'w') as raw_file:
+    #   json.dump(json_output, raw_file, indent = 2)
 
     formal_result = original_json(json_output['arena'])
 
@@ -48,7 +48,7 @@ def cast_run(rpc_url, txhash, raw, output):
 def collect_trace(transaction_hash, edpool, folder_prefix="result"):
         # Create a directory if it doesn't exist
         raw_directory = folder_prefix + '/raw_json'
-        os.makedirs(raw_directory, exist_ok=True)
+        # os.makedirs(raw_directory, exist_ok=True)
         output_directory = folder_prefix + '/trace_json'
         os.makedirs(output_directory, exist_ok=True)
         raw_filename = os.path.join(raw_directory, f"raw_{transaction_hash}.json")
