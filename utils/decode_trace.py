@@ -163,7 +163,7 @@ def decode_trace_json(folder_prefix="result"):
 
 
                 # When foundry can decode it.
-                if trace['decoded']:
+                if trace['decoded']['name']:
                     new_trace["function"] = trace['decoded']['name']
 
                 elif len(trace['raw']['topics']) != 0:
