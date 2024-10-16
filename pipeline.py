@@ -6,6 +6,7 @@ from utils.decode_trace import decode_trace_json
 from utils.token_info import collect_token
 from utils.get_rpc import EndpointPool
 from detect_utils.rule_cyclic_calls import detect_cyclic_transaction
+from detect_utils.rule_flashloan import detect_flashloan_transaction
 import json
 
 # Get transaction information by hash
@@ -40,6 +41,9 @@ def main(tx_hash, chain, overwrite=False):
 
         if detect_cyclic_transaction(tx_hash, chain):
                 print('Suspicious Reentrancy Attack Detected') # To be updated
+
+        if detect_flashloan_transaction(tx_hash, chain):
+                print('Suspicious Flashloan Attack Detected')  # To be updated
 
 if __name__ == "__main__":
         parser = argparse.ArgumentParser()
