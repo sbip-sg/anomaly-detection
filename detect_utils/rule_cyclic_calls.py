@@ -1,28 +1,8 @@
-import json
+from detect_utils.tools import collect_from_file, filter_transaction, check_balance
 
 MIN_CALL_LENGTH = 6 # the low the more false positives
 assert MIN_CALL_LENGTH > 1
 
-def collect_from_file(tx_hash, chain, filename):
-    folder_prefix = f'../result/{tx_hash}_{chain}'
-    with open(folder_prefix + filename) as input_json:
-        output_json = json.load(input_json)
-    return output_json
-
-def filter_transaction(basic_info):
-    gas_used = basic_info.get('gasUsed')
-    to_address = basic_info.get('to')
-    base_gas = 21000
-
-    if to_address is None:
-        # contract creation, assuming nobody hacks here
-        if gas_used > base_gas * 5: # TODO update this threshold if necessary
-            return True
-
-    if gas_used > base_gas * 10: # TODO update this threshold if necessary
-        return True
-
-    return False
 
 def has_cycle(xs):
     n = len(xs)
@@ -45,7 +25,6 @@ def detect_cyclic_transaction(tx_hash, chain):
         return False
 
     sender =  basic_info.get('from')
-    print(sender)
 
     trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
     functions = []
@@ -60,12 +39,6 @@ def detect_cyclic_transaction(tx_hash, chain):
 
     possible_hack = False
     if has_cycle(functions) is not None:
-        balance_change = collect_from_file(tx_hash, chain, '/balance.json')[tx_hash]
-        if sender in balance_change.keys():
-            sender_balance_change = balance_change.get(sender)
-            sender_usd_change = 0
-            for token in sender_balance_change:
-                sender_usd_change += sender_balance_change[token][1]
-            possible_hack = sender_usd_change > 10000 # 10k USD
+        possible_hack = check_balance(tx_hash, chain, sender)
 
     return possible_hack
