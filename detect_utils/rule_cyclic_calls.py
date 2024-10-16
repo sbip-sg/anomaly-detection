@@ -1,0 +1,71 @@
+import json
+
+MIN_CALL_LENGTH = 6 # the low the more false positives
+assert MIN_CALL_LENGTH > 1
+
+def collect_from_file(tx_hash, chain, filename):
+    folder_prefix = f'../result/{tx_hash}_{chain}'
+    with open(folder_prefix + filename) as input_json:
+        output_json = json.load(input_json)
+    return output_json
+
+def filter_transaction(basic_info):
+    gas_used = basic_info.get('gasUsed')
+    to_address = basic_info.get('to')
+    base_gas = 21000
+
+    if to_address is None:
+        # contract creation, assuming nobody hacks here
+        if gas_used > base_gas * 5: # TODO update this threshold if necessary
+            return True
+
+    if gas_used > base_gas * 10: # TODO update this threshold if necessary
+        return True
+
+    return False
+
+def has_cycle(xs):
+    n = len(xs)
+    for seq_len in range(2, n // 2 + 1):
+        for i in range(n - seq_len + 1):
+            subsequence = tuple(xs[i:i + seq_len])
+            remaining_calls = xs[i + seq_len:]
+
+            if len(subsequence) >= MIN_CALL_LENGTH and subsequence in zip(*[remaining_calls[j:] for j in range(seq_len)]):
+                return subsequence
+
+    return None
+
+# Detector containing two checks to be considered as possible hack:
+# 1. cyclic calls in transactions: each sequence of calls with minimum length MIN_CALL_LENGTH
+# 2. if the sender's balance changes by more than 10k USD
+def detect_cyclic_transaction(tx_hash, chain):
+    basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
+    if not filter_transaction(basic_info):
+        return False
+
+    sender =  basic_info.get('from')
+    print(sender)
+
+    trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
+    functions = []
+
+    for call in trace:
+        if call['type'] == 'event':
+            pass # ignore event in this detectorF
+        elif 'call' in call['type']:
+            functions.append((call['from'], call['to'], call['function']))
+        else:
+            print(f"Unknown trace type: {call['type']}")
+
+    possible_hack = False
+    if has_cycle(functions) is not None:
+        balance_change = collect_from_file(tx_hash, chain, '/balance.json')[tx_hash]
+        if sender in balance_change.keys():
+            sender_balance_change = balance_change.get(sender)
+            sender_usd_change = 0
+            for token in sender_balance_change:
+                sender_usd_change += sender_balance_change[token][1]
+            possible_hack = sender_usd_change > 10000 # 10k USD
+
+    return possible_hack
