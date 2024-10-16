@@ -112,7 +112,7 @@ def original_json(dictlist):
         new_trace = element['trace']
         new_call = {
             'from': address,
-            'to': new_trace['address'].lower()
+            'to': new_trace['address'].lower(),
             'depth': depth,
             'kind': new_trace['kind'].lower(),
             'success': new_trace['success'],
