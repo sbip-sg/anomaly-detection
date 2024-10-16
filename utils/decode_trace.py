@@ -137,12 +137,12 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["depth"] = trace["depth"]
 
                 # When foundry can decode it.
-                if trace['decoded']['func']:
-                    new_trace["function"] = trace['decoded']['func']['signature']
-                    new_trace["input"] = decode_input(new_trace["function"], trace['data'][8:])
+                if trace['decoded']['call_data']:
+                    new_trace["function"] = trace['decoded']['call_data']['signature']
+                    new_trace["input"] = decode_input(new_trace["function"], trace['data'][10:])
                 else:
-                    func_hash = trace['data'][:8]
-                    input_hash = trace['data'][8:]
+                    func_hash = trace['data'][2:10]
+                    input_hash = trace['data'][10:]
 
                     # Use function signature database to search for 4bytes
                     func_name = get_function_signature(func_hash)
@@ -163,7 +163,7 @@ def decode_trace_json(folder_prefix="result"):
 
 
                 # When foundry can decode it.
-                if trace['decoded']:
+                if trace['decoded']['name']:
                     new_trace["function"] = trace['decoded']['name']
 
                 elif len(trace['raw']['topics']) != 0:
@@ -181,7 +181,7 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
 
             # If trace is a create log
-            elif trace['kind'].lower() == 'create':
+            elif trace['kind'].lower() == 'create' or trace['kind'].lower() == 'create2':
 
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
