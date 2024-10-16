@@ -1,7 +1,7 @@
 import json
 
 def collect_from_file(tx_hash, chain, filename):
-    folder_prefix = f'../result/{tx_hash}_{chain}'
+    folder_prefix = f'result/{tx_hash}_{chain}'
     with open(folder_prefix + filename) as input_json:
         output_json = json.load(input_json)
     return output_json
