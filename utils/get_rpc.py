@@ -28,10 +28,12 @@ class EndpointPool:
     }
 
     broken_endpoints = {}
+
     def __init__(self, chain):
         self.chain = chain
         self.endpoints = self.usable_endpoints.get(chain, {})
         self.broken_endpoints[chain] = {}
+
     def mark_endpoint_broken(self, endpoint):
         '''Mark the endpoint as broken at the current timestamp.'''
         self.endpoints.remove(endpoint)
@@ -55,7 +57,7 @@ class EndpointPool:
                 self.endpoints.append(endpoint)
 
     def endpoint_by_chain(self):
-        
+
         '''Get first available endpoint to use, or raise `FindEndpointException` if no more usable endpoint available'''
         if not self.endpoints:
             self.reload_endpoint()

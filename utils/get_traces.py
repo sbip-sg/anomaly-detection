@@ -1,7 +1,7 @@
 # Function to collect transaction traces and save them as JSON files
-import subprocess
 import json
 import os
+import subprocess
 
 cast_bin = os.environ.get('CAST_BIN', 'cast')
 
@@ -11,8 +11,7 @@ def cast_run(rpc_url, txhash, raw, output):
     # Define the command
     command = [
         'cast', 'run', txhash,
-        '-r', rpc_url,
-        '-q', '--decode-internal', '--with-state-changes', '-j'
+        '-r', rpc_url, '--decode-internal', '--with-state-changes', '-j'
     ]
 
     # Run the command and capture the output
@@ -25,13 +24,13 @@ def cast_run(rpc_url, txhash, raw, output):
         if 'Traces:' in line:
             traces_index = index
             break
-    output_lines = lines[traces_index+1:]
-    
+    output_lines = lines[traces_index + 1:]
+
     filtered_output = '\n'.join(output_lines)  # Join the remaining lines
     json_output = json.loads(filtered_output)
 
     # Write the filtered output to a file
-    #with open(raw, 'w') as raw_file:
+    # with open(raw, 'w') as raw_file:
     #   json.dump(json_output, raw_file, indent = 2)
 
     formal_result = original_json(json_output['arena'])
@@ -45,30 +44,31 @@ def cast_run(rpc_url, txhash, raw, output):
 
     return formal_result
 
+
 def collect_trace(transaction_hash, edpool, folder_prefix="result"):
-        # Create a directory if it doesn't exist
-        raw_directory = folder_prefix + '/raw_json'
-        # os.makedirs(raw_directory, exist_ok=True)
-        output_directory = folder_prefix + '/trace_json'
-        os.makedirs(output_directory, exist_ok=True)
-        raw_filename = os.path.join(raw_directory, f"raw_{transaction_hash}.json")
-        filename = os.path.join(output_directory, f"trace_{transaction_hash}.json")
-        rpc = edpool.endpoint_by_chain()
-        while True:
-                try:
-                        # Initialize Web3 instance with the RPC provider
-                        cast_run(rpc, transaction_hash, raw_filename, filename)
-                        break
-                except subprocess.CalledProcessError as e:
-                        rpc = edpool.mark_endpoint_broken(rpc)
-                        print(f'Error processing request: {e}\n retry ... ')
-                        # Handle the CalledProcessError
+    # Create a directory if it doesn't exist
+    raw_directory = folder_prefix + '/raw_json'
+    # os.makedirs(raw_directory, exist_ok=True)
+    output_directory = folder_prefix + '/trace_json'
+    os.makedirs(output_directory, exist_ok=True)
+    raw_filename = os.path.join(raw_directory, f"raw_{transaction_hash}.json")
+    filename = os.path.join(output_directory, f"trace_{transaction_hash}.json")
+    rpc = edpool.endpoint_by_chain()
+    while True:
+        try:
+            # Initialize Web3 instance with the RPC provider
+            cast_run(rpc, transaction_hash, raw_filename, filename)
+            break
+        except subprocess.CalledProcessError as e:
+            rpc = edpool.mark_endpoint_broken(rpc)
+            print(f'Error processing request: {e}\n retry ... ')
+            # Handle the CalledProcessError
 
-                except Exception as e:
-                        raise RuntimeError(f"An unexpected error occurred: {e}")
-                        # Handle other unexpected exceptions
+        except Exception as e:
+            raise RuntimeError(f"An unexpected error occurred: {e}")
+            # Handle other unexpected exceptions
 
-                print('trace_finished', transaction_hash)
+        print('trace_finished', transaction_hash)
 
 
 # Used to Transform New Version of Foundry Output to Clear Json
@@ -77,10 +77,37 @@ def original_json(dictlist):
     new_element_list = []
     # Use a stack to store event logs
     log_list = []
+
+    father_call = {}
+
     for element in dictlist:
         # Get the location of the call
-        address = element['trace']['caller'].lower()
-        depth = element['trace']['depth']
+        if element['trace']['kind'].lower() != 'delegatecall':
+            # Remove keys in father_call that are greater than the current depth
+            father_call = {k: v for k, v in father_call.items() if k <= depth}
+            address = element['trace']['address'].lower()
+            father_call[depth] = address
+
+        else:
+            if depth - 1 not in father_call:
+                father_call[depth - 1] = father_call[depth - 2]
+            address = father_call[depth - 1]
+
+        # Reversed log list
+        rlog_list = log_list[::-1]
+
+        # If this event is an inner event, pop it into list
+        log_to_detele = []
+        for rlog in rlog_list:
+            if depth <= rlog['depth']:
+                new_element_list.append(rlog)
+                log_to_detele.append(rlog)
+                
+        for dlog in log_to_detele:
+            rlog_list.remove(dlog)
+
+        # Update log list
+        log_list = rlog_list[::-1]
 
         # If the call has event logs
         if len(element['logs']) != 0:
@@ -97,21 +124,10 @@ def original_json(dictlist):
                 }
                 log_list.append(newlog)
 
-        # Reversed log list
-        rlog_list = log_list[::-1]
-
-        # If this event is an inner event, pop it into list
-        for rlog in rlog_list:
-            if depth < rlog['depth']:
-                new_element_list.append(rlog)
-                rlog_list.remove(rlog)
-        # Update log list
-        log_list = rlog_list[::-1]
-
         # Collect the new call
         new_trace = element['trace']
         new_call = {
-            'from': address,
+            'from': new_trace['caller'].lower(),
             'to': new_trace['address'].lower(),
             'depth': depth,
             'kind': new_trace['kind'].lower(),
@@ -136,6 +152,7 @@ def original_json(dictlist):
     for log in rlog_list:
         new_element_list.append(log)
     return new_element_list
+
 
 # Collect all state changes in the steps of a call trace
 def collect_state_changes(steps):

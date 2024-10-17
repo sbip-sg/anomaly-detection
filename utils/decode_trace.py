@@ -2,6 +2,7 @@ import json
 from os import listdir
 from eth_abi import decode
 import os
+
 try:
     from .lookup_function import get_function_signature
 except ImportError:
@@ -11,6 +12,7 @@ try:
     from .lookup_event import get_event_db_signature
 except ImportError:
     from lookup_event import get_event_db_signature
+
 
 # Function to check if parentheses are balanced in a string
 def are_parentheses_balanced(s):
@@ -26,6 +28,7 @@ def are_parentheses_balanced(s):
 
     return not stack
 
+
 # Function to split parameters in a list
 def split_parameters(s):
     s_list = s.split(',')
@@ -39,6 +42,7 @@ def split_parameters(s):
             s_list.pop(i + 1)
 
     return s_list
+
 
 # Function to decode input data based on function signature.
 def decode_input(function_text, input_hash):
@@ -60,11 +64,12 @@ def decode_input(function_text, input_hash):
                         input_list.append(value)
                 except Exception as e:
                     print("Error: input hash can not be decoded")
-                    input_list = decode_unknown_input(input_hash, data = True, event = False)
+                    input_list = decode_unknown_input(input_hash, data=True, event=False)
         # Otherwise, we use above function to guess the input 64 digits.
         elif len(input_hash) != 0:
-            input_list = decode_unknown_input(input_hash, data = True, event = False)
+            input_list = decode_unknown_input(input_hash, data=True, event=False)
     return input_list
+
 
 # Function to convert bytes to base64 encoded string
 def convert_bytes_to_string(obj):
@@ -72,8 +77,9 @@ def convert_bytes_to_string(obj):
         return obj.hex()
     raise TypeError("Object of type {} not serializable".format(type(obj)))
 
+
 # When we do not know parameter types, we manually separate inputs.
-def decode_unknown_input(chunks, data = False, event = True):
+def decode_unknown_input(chunks, data=False, event=True):
     input_list = []
     # There are 3 situations
     # Decoding event data or trace inputs
@@ -85,7 +91,7 @@ def decode_unknown_input(chunks, data = False, event = True):
         else:
             raw = chunks
         # Add 0x for each line 64 digits chunk because event topics have 0x for each topic
-        chunks = ['0x'+ raw[i:i + 64] for i in range(0, len(raw), 64)]
+        chunks = ['0x' + raw[i:i + 64] for i in range(0, len(raw), 64)]
     for line in chunks:
         line = line[2:]  # Remove '0x' for prefix or topics
         count_of_zeros = len(line) - len(line.lstrip('0'))  # Count leading zeros
@@ -102,9 +108,9 @@ def decode_unknown_input(chunks, data = False, event = True):
             input_list.append(decode(['address'], bytes.fromhex(line))[0])
     return input_list
 
+
 # Function to decode trace JSON files
 def decode_trace_json(folder_prefix="result"):
-
     # dumping decoded traces and event to invocation_tree folder
     json_file_path = folder_prefix + '/invocation_tree/'
     os.makedirs(json_file_path, exist_ok=True)
@@ -161,7 +167,6 @@ def decode_trace_json(folder_prefix="result"):
 
                 new_trace["depth"] = trace["depth"] + 1
 
-
                 # When foundry can decode it.
                 if trace['decoded']['name']:
                     new_trace["function"] = trace['decoded']['name']
@@ -187,13 +192,13 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["to"] = trace["to"]
                 new_trace["depth"] = trace["depth"]
                 new_trace['data'] = trace['data']
-                
+
             # according to the depth of trace, find its location
             if new_trace['depth'] + 1 >= len(locations):
                 while len(locations) <= new_trace['depth']:
                     locations.append(-1)
             locations[new_trace["depth"]] += 1
-            for position in range(new_trace["depth"]+1, len(locations)):
+            for position in range(new_trace["depth"] + 1, len(locations)):
                 locations[position] = -1
             new_trace['location'] = locations[:new_trace["depth"] + 1]
 
