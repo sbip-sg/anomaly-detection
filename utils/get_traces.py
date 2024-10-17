@@ -82,7 +82,6 @@ def original_json(dictlist):
 
     for element in dictlist:
         # Get the location of the call
-        depth = element['trace']['depth']
         if element['trace']['kind'].lower() != 'delegatecall':
             # Remove keys in father_call that are greater than the current depth
             father_call = {k: v for k, v in father_call.items() if k <= depth}
