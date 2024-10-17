@@ -25,13 +25,13 @@ def cast_run(rpc_url, txhash, raw, output):
         if 'Traces:' in line:
             traces_index = index
             break
-    output_lines = lines[traces_index+1:]
-    
+    output_lines = lines[traces_index + 1:]
+
     filtered_output = '\n'.join(output_lines)  # Join the remaining lines
     json_output = json.loads(filtered_output)
 
     # Write the filtered output to a file
-    #with open(raw, 'w') as raw_file:
+    # with open(raw, 'w') as raw_file:
     #   json.dump(json_output, raw_file, indent = 2)
 
     formal_result = original_json(json_output['arena'])
@@ -45,30 +45,31 @@ def cast_run(rpc_url, txhash, raw, output):
 
     return formal_result
 
+
 def collect_trace(transaction_hash, edpool, folder_prefix="result"):
-        # Create a directory if it doesn't exist
-        raw_directory = folder_prefix + '/raw_json'
-        # os.makedirs(raw_directory, exist_ok=True)
-        output_directory = folder_prefix + '/trace_json'
-        os.makedirs(output_directory, exist_ok=True)
-        raw_filename = os.path.join(raw_directory, f"raw_{transaction_hash}.json")
-        filename = os.path.join(output_directory, f"trace_{transaction_hash}.json")
-        rpc = edpool.endpoint_by_chain()
-        while True:
-                try:
-                        # Initialize Web3 instance with the RPC provider
-                        cast_run(rpc, transaction_hash, raw_filename, filename)
-                        break
-                except subprocess.CalledProcessError as e:
-                        rpc = edpool.mark_endpoint_broken(rpc)
-                        print(f'Error processing request: {e}\n retry ... ')
-                        # Handle the CalledProcessError
+    # Create a directory if it doesn't exist
+    raw_directory = folder_prefix + '/raw_json'
+    # os.makedirs(raw_directory, exist_ok=True)
+    output_directory = folder_prefix + '/trace_json'
+    os.makedirs(output_directory, exist_ok=True)
+    raw_filename = os.path.join(raw_directory, f"raw_{transaction_hash}.json")
+    filename = os.path.join(output_directory, f"trace_{transaction_hash}.json")
+    rpc = edpool.endpoint_by_chain()
+    while True:
+        try:
+            # Initialize Web3 instance with the RPC provider
+            cast_run(rpc, transaction_hash, raw_filename, filename)
+            break
+        except subprocess.CalledProcessError as e:
+            rpc = edpool.mark_endpoint_broken(rpc)
+            print(f'Error processing request: {e}\n retry ... ')
+            # Handle the CalledProcessError
 
-                except Exception as e:
-                        raise RuntimeError(f"An unexpected error occurred: {e}")
-                        # Handle other unexpected exceptions
+        except Exception as e:
+            raise RuntimeError(f"An unexpected error occurred: {e}")
+            # Handle other unexpected exceptions
 
-                print('trace_finished', transaction_hash)
+        print('trace_finished', transaction_hash)
 
 
 # Used to Transform New Version of Foundry Output to Clear Json
@@ -136,6 +137,7 @@ def original_json(dictlist):
     for log in rlog_list:
         new_element_list.append(log)
     return new_element_list
+
 
 # Collect all state changes in the steps of a call trace
 def collect_state_changes(steps):
