@@ -3,12 +3,13 @@ import os
 
 db_path = os.environ.get('EVENT_DB_PATH', './db')
 db = None
+
+
 def get_db():
     global db
     if db is None:
         db = leveldb.LevelDB(f'{db_path}/event_db')
     return db
-
 
 
 def get_event_db_signature(function_hash: str):

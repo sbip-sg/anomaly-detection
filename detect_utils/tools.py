@@ -1,10 +1,12 @@
 import json
 
+
 def collect_from_file(tx_hash, chain, filename):
     folder_prefix = f'result/{tx_hash}_{chain}'
     with open(folder_prefix + filename) as input_json:
         output_json = json.load(input_json)
     return output_json
+
 
 def filter_transaction(basic_info):
     gas_used = basic_info.get('gasUsed')
@@ -13,13 +15,14 @@ def filter_transaction(basic_info):
 
     if to_address is None:
         # contract creation, assuming nobody hacks here
-        if gas_used > base_gas * 5: # TODO update this threshold if necessary
+        if gas_used > base_gas * 5:  # TODO update this threshold if necessary
             return True
 
-    if gas_used > base_gas * 10: # TODO update this threshold if necessary
+    if gas_used > base_gas * 10:  # TODO update this threshold if necessary
         return True
 
     return False
+
 
 def check_balance(tx_hash, chain, address):
     possible_hack = False
