@@ -80,7 +80,7 @@ def original_json(dictlist):
     log_list = []
     for element in dictlist:
         # Get the location of the call
-        address = element['trace']['caller'].lower()
+        address = element['trace']['address'].lower()
         depth = element['trace']['depth']
 
         # If the call has event logs
@@ -112,7 +112,7 @@ def original_json(dictlist):
         # Collect the new call
         new_trace = element['trace']
         new_call = {
-            'from': address,
+            'from':  new_trace['caller'].lower(),
             'to': new_trace['address'].lower(),
             'depth': depth,
             'kind': new_trace['kind'].lower(),
