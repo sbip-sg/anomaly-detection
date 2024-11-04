@@ -209,7 +209,7 @@ def collect_token(time_stamp, edpool, folder_prefix):
                                                      amount / pow(10, decimal), flow)
 
                     # event name as deposit refers to token deposit
-                    elif event_name.lower() == 'deposit' and len(input) < 3:
+                    elif event_name.lower() == 'deposit' and 0 < len(input) < 3:
                         currency, decimal = get_currency(trace['address'], rpc)
                         to_address = input[0]
                         if len(trace['data']) == 2:
