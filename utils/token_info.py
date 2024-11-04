@@ -218,11 +218,7 @@ def collect_token(time_stamp, edpool, folder_prefix):
 
                     # event name as transfer refers to token transfer
                     if event_name.lower() == 'transfer':
-                        currency, decimal = get_currency(memory['last_call_to'], rpc)
-                        if currency == memory['last_call_to']:
-                            currency, decimal = get_currency(memory['last_call_from'], rpc)
-                        if currency == memory['last_call_from']:
-                            currency, decimal = get_currency(memory['last_call_to'], rpc)
+                        currency, decimal = get_currency(trace['address'], rpc)
                         from_address, to_address, amount = find_address_transfer_event(trace, input, memory)
                         value = amount / pow(10, decimal)
                         summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
