@@ -122,7 +122,7 @@ def original_json(dictlist):
                     else:
                         ahead_log_dict[log_idx].append(newlog)
                 else:
-                    if log_idx not in after_log_dict:
+                    if children[-1] not in after_log_dict:
                         after_log_dict[children[-1]] = [[newlog, depth]]
                     else:
                         after_log_dict[children[-1]].append([newlog, depth])

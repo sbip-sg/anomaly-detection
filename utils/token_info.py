@@ -98,7 +98,7 @@ def deal_transfer(summary, currency, trace, flow):
 
 # This function is from observation and would be less reliable
 # Function to find the address and amount from an event
-def find_address_transfer_event(trace, input, memory):
+def find_address_transfer_event(trace, input):
     # from address is normally the first of the inputs
     if (trace['address'] == '0x82af49447d8a07e3bd95bd0d56f35241523fbab1' and
             input[0] == '0x0000000000000000000000000000000000000000'):
@@ -122,35 +122,14 @@ def find_address_transfer_event(trace, input, memory):
     # If an event have less than 2 inputs and have data, this transfer may be from null.
     elif trace['data']:
         amount = trace['data'][0]
-        if memory['last_is_deposit']:
-            from_address = memory['last_call_to']
-            to_address = input[0]
-        else:
-            to_address = memory['last_withdraw']
-            from_address = input[0]
+        from_address = trace['address']
+        to_address = input[0]
 
     # if have no information, ignore it.
     else:
         amount = 0
         to_address = '0x' + '0' * 40
     return from_address, to_address, amount
-
-
-# Getting other-token transfers from events has a problem, no evidence of the currency name is in event itself.
-# So I find a solution by record the last trace to address to get the currency address.
-def update_memory(trace, memory):
-    # For transfer and deposit, the last trace's to address is the contract of the token.
-    if trace['type'] == 'call':
-        memory['last_call_to'] = trace["to"]
-        memory['last_call_from'] = trace["from"]
-
-    # For withdraw, the last withdraw trace's to address is the contract of the token.
-    if trace['type'] == 'call' and 'withdraw' in trace["function"].lower():
-        memory['last_withdraw'] = trace["to"]
-        memory['last_is_deposit'] = False
-    if trace['type'] == 'call' and 'deposit' in trace["function"].lower():
-        memory['last_is_deposit'] = True
-    return memory
 
 
 # For the output dict, remove zero values and empty values
@@ -199,58 +178,47 @@ def collect_token(time_stamp, edpool, folder_prefix):
         summary_dict = {}
         traces = json.load(file)
 
-        # See update_memory(trace, memory) function
-        memory = {
-            "last_call_to": '',
-            'last_call_from': '',
-            "last_withdraw": '',
-            'last_is_deposit': True,
-            "out_of_gas": False
-        }
+        # memory for out of gas
+        out_of_gas = False
 
         for trace in traces:
             # starting with reverted and out-of-gas check
             # event does not show successful status, only to see whether last call is successful
-            if not memory['out_of_gas']:
+            if not out_of_gas:
                 if trace['type'] == 'event':
                     event_name = trace["function"]
                     input = trace['input']
 
                     # event name as transfer refers to token transfer
                     if event_name.lower() == 'transfer':
-                        currency, decimal = get_currency(memory['last_call_to'], rpc)
-                        if currency == memory['last_call_to']:
-                            currency, decimal = get_currency(memory['last_call_from'], rpc)
-                        if currency == memory['last_call_from']:
-                            currency, decimal = get_currency(memory['last_call_to'], rpc)
-                        from_address, to_address, amount = find_address_transfer_event(trace, input, memory)
+                        currency, decimal = get_currency(trace['address'], rpc)
+                        from_address, to_address, amount = find_address_transfer_event(trace, input)
                         value = amount / pow(10, decimal)
                         summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
                                                      value, flow)
 
                     # event name as withdrawal refers to token withdraw
                     elif event_name.lower() == 'withdrawal':
-                        currency, decimal = get_currency(memory['last_withdraw'], rpc)
+                        currency, decimal = get_currency(trace['address'], rpc)
                         from_address = input[0]
                         if len(trace['data']) == 2:
                             amount = trace['data'][1]
                         else:
                             amount = trace['data'][0]
-                        summary_dict = othertransfer(summary_dict, currency, from_address, memory['last_withdraw'],
+                        summary_dict = othertransfer(summary_dict, currency, from_address, trace['address'],
                                                      amount / pow(10, decimal), flow)
 
                     # event name as deposit refers to token deposit
                     elif event_name.lower() == 'deposit' and len(input) < 3:
-                        currency, decimal = get_currency(memory['last_call_to'], rpc)
+                        currency, decimal = get_currency(trace['address'], rpc)
                         to_address = input[0]
                         if len(trace['data']) == 2:
                             amount = trace['data'][1]
                         else:
                             amount = trace['data'][0]
-                        summary_dict = othertransfer(summary_dict, currency, memory['last_call_to'], to_address,
+                        summary_dict = othertransfer(summary_dict, currency, trace['address'], to_address,
                                                      amount / pow(10, decimal), flow)
             if trace['type'] == 'call' and trace['status'] != "OutOfGas":
-                memory = update_memory(trace, memory)
 
                 # for local token flow, there mostly is a trace with non-zero value
                 if trace['type'] == 'call' or trace['type'] == 'staticcall' and trace["value"] != 0:
@@ -258,9 +226,9 @@ def collect_token(time_stamp, edpool, folder_prefix):
 
             # Call is out of gas, so the following events are not available
             if trace['type'] == 'call' and trace['status'] == "OutOfGas":
-                memory['out_of_gas'] = True
+                out_of_gas = True
             else:
-                memory['out_of_gas'] = False
+                out_of_gas = False
 
         # If it has balance changes
         if len(summary_dict) != 0:
