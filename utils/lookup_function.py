@@ -1,14 +1,14 @@
-import leveldb
+import plyvel
 import os
 
-db_path = os.environ.get('EVENT_DB_PATH', './db')
+db_path = os.environ.get('EVENT_DB_PATH')
 db = None
 
 
 def get_db():
     global db
     if db is None:
-        db = leveldb.LevelDB(f'{db_path}/function_db')
+        db = plyvel.DB(f'{db_path}/db/function_db')
     return db
 
 
@@ -27,8 +27,12 @@ def get_function_signature(function_hash: str):
     if function_hash.startswith('0x'):
         function_hash = function_hash[2:]
     try:
-        signatures = get_db().Get(function_hash.encode()).decode()
+        signatures = get_db().get(function_hash.encode())
+        if signatures:
+            return signatures.decode()
+        else:
+            print('Error: function not in database')
+            return None
     except KeyError:
         print('Error: function not in database')
         return None
-    return signatures
