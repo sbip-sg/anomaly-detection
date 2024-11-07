@@ -164,6 +164,10 @@ def original_json(dictlist):
 
         new_element_list.append(new_element_dict[key][0])
 
+    for key in ahead_log_dict:
+        for nlog in ahead_log_dict[key]:
+            new_element_list.append(nlog)
+
     sorted_afters = sorted(after_log_dict.keys(), reverse=True)
 
     for key in sorted_afters:
