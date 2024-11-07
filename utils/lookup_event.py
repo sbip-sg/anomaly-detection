@@ -31,8 +31,8 @@ def get_event_db_signature(function_hash: str):
         if signatures:
             return signatures.decode()
         else:
-            print('Error: event not in database')
+            print(f'Error: event {function_hash} not in database')
             return None
     except KeyError:
-        print('Error: event not in database')
+        print(f'Error: event {function_hash} not in database')
         return None

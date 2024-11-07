@@ -31,8 +31,8 @@ def get_function_signature(function_hash: str):
         if signatures:
             return signatures.decode()
         else:
-            print('Error: function not in database')
+            print(f'Error: function {function_hash} not in database')
             return None
     except KeyError:
-        print('Error: function not in database')
+        print(f'Error: function {function_hash} not in database')
         return None
