@@ -165,12 +165,6 @@ def original_json(dictlist):
     new_element_list = []
 
     for key in new_element_dict:
-        # If this call has events which should be just before the call
-        if key in ahead_log_dict:
-            for nlog in ahead_log_dict[key]:
-                new_element_list.append(nlog)
-            del ahead_log_dict[key]
-
         for akey in after_log_dict:
             # Index of after_log_dict is the last child of the call.
             # If current index is larger than the last child
@@ -180,6 +174,12 @@ def original_json(dictlist):
                     if levent[1] >= new_element_dict[key][4]:
                         new_element_list.append(levent[0])
                         after_log_dict[akey].remove(levent)
+
+        # If this call has events which should be just before the call
+        if key in ahead_log_dict:
+            for nlog in ahead_log_dict[key]:
+                new_element_list.append(nlog)
+            del ahead_log_dict[key]
 
         new_element_list.append(new_element_dict[key][0])
 
