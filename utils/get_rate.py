@@ -31,6 +31,8 @@ def collect(token, date):
 #   1, Find more stable api
 #   2, Build an exchange rate database and maintain it everyday
 def get_rate(time_stamp, currency):
+    if currency.lower() == 'usdc' or currency.lower() == 'usdt':
+        return 1
     if currency not in currency_dict.keys():
         try:
             token = transform[currency.lower()][0]
@@ -41,7 +43,7 @@ def get_rate(time_stamp, currency):
             formatted_date = date_time.strftime('%d-%m-%Y')
             exchange_rate = collect(token, formatted_date)
         except Exception as e:
-            print(f"Error: Unknown Token")
+            print(f"Error: Unable to fetch exchange rate of {currency}")
             exchange_rate = 0
 
         currency_dict[currency] = exchange_rate
