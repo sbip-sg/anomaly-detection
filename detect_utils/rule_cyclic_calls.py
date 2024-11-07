@@ -3,7 +3,7 @@ from detect_utils.tools import collect_from_file, filter_transaction, check_bala
 MIN_CALL_LENGTH = 6  # the low the more false positives
 assert MIN_CALL_LENGTH > 1
 
-
+# Detect whether the trace contains cycling calls
 def has_cycle(xs):
     n = len(xs)
     for seq_len in range(2, n // 2 + 1):
