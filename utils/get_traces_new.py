@@ -6,6 +6,21 @@ import subprocess
 cast_bin = os.environ.get('CAST_BIN', 'cast')
 
 
+def dfs_recursive(tree, node, visited=None, result=None):
+    if visited is None:
+        visited = set()  # To keep track of visited nodes
+    if result is None:
+        result = []  # To store the result of visited nodes
+
+    result.append(node)  # Add the current node to the result list
+    visited.add(node)
+
+    for child in tree.get(node, []):  # Get the children of the current node
+        if child not in visited:
+            dfs_recursive(tree, child, visited, result)
+
+    return result  # Return the accumulated result
+
 def cast_run(rpc_url, txhash, raw, output):
     print('Foundry Start')
     # Define the command
