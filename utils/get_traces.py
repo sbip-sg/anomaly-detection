@@ -208,7 +208,7 @@ def original_json(dict_list):
     for idx in dfs_index:
         if isinstance(idx, int):
             new_element = new_element_dict[idx]['call_content']
-        elif isinstance(idx, str) and idx.startwith('sd'):
+        elif isinstance(idx, str) and idx.startswith('sd'):
             new_element = new_sd_dict[idx]
         else:
             new_element = new_event_dict[idx]['log_content']

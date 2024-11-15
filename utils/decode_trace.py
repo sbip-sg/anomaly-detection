@@ -63,7 +63,7 @@ def decode_input(function_text, input_hash):
                     for value in values:
                         input_list.append(value)
                 except Exception as e:
-                    print("Error: input hash can not be decoded")
+                    print(f"Error: {function_text} input hash can not be decoded")
                     input_list = decode_unknown_input(input_hash, data=True, event=False)
         # Otherwise, we use above function to guess the input 64 digits.
         elif len(input_hash) != 0:
@@ -192,6 +192,11 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["to"] = trace["to"]
                 new_trace["depth"] = trace["depth"]
                 new_trace['data'] = trace['data']
+            elif trace['kind'].lower() == 'selfdestruct':
+
+                new_trace["address"] = trace["address"]
+                new_trace["refund_target"] = trace["refund_target"]
+                new_trace["depth"] = trace["depth"]
 
             # according to the depth of trace, find its location
             if new_trace['depth'] + 1 >= len(locations):
