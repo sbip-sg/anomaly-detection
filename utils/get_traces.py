@@ -6,6 +6,40 @@ import subprocess
 cast_bin = os.environ.get('CAST_BIN', 'cast')
 
 
+def dfs_recursive(tree, node, visited=None, result=None):
+    if visited is None:
+        visited = set()  # To keep track of visited nodes
+    if result is None:
+        result = []  # To store the result of visited nodes
+
+    result.append(node)  # Add the current node to the result list
+    visited.add(node)
+
+    for child in tree.get(node, []):  # Get the children of the current node
+        if child not in visited:
+            dfs_recursive(tree, child, visited, result)
+
+    return result  # Return the accumulated result
+
+def find_position_before_nth_int(mixed_list, n):
+    int_count = 0  # Counter for integers
+    for i in range(len(mixed_list)):
+        if isinstance(mixed_list[i], int):
+            int_count += 1
+            if int_count == n + 1:
+                return i  # Return the position before the nth integer
+    return len(mixed_list)  # Return -1 if the nth integer does not exist
+
+def insert_event(log_idx, tree_relation, parent, position):
+    plist = tree_relation[parent] # Get the parent's children list
+    if len(plist) == position: # If the log is the last of the list
+        plist.append(log_idx)
+    else: # If the log is before some call traces (ignore events)
+        e_position = find_position_before_nth_int(plist, position)
+        plist.insert(e_position, log_idx)
+    return tree_relation
+
+
 def cast_run(rpc_url, txhash, raw, output):
     print('Foundry Start')
     # Define the command
@@ -74,24 +108,22 @@ def collect_trace(transaction_hash, edpool, folder_prefix="result"):
 
 
 # Used to Transform New Version of Foundry Output to Clear Json
-def original_json(dictlist):
+def tree_structure(dict_list):
     # Collect the new calls
     new_element_dict = {}
+    new_event_list = []
+    tree_relation = {}
 
-    # Use stacks to store event logs
-    ahead_log_dict = {}
-    after_log_dict = {}
-
-    for element in dictlist:
+    for element in dict_list:
         # Collect basic information and position/relations of a call
         idx = element["idx"]
-        father = element['parent']
+        parent = element['parent']
         children = element['children']
         depth = element['trace']['depth']
         new_trace = element['trace']
 
         if element['trace']['kind'].lower() == 'delegatecall':
-            # for a delegatecall, the address of its events is address of the call triggering it (father)
+            # for a delegate call, the address of its events is address of the call triggering it (father)
             event_address = new_element_dict[father][2]
 
         else:
@@ -110,7 +142,7 @@ def original_json(dictlist):
 
                 # The position is where the log is supposed to be in the call's children.
                 log_position = log['position']
-                newlog = {
+                new_log = {
                     'from': event_address,
                     'kind': 'event',
                     'decoded': log['decoded'],
@@ -118,29 +150,7 @@ def original_json(dictlist):
                     'depth': depth
                 }
 
-                # if the call has no child call, the event should be before the next call.
-                # log_idx: if -1: the event should be before the next call with a depth no smaller than this call.
-                #          else: the event should be just before the call having same idx as log idx.
-                if len(children) == 0:
-                    log_idx = idx + 1
-                elif len(children) == log['position']:
-                    log_idx = -1
-                else:
-                    log_idx = children[log_position]
-
-                # Store events by their idx
-                if log_idx >= 0:
-                    if log_idx not in ahead_log_dict:
-                        ahead_log_dict[log_idx] = [newlog]
-                    else:
-                        ahead_log_dict[log_idx].append(newlog)
-
-                # Store events that we do not know what their idx should be.
-                else:
-                    if children[-1] not in after_log_dict:
-                        after_log_dict[children[-1]] = [[newlog, depth]]
-                    else:
-                        after_log_dict[children[-1]].append([newlog, depth])
+                new_event_list.append({'parent': idx, 'position': log_position, 'log_content': new_log})
 
         # Collect the new call
         new_call = {
@@ -159,42 +169,30 @@ def original_json(dictlist):
             'decoded': new_trace['decoded'],
         }
 
-        new_element_dict[idx] = [new_call, father, event_address, children, depth]
+        new_element_dict[idx] = {'parent': parent, 'children': children, 'call_content': new_call}
+        tree_relation[idx] = children
 
-    # Add the call to the list by idx
+    return new_element_dict, new_event_list, tree_relation
+
+def original_json(dict_list):
+    # Get the tree related information
+    new_element_dict, new_event_dict, tree_relation = tree_structure(dict_list)
     new_element_list = []
 
-    for key in new_element_dict:
-        for akey in after_log_dict:
-            # Index of after_log_dict is the last child of the call.
-            # If current index is larger than the last child
-            # and the depth shows this call is not a child of the call
-            if akey < key:
-                for levent in after_log_dict[akey]:
-                    if levent[1] >= new_element_dict[key][4]:
-                        new_element_list.append(levent[0])
-                        after_log_dict[akey].remove(levent)
+    # Insert events in its position
+    for ev in new_event_dict:
+        tree_relation = insert_event(ev, tree_relation, b[ev]['parent'], b[ev]['position'])
 
-        # If this call has events which should be just before the call
-        if key in ahead_log_dict:
-            for nlog in ahead_log_dict[key]:
-                new_element_list.append(nlog)
-            del ahead_log_dict[key]
+    # DFS to get the trace list
+    dfs_index = dfs_recursive(tree_relation, 0)
 
-        new_element_list.append(new_element_dict[key][0])
-
-    # If the last call has events which should be just after the last call
-    for key in ahead_log_dict:
-        for nlog in ahead_log_dict[key]:
-            new_element_list.append(nlog)
-
-    sorted_afters = sorted(after_log_dict.keys(), reverse=True)
-
-    # If the events after the last child should be at the end of trace
-    for key in sorted_afters:
-        for levent in after_log_dict[key]:
-            new_element_list.append(levent[0])
-
+    # Retrieve calls and events from the dictionaries
+    for idx in dfs_index:
+        if isinstance(idx, int):
+            new_element = new_element_dict[idx]['call_content']
+        else:
+            new_element = new_event_dict[idx]['log_content']
+        new_element_list.append(new_element)
     return new_element_list
 
 
