@@ -111,8 +111,9 @@ def collect_trace(transaction_hash, edpool, folder_prefix="result"):
 def tree_structure(dict_list):
     # Collect the new calls
     new_element_dict = {}
-    new_event_list = []
+    new_event_dict = {}
     tree_relation = {}
+    log_idx = 0
 
     for element in dict_list:
         # Collect basic information and position/relations of a call
@@ -123,8 +124,8 @@ def tree_structure(dict_list):
         new_trace = element['trace']
 
         if element['trace']['kind'].lower() == 'delegatecall':
-            # for a delegate call, the address of its events is address of the call triggering it (father)
-            event_address = new_element_dict[father][2]
+            # for a delegate call, the address of its events is address of the call triggering it (parent)
+            event_address = new_element_dict[parent]['event_address']
 
         else:
 
@@ -139,7 +140,6 @@ def tree_structure(dict_list):
 
             # If a call has event
             for log in element['logs']:
-
                 # The position is where the log is supposed to be in the call's children.
                 log_position = log['position']
                 new_log = {
@@ -150,7 +150,8 @@ def tree_structure(dict_list):
                     'depth': depth
                 }
 
-                new_event_list.append({'parent': idx, 'position': log_position, 'log_content': new_log})
+                new_event_dict['e' + str(log_idx)] = {'parent': idx, 'position': log_position, 'log_content': new_log}
+                log_idx += 1
 
         # Collect the new call
         new_call = {
@@ -169,10 +170,11 @@ def tree_structure(dict_list):
             'decoded': new_trace['decoded'],
         }
 
-        new_element_dict[idx] = {'parent': parent, 'children': children, 'call_content': new_call}
+        new_element_dict[idx] = {'parent': parent, 'children': children, 'call_content': new_call,
+                                 'event_address': event_address}
         tree_relation[idx] = children
 
-    return new_element_dict, new_event_list, tree_relation
+    return new_element_dict, new_event_dict, tree_relation
 
 def original_json(dict_list):
     # Get the tree related information
