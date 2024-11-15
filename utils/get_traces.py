@@ -44,12 +44,14 @@ def cast_run(rpc_url, txhash, raw, output):
     print('Foundry Start')
     # Define the command
     command = [
-        'cast', 'run', txhash,
+        'cast', 'run', '-v', txhash,
         '-r', rpc_url, '--decode-internal', '--with-state-changes', '-j'
     ]
 
     if 'nus' in rpc_url:
         command.append('--no-rate-limit')
+
+    print('CMD:' ' '.join(command))
 
     # Run the command and capture the output
     result = subprocess.run(command, capture_output=True, text=True, check=True)
