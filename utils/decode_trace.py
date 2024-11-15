@@ -145,7 +145,16 @@ def decode_trace_json(folder_prefix="result"):
                 # When foundry can decode it.
                 if trace['decoded']['call_data']:
                     new_trace["function"] = trace['decoded']['call_data']['signature']
-                    new_trace["input"] = decode_input(new_trace["function"], trace['data'][10:])
+                    new_args = []
+                    args = trace['decoded']['call_data']['args']
+                    for arg in args:
+                        if '[' in arg:
+                            arg = arg.split(' ')[0]
+                        arg = arg.lower()
+                        if arg.isdigit():
+                            arg = int(arg)
+                        new_args.append(arg)
+                    new_trace["input"] = new_args
                 else:
                     func_hash = trace['data'][2:10]
                     input_hash = trace['data'][10:]
@@ -170,6 +179,7 @@ def decode_trace_json(folder_prefix="result"):
                 # When foundry can decode it.
                 if trace['decoded']['name']:
                     new_trace["function"] = trace['decoded']['name']
+
 
                 elif len(trace['raw']['topics']) != 0:
                     func_hash = trace['raw']['topics'][0][2:]
