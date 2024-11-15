@@ -115,8 +115,10 @@ def tree_structure(dict_list):
     # Collect the new calls
     new_element_dict = {}
     new_event_dict = {}
+    new_sd_dict = {}
     tree_relation = {}
     log_idx = 0
+    sd_idx = 0
 
     for element in dict_list:
         # Collect basic information and position/relations of a call
@@ -172,21 +174,32 @@ def tree_structure(dict_list):
             'status': new_trace['status'],
             'decoded': new_trace['decoded'],
         }
+        if new_trace['selfdestruct_address']:
+            new_selfdestruct = {
+                'address': new_trace['selfdestruct_address'].lower(),
+                'refund_target': new_trace['selfdestruct_refund_target'].lower(),
+                'depth': depth + 1,
+                'kind': 'selfdestruct',
+                'value': new_trace['selfdestruct_transferred_value']
+            }
+            new_sd_dict['sd' + str(sd_idx)] = new_selfdestruct
+            children.append('sd' + str(sd_idx))
+            sd_idx += 1
 
         new_element_dict[idx] = {'parent': parent, 'children': children, 'call_content': new_call,
                                  'event_address': event_address}
         tree_relation[idx] = children
 
-    return new_element_dict, new_event_dict, tree_relation
+    return new_element_dict, new_event_dict, new_sd_dict, tree_relation
 
 def original_json(dict_list):
     # Get the tree related information
-    new_element_dict, new_event_dict, tree_relation = tree_structure(dict_list)
+    new_element_dict, new_event_dict, new_sd_dict, tree_relation = tree_structure(dict_list)
     new_element_list = []
 
     # Insert events in its position
     for ev in new_event_dict:
-        tree_relation = insert_event(ev, tree_relation, b[ev]['parent'], b[ev]['position'])
+        tree_relation = insert_event(ev, tree_relation, new_event_dict[ev]['parent'], new_event_dict[ev]['position'])
 
     # DFS to get the trace list
     dfs_index = dfs_recursive(tree_relation, 0)
@@ -195,6 +208,8 @@ def original_json(dict_list):
     for idx in dfs_index:
         if isinstance(idx, int):
             new_element = new_element_dict[idx]['call_content']
+        elif isinstance(idx, str) and idx.startwith('sd'):
+            new_element = new_sd_dict[idx]
         else:
             new_element = new_event_dict[idx]['log_content']
         new_element_list.append(new_element)
