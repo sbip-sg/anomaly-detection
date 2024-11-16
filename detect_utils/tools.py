@@ -1,13 +1,13 @@
 import json
 
-
+# Get information of a transaction from the collected files
 def collect_from_file(tx_hash, chain, filename):
     folder_prefix = f'result/{tx_hash}_{chain}'
     with open(folder_prefix + filename) as input_json:
         output_json = json.load(input_json)
     return output_json
 
-
+# Filter transactions by their gas usage.
 def filter_transaction(basic_info):
     gas_used = basic_info.get('gasUsed')
     to_address = basic_info.get('to')
@@ -23,7 +23,7 @@ def filter_transaction(basic_info):
 
     return False
 
-
+# Detect the balance change of given address of a transaction
 def check_balance(tx_hash, chain, address):
     possible_hack = False
     balance_change = collect_from_file(tx_hash, chain, '/balance.json')[tx_hash]

@@ -4,5 +4,5 @@ web3==5.31.4
 eth-abi==2.2.0
 flask
 flask-cors
-leveldb
+plyvel
 python-dotenv

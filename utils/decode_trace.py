@@ -63,7 +63,7 @@ def decode_input(function_text, input_hash):
                     for value in values:
                         input_list.append(value)
                 except Exception as e:
-                    print("Error: input hash can not be decoded")
+                    print(f"Error: {function_text} input hash can not be decoded")
                     input_list = decode_unknown_input(input_hash, data=True, event=False)
         # Otherwise, we use above function to guess the input 64 digits.
         elif len(input_hash) != 0:
@@ -145,7 +145,16 @@ def decode_trace_json(folder_prefix="result"):
                 # When foundry can decode it.
                 if trace['decoded']['call_data']:
                     new_trace["function"] = trace['decoded']['call_data']['signature']
-                    new_trace["input"] = decode_input(new_trace["function"], trace['data'][10:])
+                    new_args = []
+                    args = trace['decoded']['call_data']['args']
+                    for arg in args:
+                        if '[' in arg:
+                            arg = arg.split(' ')[0]
+                        arg = arg.lower()
+                        if arg.isdigit():
+                            arg = int(arg)
+                        new_args.append(arg)
+                    new_trace["input"] = new_args
                 else:
                     func_hash = trace['data'][2:10]
                     input_hash = trace['data'][10:]
@@ -171,6 +180,7 @@ def decode_trace_json(folder_prefix="result"):
                 if trace['decoded']['name']:
                     new_trace["function"] = trace['decoded']['name']
 
+
                 elif len(trace['raw']['topics']) != 0:
                     func_hash = trace['raw']['topics'][0][2:]
 
@@ -192,6 +202,11 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["to"] = trace["to"]
                 new_trace["depth"] = trace["depth"]
                 new_trace['data'] = trace['data']
+            elif trace['kind'].lower() == 'selfdestruct':
+
+                new_trace["address"] = trace["address"]
+                new_trace["refund_target"] = trace["refund_target"]
+                new_trace["depth"] = trace["depth"]
 
             # according to the depth of trace, find its location
             if new_trace['depth'] + 1 >= len(locations):

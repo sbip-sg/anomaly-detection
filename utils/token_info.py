@@ -193,35 +193,38 @@ def collect_token(time_stamp, edpool, folder_prefix):
                     if event_name.lower() == 'transfer':
                         currency, decimal = get_currency(trace['address'], rpc)
                         from_address, to_address, amount = find_address_transfer_event(trace, input)
-                        value = amount / pow(10, decimal)
-                        summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
-                                                     value, flow)
+                        if isinstance(amount, int):
+                            value = amount / pow(10, decimal)
+                            summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
+                                                         value, flow)
 
                     # event name as withdrawal refers to token withdraw
-                    elif event_name.lower() == 'withdrawal':
+                    elif event_name.lower() == 'withdrawal' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
                         currency, decimal = get_currency(trace['address'], rpc)
                         from_address = input[0]
                         if len(trace['data']) == 2:
                             amount = trace['data'][1]
                         else:
                             amount = trace['data'][0]
-                        summary_dict = othertransfer(summary_dict, currency, from_address, trace['address'],
+                        if isinstance(amount, int):
+                            summary_dict = othertransfer(summary_dict, currency, from_address, trace['address'],
                                                      amount / pow(10, decimal), flow)
 
                     # event name as deposit refers to token deposit
-                    elif event_name.lower() == 'deposit' and len(input) < 3:
-                        currency, decimal = get_currency(trace['address'], rpc)
-                        to_address = input[0]
-                        if len(trace['data']) == 2:
-                            amount = trace['data'][1]
-                        else:
-                            amount = trace['data'][0]
-                        summary_dict = othertransfer(summary_dict, currency, trace['address'], to_address,
-                                                     amount / pow(10, decimal), flow)
-            if trace['type'] == 'call' and trace['status'] != "OutOfGas":
+                    elif event_name.lower() == 'deposit' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
+                            currency, decimal = get_currency(trace['address'], rpc)
+                            to_address = input[0]
+                            if len(trace['data']) == 2:
+                                amount = trace['data'][1]
+                            else:
+                                amount = trace['data'][0]
+                            if isinstance(amount, int):
+                                summary_dict = othertransfer(summary_dict, currency, trace['address'], to_address,
+                                                         amount / pow(10, decimal), flow)
+            if trace['type'] == 'call' or trace['type'] == 'staticcall' or trace['type'] == 'create' and trace['status'] != "OutOfGas":
 
                 # for local token flow, there mostly is a trace with non-zero value
-                if trace['type'] == 'call' or trace['type'] == 'staticcall' and trace["value"] != 0:
+                if trace['type'] == 'call' or trace['type'] == 'staticcall' or trace['type'] == 'create' and trace["value"] != 0:
                     summary_dict = deal_transfer(summary_dict, token, trace, flow)
 
             # Call is out of gas, so the following events are not available
