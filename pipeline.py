@@ -27,10 +27,6 @@ def main(tx_hash, chain, overwrite=False):
     # Time stamp is for getting exchange rate
     basic_info, time_stamp = collect_info(tx_hash, edpool)
 
-    # Save basic information
-    with open(folder_prefix + '/basic_info.json', 'w') as jsonfile:
-        json.dump(basic_info, jsonfile, indent=2)
-
     # Collect traces (raw invocation tree)
     collect_trace(tx_hash, edpool, folder_prefix)
 
@@ -50,7 +46,11 @@ def main(tx_hash, chain, overwrite=False):
         print('Suspicious Flashloan Attack Detected')  # To be updated
         detection_result = True
 
-    return detection_result
+    basic_info['detection_result'] = detection_result
+
+    # Save basic information
+    with open(folder_prefix + '/basic_info.json', 'w') as jsonfile:
+        json.dump(basic_info, jsonfile, indent=2)
 
 
 if __name__ == "__main__":
