@@ -40,11 +40,17 @@ def main(tx_hash, chain, overwrite=False):
     # According to the decoded invocation tree, get token flow and balance changes.
     collect_token(time_stamp, edpool, folder_prefix)
 
+    detection_result = False
+
     if detect_cyclic_transaction(tx_hash, chain):
         print('Suspicious Reentrancy Attack Detected')  # To be updated
+        detection_result = True
 
     if detect_flashloan_transaction(tx_hash, chain):
         print('Suspicious Flashloan Attack Detected')  # To be updated
+        detection_result = True
+
+    return detection_result
 
 
 if __name__ == "__main__":
