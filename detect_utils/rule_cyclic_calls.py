@@ -32,8 +32,8 @@ def detect_cyclic_transaction(tx_hash, chain):
     functions = []
 
     for call in trace:
-        if call['type'] == 'event':
-            pass  # ignore event in this detectorF
+        if call['type'] == 'event' or call['type'] == 'create' or call['type'] == 'selfdestruct':
+            pass  # ignore event in this detector
         elif 'call' in call['type']:
             functions.append((call['from'], call['to'], call['function']))
         else:
