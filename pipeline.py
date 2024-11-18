@@ -27,6 +27,9 @@ def main(tx_hash, chain, overwrite=False):
     # Time stamp is for getting exchange rate
     basic_info, time_stamp = collect_info(tx_hash, edpool)
 
+    with open(folder_prefix + '/basic_info.json', 'w') as jsonfile:
+        json.dump(basic_info, jsonfile, indent=2)
+
     # Collect traces (raw invocation tree)
     collect_trace(tx_hash, edpool, folder_prefix)
 
@@ -37,6 +40,7 @@ def main(tx_hash, chain, overwrite=False):
     collect_token(time_stamp, edpool, folder_prefix)
 
     detection_result = False
+
 
     if detect_cyclic_transaction(tx_hash, chain):
         print('Suspicious Reentrancy Attack Detected')  # To be updated
