@@ -1,5 +1,4 @@
 import json
-import pandas as pd
 from os import listdir
 from web3 import Web3
 from utils.get_rate import get_rate
