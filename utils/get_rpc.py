@@ -12,7 +12,9 @@ class EndpointPool:
     # a dict from chain -> a set of endpoints
     usable_endpoints = {
         "eth": [
-                "http://sbip-g3.d2.comp.nus.edu.sg:8545",
+                "http://sbip-g3.d2.comp.nus.edu.sg:8545"
+                # "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+                # "https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134"
                 ],
         "optimism": ["https://op-pokt.nodies.app"],
         "fantom": ["https://rpc.ftm.tools"],

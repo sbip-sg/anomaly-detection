@@ -27,7 +27,6 @@ def main(tx_hash, chain, overwrite=False):
     # Time stamp is for getting exchange rate
     basic_info, time_stamp = collect_info(tx_hash, edpool)
 
-    # Save basic information
     with open(folder_prefix + '/basic_info.json', 'w') as jsonfile:
         json.dump(basic_info, jsonfile, indent=2)
 
@@ -40,11 +39,22 @@ def main(tx_hash, chain, overwrite=False):
     # According to the decoded invocation tree, get token flow and balance changes.
     collect_token(time_stamp, edpool, folder_prefix)
 
+    detection_result = False
+
+
     if detect_cyclic_transaction(tx_hash, chain):
         print('Suspicious Reentrancy Attack Detected')  # To be updated
+        detection_result = True
 
     if detect_flashloan_transaction(tx_hash, chain):
         print('Suspicious Flashloan Attack Detected')  # To be updated
+        detection_result = True
+
+    basic_info['detection_result'] = detection_result
+
+    # Save basic information
+    with open(folder_prefix + '/basic_info.json', 'w') as jsonfile:
+        json.dump(basic_info, jsonfile, indent=2)
 
 
 if __name__ == "__main__":

@@ -50,6 +50,7 @@
                 <p><strong>To:</strong> {{ results.basic_info.to|default('N/A') }}</p>
                 <p><strong>Gas Used:</strong> {{ results.basic_info.gasUsed|default('N/A') }}</p>
                 <p><strong>Value Transferred:</strong> {{ results.basic_info.value|default('0') }} ETH></p>
+                <p><strong>Detection Result:</strong> {{ results.basic_info.detection_result|default('False') }}</p>
             </div>
         {% else %}
             <p class="error">No basic information available.</p>
