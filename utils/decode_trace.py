@@ -108,6 +108,20 @@ def decode_unknown_input(chunks, data=False, event=True):
             input_list.append(decode(['address'], bytes.fromhex(line))[0])
     return input_list
 
+def digit_arg(arg):
+    if len(arg.split(' ')) == 2 and arg.split(' ')[1][0] == '[' and arg.split(' ')[1][-1] == ']':
+        arg = arg.split(' ')[0]
+    return arg.lower()
+
+def process_args(arg):
+    args = []
+    if arg[0] == '[' and arg[-1] == ']':
+        args = arg[1:-1].split(', ')
+        for item in args:
+            args.append(digit_arg(item))
+    else:
+        args = digit_arg(arg)
+    return args
 
 # Function to decode trace JSON files
 def decode_trace_json(folder_prefix="result"):
@@ -148,7 +162,7 @@ def decode_trace_json(folder_prefix="result"):
                     new_args = []
                     args = trace['decoded']['call_data']['args']
                     for arg in args:
-                        arg = arg.lower()
+                        arg = process_args(arg)
                         new_args.append(arg)
                     new_trace["input"] = new_args
                 else:
