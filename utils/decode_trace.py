@@ -114,14 +114,14 @@ def digit_arg(arg):
     return arg.lower()
 
 def process_args(arg):
-    args = []
     if arg[0] == '[' and arg[-1] == ']':
+        new_arg = []
         args = arg[1:-1].split(', ')
         for item in args:
-            args.append(digit_arg(item))
+            new_arg.append(digit_arg(item))
     else:
-        args = digit_arg(arg)
-    return args
+        new_arg = digit_arg(arg)
+    return new_arg
 
 # Function to decode trace JSON files
 def decode_trace_json(folder_prefix="result"):
