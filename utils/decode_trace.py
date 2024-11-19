@@ -156,6 +156,10 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["to"] = trace["to"]
                 new_trace["depth"] = trace["depth"]
 
+                # Move state changes into new trace
+                if 'statechanges' in trace.keys():
+                    new_trace["statechanges"] = trace['statechanges']
+
                 # When foundry can decode it.
                 if trace['decoded']['call_data']:
                     new_trace["function"] = trace['decoded']['call_data']['signature']
