@@ -2,23 +2,13 @@ from datetime import datetime
 import requests
 import json
 import time
-import os
-import sys
 
 # Record collected cryptocurrency to avoid extra requests.
 currency_dict = {}
 
-
-def get_resource_path(relative_path):
-    """ Get absolute path to resource, works for both development and PyInstaller. """
-    if getattr(sys, '_MEIPASS', False):  # Running in a PyInstaller bundle
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.dirname(__file__), relative_path)
-
-
 # Inputs are token symbols and coingecko api needs token's id. Collected top 300 tokens in ethereum environment.
-with open(get_resource_path("utils/token.json")) as file:
-    transform = json.load(file)
+file = open("utils/token.json")
+transform = json.load(file)
 
 
 # Request coingecko api to get token exchange rate to usd (This function is not stable when calling too frequently)

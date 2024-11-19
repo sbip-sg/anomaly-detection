@@ -3,19 +3,10 @@ import pandas as pd
 from os import listdir
 from web3 import Web3
 from utils.get_rate import get_rate
-import os
-import sys
-
-def get_resource_path(relative_path):
-    """ Get absolute path to resource, works for both development and PyInstaller. """
-    if getattr(sys, '_MEIPASS', False):  # Running in a PyInstaller bundle
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.dirname(__file__), relative_path)
-
 
 # Abi file to call contract for symbol and decimals
-with open(get_resource_path("utils/erc20.abi.json")) as abi_file:
-    abi = json.load(abi_file)
+abi_file = open("utils/erc20.abi.json")
+abi = json.load(abi_file)
 
 # dict to store currency symbol and decimals
 currency_dict = {}

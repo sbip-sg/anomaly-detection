@@ -44,33 +44,27 @@ def cast_run(rpc_url, txhash, raw, output):
     print('Foundry Start')
     # Define the command
     command = [
-        'cast', 'run', '-v', txhash,
+        'cast', 'run', txhash,
         '-r', rpc_url, '--decode-internal', '--with-state-changes', '-j'
     ]
 
     if 'nus' in rpc_url:
         command.append('--no-rate-limit')
 
-    print(f"Running command: {' '.join(command)}")
-
     # Run the command and capture the output
     result = subprocess.run(command, capture_output=True, text=True, check=True)
-    result.check_returncode()
 
-    json_output = None
-    for line in result.stdout.split('\n'):
-        try:
-            json_output = json.loads(line)
+    lines = result.stdout.strip().split('\n')
+    traces_index = -1
+
+    for index, line in enumerate(lines):
+        if 'Traces:' in line:
+            traces_index = index
             break
-        except json.JSONDecodeError as e:
-            pass
+    output_lines = lines[traces_index + 1:]
 
-    if json_output is None:
-        print(f"An error occurred while decoding the JSON output {result.stdout[:1000]}")
-        raise RuntimeError(f"An error occurred while decoding the JSON output: {result.stdout[:1000]}")
-
-
-
+    filtered_output = '\n'.join(output_lines)  # Join the remaining lines
+    json_output = json.loads(filtered_output)
 
     # Write the filtered output to a file
     # with open(raw, 'w') as raw_file:
