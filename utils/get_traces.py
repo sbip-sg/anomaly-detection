@@ -44,7 +44,7 @@ def cast_run(rpc_url, txhash, raw, output):
     print('Foundry Start')
     # Define the command
     command = [
-        'cast', 'run', txhash,
+        'cast', 'run', '-v', txhash,
         '-r', rpc_url, '--decode-internal', '--with-state-changes', '-j'
     ]
 
