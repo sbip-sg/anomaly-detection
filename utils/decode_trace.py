@@ -186,7 +186,7 @@ def process_args(arg):
         for item in args:
             new_arg.append(digit_arg(item))
     else:
-        new_arg = digit_arg(arg)
+        new_arg = [digit_arg(arg)]
     return new_arg
 
 # Function to decode trace JSON files
