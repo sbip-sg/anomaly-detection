@@ -9,7 +9,7 @@ def has_flashloan(tx_hash, chain):
     for element in trace:
         if element['type'] == 'event' and element['function'].lower() == 'flashloan':
             if len(element['input']) > 0:
-                value = element['input'][0].lower()
+                value = element['input'][0]
                 if isinstance(value, str):
                     value = value.lower()
                     if len(value) == 42 and value.startswith("0x") and value not in address_list:
