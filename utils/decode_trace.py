@@ -175,14 +175,44 @@ def decode_unknown_input(chunks, data=False, event=True):
     return input_list
 
 def digit_arg(arg):
-    if len(arg.split(' ')) == 2 and arg.split(' ')[1][0] == '[' and arg.split(' ')[1][-1] == ']':
+    arg = arg.strip()
+    if len(arg) != 0 and arg[0] == '(' and arg[-1] ==')':
+        args = split_outside_parentheses(arg[1:-1])
+        new_arg = []
+        for item in args:
+            new_arg.append(digit_arg(item))
+        return new_arg
+
+    elif len(arg.split(' ')) == 2 and arg.split(' ')[1][0] == '[' and arg.split(' ')[1][-1] == ']':
         arg = arg.split(' ')[0]
+
     return arg.lower()
+
+def split_outside_parentheses(s):
+    result = []
+    current_part = []
+    level = 0  # To track the depth of parentheses
+
+    for char in s:
+        if char == ',' and level == 0:
+            # Split only if not inside parentheses
+            result.append(''.join(current_part))
+            current_part = []
+        else:
+            if char == '(':
+                level += 1
+            elif char == ')':
+                level -= 1
+            current_part.append(char)
+
+    # Add the last part
+    result.append(''.join(current_part))
+    return result
 
 def process_args(arg):
     if arg[0] == '[' and arg[-1] == ']':
         new_arg = []
-        args = arg[1:-1].split(', ')
+        args = split_outside_parentheses(arg[1:-1])
         for item in args:
             new_arg.append(digit_arg(item))
     else:
@@ -227,8 +257,9 @@ def decode_trace_json(folder_prefix="result"):
                     new_trace["statechanges"] = trace['statechanges']
 
                 # When foundry can decode it.
+                func_hash = trace['data'][2:10]
+                input_hash = trace['data'][10:]
                 if trace['decoded']['call_data']:
-                    func_hash = trace['data'][2:10]
                     new_trace["decodeStatue"] = "foundry"
                     new_trace["selector"] = func_hash
                     new_trace["function"] = trace['decoded']['call_data']['signature']
@@ -239,9 +270,11 @@ def decode_trace_json(folder_prefix="result"):
                         arg = process_args(arg)
                         new_args.append(arg)
                     new_trace["input"] = new_args
+                    if len(new_args) == 0 and len(trace['data'][10:]) != 0:
+                        new_trace["input"] = decode_input(new_trace["function"], input_hash)
+                        new_trace["decodeStatue"] = "database"
+
                 else:
-                    func_hash = trace['data'][2:10]
-                    input_hash = trace['data'][10:]
                     new_trace["selector"] = func_hash
 
                     # Use function signature database to search for 4bytes
