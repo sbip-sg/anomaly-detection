@@ -2,6 +2,7 @@ import json
 from os import listdir
 from eth_abi import decode
 import os
+import re
 
 try:
     from .lookup_function import get_function_signature
@@ -13,6 +14,71 @@ try:
 except ImportError:
     from lookup_event import get_event_db_signature
 
+# Parse the structure of parameter types of a function
+def parse_structure(structure):
+    def parse_element(element):
+        # Match a single element type (letters and numbers)
+        match_single = re.fullmatch(r'[a-zA-Z_][a-zA-Z0-9_]*', element)
+        if match_single:
+            return {"type": element}
+
+        # Match a list type (e.g., 'type[]' or 'type[n]')
+        match_list = re.fullmatch(r'(.*)\[(\d*)\]', element)
+        if match_list:
+            inner_type = parse_element(match_list.group(1).strip())  # Recursively parse the inner type
+            size = match_list.group(2)  # Size, '' for infinite lists
+            return {
+                "type": "list",
+                "inner_type": inner_type,
+                "size": int(size) if size.isdigit() else "infinite"
+            }
+
+        # Match a structure (e.g., '(type1,type2)')
+        if element.startswith('(') and element.endswith(')'):
+            inner_types = split_structure(element[1:-1])
+            return {
+                "type": "structure",
+                "elements": [parse_element(t) for t in inner_types]
+            }
+
+        raise ValueError(f"Unknown element: {element}")
+
+    def split_structure(struct):
+        # Splits a structure string by ',' considering nested structures and lists
+        result = []
+        depth = 0
+        current = []
+        for char in struct:
+            if char == ',' and depth == 0:
+                result.append(''.join(current).strip())
+                current = []
+            else:
+                if char == '(' or char == '[':
+                    depth += 1
+                elif char == ')' or char == ']':
+                    depth -= 1
+                current.append(char)
+        if current:
+            result.append(''.join(current).strip())
+        return result
+
+    # Start parsing
+    return parse_element(structure)
+
+def process_function(function):
+    # Can not determine the function of this hash
+    if function.find(';') != -1:
+        return function, {}
+    try:
+        # Separate function name and parameters
+        index = function.find('(')
+        function_name = function[:index]
+        parameters = parse_structure(function[index:])
+        return function_name, parameters
+
+    # The function is not simple function(parameters)
+    except:
+        return function, {}
 
 # Function to check if parentheses are balanced in a string
 def are_parentheses_balanced(s):
@@ -162,7 +228,11 @@ def decode_trace_json(folder_prefix="result"):
 
                 # When foundry can decode it.
                 if trace['decoded']['call_data']:
+                    func_hash = trace['data'][2:10]
+                    new_trace["decodeStatue"] = "foundry"
+                    new_trace["selector"] = func_hash
                     new_trace["function"] = trace['decoded']['call_data']['signature']
+                    new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
                     new_args = []
                     args = trace['decoded']['call_data']['args']
                     for arg in args:
@@ -172,16 +242,21 @@ def decode_trace_json(folder_prefix="result"):
                 else:
                     func_hash = trace['data'][2:10]
                     input_hash = trace['data'][10:]
+                    new_trace["selector"] = func_hash
 
                     # Use function signature database to search for 4bytes
                     func_name = get_function_signature(func_hash)
 
                     if func_name:
+                        new_trace["decodeStatue"] = "database"
                         new_trace["function"] = func_name
+                        new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
                         new_trace["input"] = decode_input(func_name, input_hash)
                     else:
                         # If we can not get the function name, just use function hash as name
+                        new_trace["decodeStatue"] = "none"
                         new_trace["function"] = func_hash
+                        new_trace["functionName"], new_trace["parameters"] = func_hash, {}
                         new_trace["input"] = decode_input(func_hash, input_hash)
 
             # If trace is an event log
