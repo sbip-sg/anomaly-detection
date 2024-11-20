@@ -174,50 +174,49 @@ def decode_unknown_input(chunks, data=False, event=True):
             input_list.append(decode(['address'], bytes.fromhex(line))[0])
     return input_list
 
-def digit_arg(arg):
-    arg = arg.strip()
-    if len(arg) != 0 and arg[0] == '(' and arg[-1] ==')':
-        args = split_outside_parentheses(arg[1:-1])
-        new_arg = []
-        for item in args:
-            new_arg.append(digit_arg(item))
-        return new_arg
 
-    elif len(arg.split(' ')) == 2 and arg.split(' ')[1][0] == '[' and arg.split(' ')[1][-1] == ']':
-        arg = arg.split(' ')[0]
+def parse_grouped_elements(input_str):
+    # Step 1: Handle the special cases
+    # Replace ', ' with ','
+    input_str = input_str.replace(', ', ',')
+    # Replace patterns like 'number [number e number]' or 'number [number.number e number]' with just 'number'
+    input_str = re.sub(r'(\d+)\s*\[\d+(\.\d+)?e\d+\]', r'\1', input_str)
+    # input lower
+    input_str = input_str.lower()
 
-    return arg.lower()
+    def parse_recursive(s, index):
+        result = []
+        current = []
 
-def split_outside_parentheses(s):
-    result = []
-    current_part = []
-    level = 0  # To track the depth of parentheses
+        while index < len(s):
+            char = s[index]
+            if char == ',':
+                # Add current element to result if not empty
+                if current:
+                    result.append(''.join(current).strip())
+                    current = []
+            elif char in '[(':
+                # Start a new group, call recursively
+                group, index = parse_recursive(s, index + 1)
+                result.append(group)
+            elif char in '])':
+                # End of current group, finalize and return
+                if current:
+                    result.append(''.join(current).strip())
+                return result, index
+            else:
+                # Part of an element
+                current.append(char)
+            index += 1
 
-    for char in s:
-        if char == ',' and level == 0:
-            # Split only if not inside parentheses
-            result.append(''.join(current_part))
-            current_part = []
-        else:
-            if char == '(':
-                level += 1
-            elif char == ')':
-                level -= 1
-            current_part.append(char)
+        # Finalize last element if outside any group
+        if current:
+            result.append(''.join(current).strip())
+        return result, index
 
-    # Add the last part
-    result.append(''.join(current_part))
-    return result
-
-def process_args(arg):
-    if arg[0] == '[' and arg[-1] == ']':
-        new_arg = []
-        args = split_outside_parentheses(arg[1:-1])
-        for item in args:
-            new_arg.append(digit_arg(item))
-    else:
-        new_arg = [digit_arg(arg)]
-    return new_arg
+    # Step 2: Parse the remaining string
+    parsed_list, _ = parse_recursive(input_str, 0)
+    return parsed_list
 
 # Function to decode trace JSON files
 def decode_trace_json(folder_prefix="result"):
@@ -267,7 +266,7 @@ def decode_trace_json(folder_prefix="result"):
                     new_args = []
                     args = trace['decoded']['call_data']['args']
                     for arg in args:
-                        arg = process_args(arg)
+                        arg = parse_grouped_elements(arg)
                         new_args.append(arg)
                     new_trace["input"] = new_args
                     if len(new_args) == 0 and len(trace['data'][10:]) != 0:
