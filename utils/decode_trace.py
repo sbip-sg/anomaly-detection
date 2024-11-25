@@ -181,6 +181,9 @@ def parse_grouped_elements(input_str):
     input_str = input_str.replace(', ', ',')
     # Replace patterns like 'number [number e number]' or 'number [number.number e number]' with just 'number'
     input_str = re.sub(r'(\d+)\s*\[\d+(\.\d+)?e\d+\]', r'\1', input_str)
+
+    # Replace patterns like '-number [-number e number]' or '-number [-number.number e number]' with just '-number'
+    input_str = re.sub(r'(-\d+)\s*\[-\d+(\.\d+)?e\d+\]', r'\1', input_str)
     # input lower
     input_str = input_str.lower()
 
