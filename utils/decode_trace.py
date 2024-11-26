@@ -177,6 +177,10 @@ def decode_unknown_input(chunks, data=False, event=True):
 
 def parse_grouped_elements(input_str):
     # Step 1: Handle the special cases
+    if '\"' in input_str:
+        return [input_str]
+    if 'ecrecover:' in input_str.lower():
+        input_str = re.findall(r'\[(.*?)\]', input_str)[0]
     # Replace ', ' with ','
     input_str = input_str.replace(', ', ',')
     # Replace patterns like 'number [number e number]' or 'number [number.number e number]' with just 'number'
@@ -216,7 +220,6 @@ def parse_grouped_elements(input_str):
         if current:
             result.append(''.join(current).strip())
         return result, index
-
     # Step 2: Parse the remaining string
     parsed_list, _ = parse_recursive(input_str, 0)
     return parsed_list
