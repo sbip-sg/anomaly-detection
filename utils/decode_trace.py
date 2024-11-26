@@ -319,8 +319,7 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["status"] = trace['status']
 
             # If trace is a function call
-            if trace['kind'].lower() == 'call' or trace['kind'].lower() == 'delegatecall' or trace[
-                'kind'].lower() == 'staticcall':
+            if 'call' in trace['kind'].lower():
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
                 new_trace["depth"] = trace["depth"]
@@ -366,6 +365,7 @@ def decode_trace_json(folder_prefix="result"):
                         new_trace["function"] = func_hash
                         new_trace["functionName"], new_trace["parameters"] = func_hash, {}
                         new_trace["input"] = decode_input(func_hash, input_hash)
+                new_trace["output"] = decode_input(func_hash, trace['output'][2:])
 
             # If trace is an event log
             elif trace['kind'].lower() == 'event':
