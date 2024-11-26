@@ -224,6 +224,74 @@ def parse_grouped_elements(input_str):
     parsed_list, _ = parse_recursive(input_str, 0)
     return parsed_list
 
+# guess the type of a parameter
+def guess_type(parameter):
+    def is_lowercase_address(address):
+        """
+        Checks whether the given string is a valid lowercase Ethereum address.
+
+        Args:
+            address (str): The string to check.
+
+        Returns:
+            bool: True if the string is a valid lowercase Ethereum address, False otherwise.
+        """
+        if not isinstance(address, str):
+            return False
+        # Ethereum addresses should be 42 characters long and start with '0x'
+        if len(address) != 42 or not address.startswith("0x"):
+            return False
+        # Check if the remaining 40 characters are lowercase hexadecimal
+        return bool(re.fullmatch(r"0x[0-9a-f]{40}", address))
+
+    def is_bool(bool_string):
+        return bool_string in ['true', 'false']
+
+    if isinstance(parameter, int):
+        return 'int'
+    if is_bool(parameter):
+        return 'bool'
+    elif parameter.isdigit():
+        return 'int'
+    elif is_lowercase_address(parameter):
+        return 'address'
+    elif parameter.startswith('0x'):
+        return 'bytes'
+    else:
+        return 'string'
+
+# check whether elements in a list have the same type
+def check_list(plist, ptype):
+    if len(plist) == 0:
+        return True
+    for element in plist[0]:
+        if guess_type(element) not in ptype:
+            return False
+    return True
+
+# Add the inputs into parameters
+def input_parameter(inputs, parameters, inner = False):
+    if 'elements' in parameters:
+        elements = parameters['elements']
+        if len(elements) == len(inputs):
+            for key in range(len(inputs)):
+                if elements[key]['type'] not in ['list', 'structure']:
+                    if not inner:
+                        value = inputs[key][0]
+                    else:
+                        value = inputs[key]
+                    if guess_type(value) in elements[key]['type']:
+                        elements[key]['value'] = value
+                elif elements[key]['type'] == 'list':
+                    if elements[key]['inner_type']['type'] not in ['list', 'structure']:
+                        if check_list(inputs[key], elements[key]['inner_type']['type']):
+                            elements[key]['value'] = inputs[key]
+                    else:
+                        elements[key]['value'] = inputs[key]
+                elif elements[key]['type'] == 'structure':
+                    elements[key] = input_parameter(inputs[key][0], elements[key], True)
+    return parameters
+
 # Function to decode trace JSON files
 def decode_trace_json(folder_prefix="result"):
     # dumping decoded traces and event to invocation_tree folder
@@ -278,6 +346,8 @@ def decode_trace_json(folder_prefix="result"):
                     if len(new_args) == 0 and len(trace['data'][10:]) != 0:
                         new_trace["input"] = decode_input(new_trace["function"], input_hash)
                         new_trace["decodeStatue"] = "database"
+                    else:
+                        new_trace['parameters'] = input_parameter(new_trace['input'], new_trace['parameters'])
 
                 else:
                     new_trace["selector"] = func_hash
