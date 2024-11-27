@@ -331,9 +331,9 @@ def decode_trace_json(folder_prefix="result"):
                 # When foundry can decode it.
                 func_hash = trace['data'][2:10]
                 input_hash = trace['data'][10:]
+                new_trace["selector"] = func_hash
                 if trace['decoded']['call_data']:
                     new_trace["decodeStatue"] = "foundry"
-                    new_trace["selector"] = func_hash
                     new_trace["function"] = trace['decoded']['call_data']['signature']
                     new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
                     new_args = []
@@ -349,7 +349,6 @@ def decode_trace_json(folder_prefix="result"):
                         new_trace['parameters'] = input_parameter(new_trace['input'], new_trace['parameters'])
 
                 else:
-                    new_trace["selector"] = func_hash
 
                     # Use function signature database to search for 4bytes
                     func_name = get_function_signature(func_hash)
@@ -393,7 +392,7 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
 
             # If trace is a create log
-            elif trace['kind'].lower() == 'create' or trace['kind'].lower() == 'create2':
+            elif 'create' in trace['kind'].lower():
 
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
