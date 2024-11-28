@@ -222,7 +222,7 @@ def collect_state_changes(steps):
     state_changes_list = []
     op_code_list = []
     for step in steps:
-        op_code_list.append(step['op'])
+        op_code_list.append(hex(step['op'])[2:].upper())
         # If a step hs storage change
         if step['storage_change']:
             state_changes_list.append(step['storage_change'])
