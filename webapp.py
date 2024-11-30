@@ -16,6 +16,7 @@ CORS(app)
 
 from pipeline import main as process_request
 
+
 def try_read_as_json(path):
     try:
         with open(path, 'r') as f:
@@ -23,6 +24,7 @@ def try_read_as_json(path):
     except Exception:
         traceback.print_exc()
         return None
+
 
 def should_overwrite(request):
     return request.values.get('overwrite', 'false').lower() in {'on', 'true', '1', 't', 'y', 'yes'}
@@ -56,6 +58,7 @@ def validate_turnstile(request: Request):
 def formatjson_filter(data):
     return json.dumps(data, indent=4)
 
+
 def get_results(tx_hash, chain, overwrite):
     folder_prefix = f'result/{tx_hash}_{chain}'
     process_request(tx_hash, chain, overwrite)
@@ -67,7 +70,7 @@ def get_results(tx_hash, chain, overwrite):
         'basic_info': basic_info,
         'balance_info': balance_info,
         'token_flow': token_flow,
-        'invocation_tree': decoded_trace
+        'invocation_tree': decoded_trace,
     }
     return results
 
@@ -83,7 +86,6 @@ def debug_handler():
     elif request.method == 'GET':
         tx_hash = request.args.get('txhash')
         chain = request.form.get('chain')
-
 
     results = get_results(tx_hash, chain, overwrite) if tx_hash else {}
 
@@ -108,10 +110,10 @@ def process():
     return jsonify(results)
 
 
-
 @app.route('/')
 def index_handler():
     return send_from_directory('build', 'index.html')
+
 
 @app.route('/<path:filename>')
 def static_files(filename):
@@ -119,6 +121,7 @@ def static_files(filename):
         return send_from_directory('build', filename)
     except werkzeug.exceptions.NotFound:
         return send_from_directory('build', 'index.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

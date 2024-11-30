@@ -10,11 +10,11 @@ currency_dict = {}
 file = open("utils/token.json")
 transform = json.load(file)
 
+
 # Request coingecko api to get token exchange rate to usd (This function is not stable when calling too frequently)
 def collect(token, date):
-
     # Can only get exchange rates since one year ago.
-    url = ('https://api.coingecko.com/api/v3/coins/' + token + '/history?date='+date+'&localization=false')
+    url = ('https://api.coingecko.com/api/v3/coins/' + token + '/history?date=' + date + '&localization=false')
 
     try:
         data = requests.get(url).json()
@@ -25,11 +25,14 @@ def collect(token, date):
         time.sleep(13)
         return 0
 
+
 # Get exchange rate of cryptocurrency
 # Plans:
 #   1, Find more stable api
 #   2, Build an exchange rate database and maintain it everyday
 def get_rate(time_stamp, currency):
+    if currency.lower() == 'usdc' or currency.lower() == 'usdt':
+        return 1
     if currency not in currency_dict.keys():
         try:
             token = transform[currency.lower()][0]
@@ -40,7 +43,7 @@ def get_rate(time_stamp, currency):
             formatted_date = date_time.strftime('%d-%m-%Y')
             exchange_rate = collect(token, formatted_date)
         except Exception as e:
-            print(f"Error: Unknown Token")
+            print(f"Error: Unable to fetch exchange rate of {currency}")
             exchange_rate = 0
 
         currency_dict[currency] = exchange_rate

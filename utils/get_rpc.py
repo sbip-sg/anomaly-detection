@@ -12,9 +12,10 @@ class EndpointPool:
     # a dict from chain -> a set of endpoints
     usable_endpoints = {
         "eth": [
-            "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
-            "https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134",
-        ],
+                "http://sbip-g3.d2.comp.nus.edu.sg:8545",
+                # "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
+                # "https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134"
+                ],
         "optimism": ["https://op-pokt.nodies.app"],
         "fantom": ["https://rpc.ftm.tools"],
         "arbitrum": ["https://rpc.ankr.com/arbitrum"],
@@ -28,10 +29,12 @@ class EndpointPool:
     }
 
     broken_endpoints = {}
+
     def __init__(self, chain):
         self.chain = chain
         self.endpoints = self.usable_endpoints.get(chain, {})
         self.broken_endpoints[chain] = {}
+
     def mark_endpoint_broken(self, endpoint):
         '''Mark the endpoint as broken at the current timestamp.'''
         self.endpoints.remove(endpoint)
@@ -55,7 +58,7 @@ class EndpointPool:
                 self.endpoints.append(endpoint)
 
     def endpoint_by_chain(self):
-        
+
         '''Get first available endpoint to use, or raise `FindEndpointException` if no more usable endpoint available'''
         if not self.endpoints:
             self.reload_endpoint()
