@@ -2,6 +2,7 @@ import json
 from os import listdir
 from eth_abi import decode
 import os
+import re
 
 try:
     from .lookup_function import get_function_signature
@@ -13,6 +14,71 @@ try:
 except ImportError:
     from lookup_event import get_event_db_signature
 
+# Parse the structure of parameter types of a function
+def parse_structure(structure):
+    def parse_element(element):
+        # Match a single element type (letters and numbers)
+        match_single = re.fullmatch(r'[a-zA-Z_][a-zA-Z0-9_]*', element)
+        if match_single:
+            return {"type": element}
+
+        # Match a list type (e.g., 'type[]' or 'type[n]')
+        match_list = re.fullmatch(r'(.*)\[(\d*)\]', element)
+        if match_list:
+            inner_type = parse_element(match_list.group(1).strip())  # Recursively parse the inner type
+            size = match_list.group(2)  # Size, '' for infinite lists
+            return {
+                "type": "list",
+                "inner_type": inner_type,
+                "size": int(size) if size.isdigit() else "infinite"
+            }
+
+        # Match a structure (e.g., '(type1,type2)')
+        if element.startswith('(') and element.endswith(')'):
+            inner_types = split_structure(element[1:-1])
+            return {
+                "type": "structure",
+                "elements": [parse_element(t) for t in inner_types]
+            }
+
+        raise ValueError(f"Unknown element: {element}")
+
+    def split_structure(struct):
+        # Splits a structure string by ',' considering nested structures and lists
+        result = []
+        depth = 0
+        current = []
+        for char in struct:
+            if char == ',' and depth == 0:
+                result.append(''.join(current).strip())
+                current = []
+            else:
+                if char == '(' or char == '[':
+                    depth += 1
+                elif char == ')' or char == ']':
+                    depth -= 1
+                current.append(char)
+        if current:
+            result.append(''.join(current).strip())
+        return result
+
+    # Start parsing
+    return parse_element(structure)
+
+def process_function(function):
+    # Can not determine the function of this hash
+    if function.find(';') != -1:
+        return function, {}
+    try:
+        # Separate function name and parameters
+        index = function.find('(')
+        function_name = function[:index]
+        parameters = parse_structure(function[index:])
+        return function_name, parameters
+
+    # The function is not simple function(parameters)
+    except:
+        return function, {}
 
 # Function to check if parentheses are balanced in a string
 def are_parentheses_balanced(s):
@@ -109,6 +175,123 @@ def decode_unknown_input(chunks, data=False, event=True):
     return input_list
 
 
+def parse_grouped_elements(input_str):
+    # Step 1: Handle the special cases
+    if '\"' in input_str:
+        return [input_str]
+    if 'ecrecover:' in input_str.lower():
+        input_str = re.findall(r'\[(.*?)\]', input_str)[0]
+    # Replace ', ' with ','
+    input_str = input_str.replace(', ', ',')
+    # Replace patterns like 'number [number e number]' or 'number [number.number e number]' with just 'number'
+    input_str = re.sub(r'(\d+)\s*\[\d+(\.\d+)?e\d+\]', r'\1', input_str)
+
+    # Replace patterns like '-number [-number e number]' or '-number [-number.number e number]' with just '-number'
+    input_str = re.sub(r'(-\d+)\s*\[-\d+(\.\d+)?e\d+\]', r'\1', input_str)
+    # input lower
+    input_str = input_str.lower()
+
+    def parse_recursive(s, index):
+        result = []
+        current = []
+
+        while index < len(s):
+            char = s[index]
+            if char == ',':
+                # Add current element to result if not empty
+                if current:
+                    result.append(''.join(current).strip())
+                    current = []
+            elif char in '[(':
+                # Start a new group, call recursively
+                group, index = parse_recursive(s, index + 1)
+                result.append(group)
+            elif char in '])':
+                # End of current group, finalize and return
+                if current:
+                    result.append(''.join(current).strip())
+                return result, index
+            else:
+                # Part of an element
+                current.append(char)
+            index += 1
+
+        # Finalize last element if outside any group
+        if current:
+            result.append(''.join(current).strip())
+        return result, index
+    # Step 2: Parse the remaining string
+    parsed_list, _ = parse_recursive(input_str, 0)
+    return parsed_list
+
+# guess the type of a parameter
+def guess_type(parameter):
+    def is_lowercase_address(address):
+        """
+        Checks whether the given string is a valid lowercase Ethereum address.
+
+        Args:
+            address (str): The string to check.
+
+        Returns:
+            bool: True if the string is a valid lowercase Ethereum address, False otherwise.
+        """
+        if not isinstance(address, str):
+            return False
+        # Ethereum addresses should be 42 characters long and start with '0x'
+        if len(address) != 42 or not address.startswith("0x"):
+            return False
+        # Check if the remaining 40 characters are lowercase hexadecimal
+        return bool(re.fullmatch(r"0x[0-9a-f]{40}", address))
+
+    def is_bool(bool_string):
+        return bool_string in ['true', 'false']
+
+    if isinstance(parameter, int):
+        return 'int'
+    if is_bool(parameter):
+        return 'bool'
+    elif parameter.isdigit():
+        return 'int'
+    elif is_lowercase_address(parameter):
+        return 'address'
+    elif parameter.startswith('0x'):
+        return 'bytes'
+    else:
+        return 'string'
+
+# check whether elements in a list have the same type
+def check_list(plist, ptype):
+    if len(plist) == 0:
+        return True
+    for element in plist[0]:
+        if guess_type(element) not in ptype:
+            return False
+    return True
+
+# Add the inputs into parameters
+def input_parameter(inputs, parameters, inner = False):
+    if 'elements' in parameters:
+        elements = parameters['elements']
+        if len(elements) == len(inputs):
+            for key in range(len(inputs)):
+                if elements[key]['type'] not in ['list', 'structure']:
+                    if not inner:
+                        value = inputs[key][0]
+                    else:
+                        value = inputs[key]
+                    if guess_type(value) in elements[key]['type']:
+                        elements[key]['value'] = value
+                elif elements[key]['type'] == 'list':
+                    if elements[key]['inner_type']['type'] not in ['list', 'structure']:
+                        if check_list(inputs[key], elements[key]['inner_type']['type']):
+                            elements[key]['value'] = inputs[key]
+                    else:
+                        elements[key]['value'] = inputs[key]
+                elif elements[key]['type'] == 'structure':
+                    elements[key] = input_parameter(inputs[key][0], elements[key], True)
+    return parameters
+
 # Function to decode trace JSON files
 def decode_trace_json(folder_prefix="result"):
     # dumping decoded traces and event to invocation_tree folder
@@ -136,39 +319,52 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["status"] = trace['status']
 
             # If trace is a function call
-            if trace['kind'].lower() == 'call' or trace['kind'].lower() == 'delegatecall' or trace[
-                'kind'].lower() == 'staticcall':
+            if 'call' in trace['kind'].lower():
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
                 new_trace["depth"] = trace["depth"]
 
+                # Move state changes into new trace
+                if 'statechanges' in trace.keys():
+                    new_trace["statechanges"] = trace['statechanges']
+
                 # When foundry can decode it.
+                func_hash = trace['data'][2:10]
+                input_hash = trace['data'][10:]
+                new_trace["selector"] = func_hash
                 if trace['decoded']['call_data']:
+                    new_trace["decodeStatue"] = "foundry"
                     new_trace["function"] = trace['decoded']['call_data']['signature']
+                    new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
                     new_args = []
                     args = trace['decoded']['call_data']['args']
                     for arg in args:
-                        if '[' in arg:
-                            arg = arg.split(' ')[0]
-                        arg = arg.lower()
-                        if arg.isdigit():
-                            arg = int(arg)
+                        arg = parse_grouped_elements(arg)
                         new_args.append(arg)
                     new_trace["input"] = new_args
+                    if len(new_args) == 0 and len(trace['data'][10:]) != 0:
+                        new_trace["input"] = decode_input(new_trace["function"], input_hash)
+                        new_trace["decodeStatue"] = "database"
+                    else:
+                        new_trace['parameters'] = input_parameter(new_trace['input'], new_trace['parameters'])
+
                 else:
-                    func_hash = trace['data'][2:10]
-                    input_hash = trace['data'][10:]
 
                     # Use function signature database to search for 4bytes
                     func_name = get_function_signature(func_hash)
 
                     if func_name:
+                        new_trace["decodeStatue"] = "database"
                         new_trace["function"] = func_name
+                        new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
                         new_trace["input"] = decode_input(func_name, input_hash)
                     else:
                         # If we can not get the function name, just use function hash as name
+                        new_trace["decodeStatue"] = "none"
                         new_trace["function"] = func_hash
+                        new_trace["functionName"], new_trace["parameters"] = func_hash, {}
                         new_trace["input"] = decode_input(func_hash, input_hash)
+                new_trace["output"] = decode_input(func_hash, trace['output'][2:])
 
             # If trace is an event log
             elif trace['kind'].lower() == 'event':
@@ -196,7 +392,7 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
 
             # If trace is a create log
-            elif trace['kind'].lower() == 'create' or trace['kind'].lower() == 'create2':
+            elif 'create' in trace['kind'].lower():
 
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]

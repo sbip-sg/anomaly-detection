@@ -70,7 +70,7 @@ def get_results(tx_hash, chain, overwrite):
         'basic_info': basic_info,
         'balance_info': balance_info,
         'token_flow': token_flow,
-        'invocation_tree': decoded_trace
+        'invocation_tree': decoded_trace,
     }
     return results
 

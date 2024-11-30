@@ -157,7 +157,7 @@ def tree_structure(dict_list):
 
                 new_event_dict['e' + str(log_idx)] = {'parent': idx, 'position': log_position, 'log_content': new_log}
                 log_idx += 1
-
+        statechanges, opcodes = collect_state_changes(new_trace['steps'])
         # Collect the new call
         new_call = {
             'from': new_trace['caller'].lower(),
@@ -170,7 +170,8 @@ def tree_structure(dict_list):
             'data': new_trace['data'],
             'output': new_trace['output'],
             # Get all state changes in steps
-            'statechanges': collect_state_changes(new_trace['steps']),
+            'statechanges': statechanges,
+            'opcodes': opcodes,
             'status': new_trace['status'],
             'decoded': new_trace['decoded'],
         }
@@ -219,8 +220,10 @@ def original_json(dict_list):
 # Collect all state changes in the steps of a call trace
 def collect_state_changes(steps):
     state_changes_list = []
+    op_code_list = []
     for step in steps:
+        op_code_list.append(hex(step['op'])[2:].upper())
         # If a step hs storage change
         if step['storage_change']:
             state_changes_list.append(step['storage_change'])
-    return state_changes_list
+    return state_changes_list, op_code_list
