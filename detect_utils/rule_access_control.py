@@ -2,17 +2,28 @@ from detect_utils.tools import collect_from_file, filter_transaction
 
 # Detect whether all calls with state changes have at least a parent with check_opcodes as True
 def check_all_parents(state_changed_list, trace_dict):
+    key_dict = {}
+    limit = 1
     for key in state_changed_list:
+        error_sum = 0
         parent = key
+        key_dict[key] = True
         while isinstance(parent, int):
             if parent not in trace_dict:
-                return False
-            if trace_dict[parent]['callerchecked']:
-                break
-            parent = trace_dict[parent]['parent']
-            if not isinstance(parent, int):
-                return False
-    return True
+                if error_sum < limit:
+                    error_sum += 1
+                else:
+                    key_dict[key] = False
+                    break
+            else:
+                if not trace_dict[parent]['callerchecked']:
+                    if error_sum < limit:
+                        error_sum += 1
+                    else:
+                        key_dict[key] = False
+                        break
+                parent = trace_dict[parent]['parent']
+    return key_dict
 
 # There is any 57(JUMPI) after 33(CALLER)
 def check_opcodes(code_list):
@@ -48,5 +59,13 @@ def detect_access_control(tx_hash, chain):
                 'opcodes': opcodes,
                 'callerchecked': check_opcodes(opcodes)
             }
-    possible_hack = not check_all_parents(state_changed_list, trace_dict)
+    result = check_all_parents(statechangedlist, tracedict)
+
+    if len(statechangedlist) == 0:
+        possible_hack = False
+    else:
+        if sum(result.values()) / len(statechangedlist) > 0.5:
+            possible_hack = False
+        else:
+            possible_hack = True
     return possible_hack

@@ -58,7 +58,7 @@ def find_largest_number(d):
     return largest
 
 # Detect whether a transaction has high range of total supply changes.
-def detect_total_supply(tx_hash, chain):
+def detect_token_supply(tx_hash, chain):
     basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
 
     total_supply_dict = total_supply(tx_hash, chain)
