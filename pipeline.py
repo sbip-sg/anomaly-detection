@@ -38,9 +38,10 @@ def main(tx_hash, chain, overwrite=False):
     # According to the decoded invocation tree, get token flow and balance changes.
     collect_token(time_stamp, edpool, folder_prefix)
 
-    detection_result = rule_based_detection(tx_hash, chain)
+    detection_result, reason = rule_based_detection(tx_hash, chain)
 
     basic_info['detection_result'] = detection_result
+    basic_info['reason'] = reason
 
     # Save basic information
     with open(folder_prefix + '/basic_info.json', 'w') as json_file:
