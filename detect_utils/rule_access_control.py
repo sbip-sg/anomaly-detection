@@ -59,12 +59,12 @@ def detect_access_control(tx_hash, chain):
                 'opcodes': opcodes,
                 'callerchecked': check_opcodes(opcodes)
             }
-    result = check_all_parents(statechangedlist, tracedict)
+    result = check_all_parents(state_changed_list, tracedict)
 
-    if len(statechangedlist) == 0:
+    if len(state_changed_list) == 0:
         possible_hack = False
     else:
-        if sum(result.values()) / len(statechangedlist) > 0.5:
+        if sum(result.values()) / len(state_changed_list) > 0.5:
             possible_hack = False
         else:
             possible_hack = True
