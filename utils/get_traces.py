@@ -2,6 +2,7 @@
 import json
 import os
 import subprocess
+import copy
 
 cast_bin = os.environ.get('CAST_BIN', 'cast')
 
@@ -125,6 +126,7 @@ def tree_structure(dict_list):
         idx = element["idx"]
         parent = element['parent']
         children = element['children']
+        copy_children = copy.deepcopy(children)
         depth = element['trace']['depth']
         new_trace = element['trace']
 
@@ -174,6 +176,9 @@ def tree_structure(dict_list):
             'opcodes': opcodes,
             'status': new_trace['status'],
             'decoded': new_trace['decoded'],
+            'parent': parent,
+            'children': copy_children,
+            'call_idx': idx
         }
         if new_trace['selfdestruct_address']:
             new_selfdestruct = {
