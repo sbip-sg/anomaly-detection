@@ -5,7 +5,7 @@ def calc_ratio(numbers):
         return None  # Return None or raise an error if needed
     largest = max(numbers)
     smallest = min(numbers)
-    return [(largest - smallest) / largest, largest - smallest]
+    return (largest - smallest) / largest
 
 # Detect whether the trace of a transaction has event named flashloan and return the receiver address list
 def total_supply(tx_hash, chain):
@@ -36,7 +36,7 @@ def total_supply(tx_hash, chain):
     for n in list(total_supply.keys()):  # Use list to allow modification during iteration
         for address in list(total_supply[n].keys()):
             # Check if the calculated ratio is zero
-            if total_supply[n][address][0] == 0 or total_supply[n][address] is None:
+            if total_supply[n][address] == 0 or total_supply[n][address] is None:
                 del total_supply[n][address]  # Remove the address
         # Remove function name if it has no addresses left
         if not total_supply[n]:
