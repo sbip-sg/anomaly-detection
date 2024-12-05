@@ -30,8 +30,25 @@ chain_dict = {
     "celo": "CELO"
 }
 
-def get_rate(address, block_number):
-    return 1
+uniswap_file = open("utils/uniswapv2.abi.json")
+uniswap = json.load(uniswap_file)
+
+def get_rate(address, block_number, w3, decimal):
+    contract_address = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+    contract = w3.eth.contract(address=contract_address, abi=uniswap)
+    if address == '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2':
+        second_address = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+    else:
+        second_address = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+    method = contract.functions.getAmountsOut(pow(10, decimal), [address, second_address])
+    result = method.call(block_identifier=block_number)
+
+    if address == '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2':
+        print(result[1] / 1e6)
+        return result[1] / 1e6
+    else:
+        print(rate_dict['ETH'] * result[1] / 1e18)
+        return rate_dict['ETH'] * result[1] / 1e18
 
 # Get the currency symbol and decimals by the contract
 def get_currency(hash, block_number, rpc):
@@ -48,8 +65,13 @@ def get_currency(hash, block_number, rpc):
             currency = contract.functions.symbol().call()
             # Get decimals
             decimal = contract.functions.decimals().call()
-            # Get exchange rate
-            exchange_rate = get_rate(address, block_number)
+            if 'usd' in currency.lower():
+                exchange_rate = 1
+            elif 'eth' in currency.lower():
+                exchange_rate = rate_dict['ETH']
+            else:
+                # Get exchange rate
+                exchange_rate = get_rate(address, block_number, w3, decimal)
         except Exception as e:
             print('Error: can not get transfer currency', hash.lower())
             currency = hash
@@ -174,11 +196,11 @@ def collect_token(block_number, edpool, folder_prefix):
 
     # get the default token name
     token = chain_dict[edpool.chain]
-
-    rate_dict[token] = get_rate('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', block_number)
     # collect token flows of each transaction
     flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
     rpc = edpool.endpoint_by_chain()
+    w3 = Web3(Web3.HTTPProvider(rpc))
+    rate_dict[token] = get_rate('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', block_number, w3, 18)
     jsonlist = listdir(folder_prefix + '/invocation_tree')
     for i in jsonlist:
         file = open(folder_prefix + '/invocation_tree/' + i)
@@ -209,7 +231,7 @@ def collect_token(block_number, edpool, folder_prefix):
 
                     # event name as withdrawal refers to token withdraw
                     elif event_name.lower() == 'withdrawal' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                        currency, decimal = get_currency(trace['address'], rpc)
+                        currency, decimal = get_currency(trace['address'], block_number - 1, rpc)
                         from_address = input[0]
                         if len(trace['data']) == 2:
                             amount = trace['data'][1]
@@ -221,7 +243,7 @@ def collect_token(block_number, edpool, folder_prefix):
 
                     # event name as deposit refers to token deposit
                     elif event_name.lower() == 'deposit' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                            currency, decimal = get_currency(trace['address'], rpc)
+                            currency, decimal = get_currency(trace['address'], block_number - 1, rpc)
                             to_address = input[0]
                             if len(trace['data']) == 2:
                                 amount = trace['data'][1]
