@@ -57,8 +57,9 @@ def collect_info(transaction_hash, edpool):
         'from': sender,
         'to': recipient,
         'gasUsed': receipt['gasUsed'],  # Get gas used from transaction receipt
-        'timestamp': timestamp
+        'timestamp': timestamp,
+        'blocknumber': transaction['blockNumber']
     }
 
     # Return the DataFrame containing transaction information
-    return transaction_data, timestamp
+    return transaction_data

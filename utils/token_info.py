@@ -2,7 +2,6 @@ import json
 import pandas as pd
 from os import listdir
 from web3 import Web3
-from utils.get_rate import get_rate
 
 # Abi file to call contract for symbol and decimals
 abi_file = open("utils/erc20.abi.json")
@@ -10,6 +9,9 @@ abi = json.load(abi_file)
 
 # dict to store currency symbol and decimals
 currency_dict = {}
+
+# dict to store token exchange rate
+rate_dict = {}
 
 # Chain-currency dict
 # getting the default currency is by value, so we need prior knowledge of tokens
@@ -28,9 +30,11 @@ chain_dict = {
     "celo": "CELO"
 }
 
+def get_rate(address, block_number):
+    return 1
 
 # Get the currency symbol and decimals by the contract
-def get_currency(hash, rpc):
+def get_currency(hash, block_number, rpc):
     hash = hash.lower()
     if hash not in currency_dict:
         w3 = Web3(Web3.HTTPProvider(rpc))
@@ -44,13 +48,17 @@ def get_currency(hash, rpc):
             currency = contract.functions.symbol().call()
             # Get decimals
             decimal = contract.functions.decimals().call()
+            # Get exchange rate
+            exchange_rate = get_rate(address, block_number)
         except Exception as e:
             print('Error: can not get transfer currency', hash.lower())
             currency = hash
             decimal = 0
-        currency_dict[hash] = (currency, decimal)
+            exchange_rate = 0
+        currency_dict[hash] = (currency, decimal, exchange_rate)
+        rate_dict[currency] = exchange_rate
     else:
-        (currency, decimal) = currency_dict[hash]
+        (currency, decimal, exchange_rate) = currency_dict[hash]
     return currency, decimal
 
 
@@ -160,13 +168,14 @@ def remove_zeros(total_dict):
 
 
 # collect tokens from decoded invocation tree
-def collect_token(time_stamp, edpool, folder_prefix):
+def collect_token(block_number, edpool, folder_prefix):
     # collect balance change of each transaction
     total_dict = {}
 
     # get the default token name
     token = chain_dict[edpool.chain]
 
+    rate_dict[token] = get_rate('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', block_number)
     # collect token flows of each transaction
     flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
     rpc = edpool.endpoint_by_chain()
@@ -191,7 +200,7 @@ def collect_token(time_stamp, edpool, folder_prefix):
 
                     # event name as transfer refers to token transfer
                     if event_name.lower() == 'transfer':
-                        currency, decimal = get_currency(trace['address'], rpc)
+                        currency, decimal = get_currency(trace['address'], block_number - 1, rpc)
                         from_address, to_address, amount = find_address_transfer_event(trace, input)
                         if isinstance(amount, int):
                             value = amount / pow(10, decimal)
@@ -242,7 +251,7 @@ def collect_token(time_stamp, edpool, folder_prefix):
                 address_balance = summary_dict[address]
                 for token in address_balance:
                     value = address_balance[token]
-                    rate = get_rate(time_stamp, token)
+                    rate = rate_dict[token]
                     address_balance[token] = [value, value * rate]
             total_dict[transaction_hash] = summary_dict
 
