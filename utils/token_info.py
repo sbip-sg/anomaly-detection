@@ -44,10 +44,8 @@ def get_rate(address, block_number, w3, decimal):
     result = method.call(block_identifier=block_number)
 
     if address == '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2':
-        print(result[1] / 1e6)
         return result[1] / 1e6
     else:
-        print(rate_dict['ETH'] * result[1] / 1e18)
         return rate_dict['ETH'] * result[1] / 1e18
 
 # Get the currency symbol and decimals by the contract
