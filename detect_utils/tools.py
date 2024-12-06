@@ -13,7 +13,7 @@ def filter_transaction(basic_info):
     to_address = basic_info.get('to')
     base_gas = 21000
 
-    if to_address is None:
+    if to_address == 'empty':
         # contract creation, assuming nobody hacks here
         if gas_used > base_gas * 5:  # TODO update this threshold if necessary
             return True
