@@ -34,18 +34,27 @@ uniswap_file = open("utils/uniswapv2.abi.json")
 uniswap = json.load(uniswap_file)
 
 def get_rate(address, block_number, w3, decimal):
+    # uniswap v2 address
     contract_address = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
     contract = w3.eth.contract(address=contract_address, abi=uniswap)
+
+    # warped ether
     if address == '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2':
+        # USDT
         second_address = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
     else:
+        # warped ether
         second_address = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+
+    # Get contract sawp amount
     method = contract.functions.getAmountsOut(pow(10, decimal), [address, second_address])
     result = method.call(block_identifier=block_number)
 
+    # warped ether to USDT
     if address == '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2':
         return result[1] / 1e6
     else:
+        # token to warped ether to USDT
         return rate_dict['ETH'] * result[1] / 1e18
 
 # Get the currency symbol and decimals by the contract
@@ -196,6 +205,8 @@ def collect_token(block_number, edpool, folder_prefix):
     token = chain_dict[edpool.chain]
     # collect token flows of each transaction
     flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
+
+    # get original token exchange rate
     rpc = edpool.endpoint_by_chain()
     w3 = Web3(Web3.HTTPProvider(rpc))
     rate_dict[token] = get_rate('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', block_number, w3, 18)
