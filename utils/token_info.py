@@ -230,7 +230,7 @@ def collect_token(block_number, edpool, folder_prefix):
                     input = trace['input']
 
                     # event name as transfer refers to token transfer
-                    if event_name.lower() == 'transfer':
+                    if event_name.lower() == 'transfer' and len(input) != 0:
                         currency, decimal = get_currency(trace['address'], block_number - 1, rpc)
                         from_address, to_address, amount = find_address_transfer_event(trace, input)
                         if isinstance(amount, int):
