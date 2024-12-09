@@ -16,7 +16,7 @@ def total_supply(tx_hash, chain):
     for element in trace:
         if 'call' in element['type']:
             element_name = element['functionName'].lower()
-            if 'totalsupply' in element_name:
+            if 'totalsupply' in element_name  and len(element['output']) > 0:
                 if isinstance(element['output'][0], int):
                     if element_name not in total_supply:
                         total_supply[element_name] = {}
