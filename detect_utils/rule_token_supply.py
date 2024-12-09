@@ -14,7 +14,7 @@ def total_supply(tx_hash, chain):
     total_supply = {}
 
     for element in trace:
-        if 'call' in element['type']:
+        if element['type'].lower() == 'call' or element['type'] == 'staticcall':
             element_name = element['functionName'].lower()
             if 'totalsupply' in element_name  and len(element['output']) > 0:
                 if isinstance(element['output'][0], int):

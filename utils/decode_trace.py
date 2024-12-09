@@ -246,7 +246,8 @@ def guess_type(parameter):
 
     def is_bool(bool_string):
         return bool_string in ['true', 'false']
-
+    while isinstance(parameter, list):
+        parameter = parameter[0]
     if isinstance(parameter, int):
         return 'int'
     if is_bool(parameter):
