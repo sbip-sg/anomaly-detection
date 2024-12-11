@@ -72,9 +72,9 @@ def get_currency(hash, block_number, rpc):
             currency = contract.functions.symbol().call()
             # Get decimals
             decimal = contract.functions.decimals().call()
-            if 'usd' in currency.lower():
+            if 'usd' in currency.lower() and len(currency.lower()) <= 6:
                 exchange_rate = 1
-            elif 'eth' in currency.lower():
+            elif 'eth' in currency.lower() and len(currency.lower()) <= 6:
                 exchange_rate = rate_dict['ETH']
             else:
                 # Get exchange rate

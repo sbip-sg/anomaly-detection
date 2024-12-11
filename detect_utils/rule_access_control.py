@@ -46,7 +46,11 @@ def detect_access_control(tx_hash, chain):
     trace = collect_from_file(tx_hash, chain, '/trace_json/trace_' + tx_hash + '.json')
     for t in trace:
         if 'call' in t['kind']:
-            state_changed = bool(t['statechanges'])
+            state_changed = False
+            for change in t['statechanges']:
+                if change['reason'] == 'SSTORE':
+                    state_changed = True
+                    break
             if state_changed:
                 state_changed_list.append(t['call_idx'])
             parent = t['parent']
