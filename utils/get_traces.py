@@ -46,7 +46,7 @@ def cast_run(rpc_url, txhash, raw, output):
     # Define the command
     command = [
         'cast', 'run', txhash,
-        '-r', rpc_url, '--decode-internal', '--with-state-changes', '-j'
+        '-r', rpc_url, '--decode-internal', '-vvvvv', '--json'
     ]
 
     if 'nus' in rpc_url:
