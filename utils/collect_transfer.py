@@ -36,7 +36,7 @@ def get_rate(address, block_number, w3, decimal, rate_dict):
         return rate_dict['ETH'] * result[1] / 1e18
 
 # Get the currency symbol and decimals by the contract
-def get_currency(hash, block_number, rpc):
+def get_currency(hash, block_number, rpc, rate_dict):
     hash = hash.lower()
     if hash not in currency_dict:
         w3 = Web3(Web3.HTTPProvider(rpc))

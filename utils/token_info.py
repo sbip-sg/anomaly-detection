@@ -87,7 +87,7 @@ def collect_token(block_number, edpool, folder_prefix):
 
                     # event name as transfer refers to token transfer
                     if event_name.lower() == 'transfer' and len(input) != 0:
-                        currency, decimal = get_currency(trace['address'], block_number - 1, rpc)
+                        currency, decimal = get_currency(trace['address'], block_number - 1, rpc, rate_dict)
                         from_address, to_address, amount = find_address_transfer_event(trace, input)
                         if isinstance(amount, int):
                             value = amount / pow(10, decimal)
@@ -96,7 +96,7 @@ def collect_token(block_number, edpool, folder_prefix):
 
                     # event name as withdrawal refers to token withdraw
                     elif event_name.lower() == 'withdrawal' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                        currency, decimal = get_currency(trace['address'], block_number - 1, rpc)
+                        currency, decimal = get_currency(trace['address'], block_number - 1, rpc, rate_dict)
                         from_address = input[0]
                         if len(trace['data']) == 2:
                             amount = trace['data'][1]
