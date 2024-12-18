@@ -23,12 +23,11 @@ def has_cycle(xs):
 # 2. if the sender's balance changes by more than 10k USD
 def detect_cyclic_transaction(tx_hash, chain):
     basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
-    if not filter_transaction(basic_info):
+    trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
+    if not filter_transaction(basic_info, trace):
         return False
 
     sender = basic_info.get('from')
-
-    trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
     functions = []
 
     for call in trace:

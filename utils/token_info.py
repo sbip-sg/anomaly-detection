@@ -2,7 +2,8 @@ import json
 import pandas as pd
 from os import listdir
 from web3 import Web3
-from utils.collect_transfer import get_rate, get_currency, find_address_transfer_event, deal_transfer, othertransfer
+from utils.collect_transfer import get_rate, get_currency, find_address_transfer_event, deal_transfer, othertransfer,get_currency_dict
+import os
 
 # Chain-currency dict
 # getting the default currency is by value, so we need prior knowledge of tokens
@@ -108,7 +109,7 @@ def collect_token(block_number, edpool, folder_prefix):
 
                     # event name as deposit refers to token deposit
                     elif event_name.lower() == 'deposit' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                            currency, decimal = get_currency(trace['address'], block_number - 1, rpc)
+                            currency, decimal = get_currency(trace['address'], block_number - 1, rpc, rate_dict)
                             to_address = input[0]
                             if len(trace['data']) == 2:
                                 amount = trace['data'][1]
@@ -145,7 +146,17 @@ def collect_token(block_number, edpool, folder_prefix):
     # Remove zeros and empty address
     total_dict = remove_zeros(total_dict)
 
+    os.makedirs(folder_prefix + '/token_info', exist_ok=True)
+
     # dump balance and tokenflow
-    with open(folder_prefix + '/balance.json', 'w') as json_file:
+    with open(folder_prefix + '/token_info/balance.json', 'w') as json_file:
         json.dump(total_dict, json_file, indent=2)
-    flow.to_json(folder_prefix + '/tokenflow.json', orient='records', indent=2)
+    flow.to_json(folder_prefix + '/token_info/tokenflow.json', orient='records', indent=2)
+
+    with open(folder_prefix + '/token_info/rate_dict.json', 'w') as json_file2:
+        json.dump(rate_dict, json_file2, indent=2)
+
+    currency_dict = get_currency_dict()
+
+    with open(folder_prefix + '/token_info/currency_dict.json', 'w') as json_file3:
+        json.dump(currency_dict, json_file3, indent=2)

@@ -110,6 +110,9 @@ def deal_transfer(summary, currency, trace, flow):
 
     return summary
 
+def get_currency_dict():
+    return currency_dict
+
 
 # This function is from observation and would be less reliable
 # Function to find the address and amount from an event

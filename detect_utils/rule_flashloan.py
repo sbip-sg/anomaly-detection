@@ -25,11 +25,11 @@ def has_flashloan(tx_hash, chain):
 # Detect whether a transaction uses flashloan and has high incomes.
 def detect_flashloan_transaction(tx_hash, chain):
     basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
-
+    trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
     address_list = has_flashloan(tx_hash, chain)
 
     # Gas usage not passed
-    if not filter_transaction(basic_info):
+    if not filter_transaction(basic_info, trace):
         return False
 
     # No flashloan

@@ -63,8 +63,11 @@ def detect_token_supply(tx_hash, chain):
 
     total_supply_dict = total_supply(tx_hash, chain)
 
+    basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
+    trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
+
     # Gas usage not passed
-    if not filter_transaction(basic_info):
+    if not filter_transaction(basic_info, trace):
         return False
 
     # No total supply
