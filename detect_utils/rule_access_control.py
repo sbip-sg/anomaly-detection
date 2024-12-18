@@ -96,8 +96,8 @@ def check_balance(tx_hash, chain, value):
 def detect_access_control(tx_hash, chain):
     idx_dict = collect_idx(tx_hash, chain)
     skiplist = ['swap', 'transferfrom', 'deposit', 'withdraw', 'flashloan', 'receiveflashloan', 'transfer'
-                , 'multicall', 'swapuniv2', 'execute', 'fallback', 'mint', 'swapcallback', 'wrapall', 'sweeptoken'
-               ,'patchsequence', 'swapexactytfortoken', 'exectransaction']
+                , 'multicall', 'swapuniv3', 'execute', 'fallback', 'mint', 'swapcallback', 'wrapall', 'sweeptoken'
+               ,'patchsequence', 'swapexactytfortoken', 'exectransaction', 'finalizeethwithdrawal']
 
     trace = collect_from_file(tx_hash, chain, '/trace_json/trace_' + tx_hash + '.json')
     sum_value = 0
