@@ -2,14 +2,8 @@ import json
 import pandas as pd
 from os import listdir
 from web3 import Web3
-from utils.get_rate import get_rate
-
-# Abi file to call contract for symbol and decimals
-abi_file = open("utils/erc20.abi.json")
-abi = json.load(abi_file)
-
-# dict to store currency symbol and decimals
-currency_dict = {}
+from utils.collect_transfer import get_rate, get_currency, find_address_transfer_event, deal_transfer, othertransfer,get_currency_dict
+import os
 
 # Chain-currency dict
 # getting the default currency is by value, so we need prior knowledge of tokens
@@ -28,108 +22,8 @@ chain_dict = {
     "celo": "CELO"
 }
 
-
-# Get the currency symbol and decimals by the contract
-def get_currency(hash, rpc):
-    hash = hash.lower()
-    if hash not in currency_dict:
-        w3 = Web3(Web3.HTTPProvider(rpc))
-        try:
-            address = Web3.to_checksum_address(hash)
-            contract = w3.eth.contract(
-                address=address,
-                abi=abi,
-            )
-            # Get symbol
-            currency = contract.functions.symbol().call()
-            # Get decimals
-            decimal = contract.functions.decimals().call()
-        except Exception as e:
-            print('Error: can not get transfer currency', hash.lower())
-            currency = hash
-            decimal = 0
-        currency_dict[hash] = (currency, decimal)
-    else:
-        (currency, decimal) = currency_dict[hash]
-    return currency, decimal
-
-
-# Build a function to inject information to a summary dict
-def update_summary(summary, address, currency, amount):
-    # if new address
-    if address not in summary:
-        summary[address] = {}
-
-    # if new currency
-    if currency not in summary[address]:
-        summary[address][currency] = 0
-
-    # calculate changes
-    summary[address][currency] += amount
-    return summary
-
-
-# Function to handle other-token transfer transactions
-def othertransfer(summary, currency, from_address, to_address, amount, flow):
-    # Delete from from-address
-    summary = update_summary(summary, from_address, currency, -amount)
-    # Add to to-address
-    summary = update_summary(summary, to_address, currency, amount)
-    # Input transfer to dataframe flow
-    if amount != 0:
-        flow.loc[len(flow)] = [from_address, to_address, currency, amount]
-
-    return summary
-
-
-# Function to deal with local-token transfer transactions
-def deal_transfer(summary, currency, trace, flow):
-    from_address = trace["from"]
-    to_address = trace["to"]
-    amount = trace["value"] / 1e18
-
-    summary = update_summary(summary, from_address, currency, -amount)
-    summary = update_summary(summary, to_address, currency, amount)
-    if amount != 0:
-        flow.loc[len(flow)] = [from_address, to_address, currency, amount]
-
-    return summary
-
-
-# This function is from observation and would be less reliable
-# Function to find the address and amount from an event
-def find_address_transfer_event(trace, input):
-    # from address is normally the first of the inputs
-    if (trace['address'] == '0x82af49447d8a07e3bd95bd0d56f35241523fbab1' and
-            input[0] == '0x0000000000000000000000000000000000000000'):
-        from_address = trace['address']
-    else:
-        from_address = input[0]
-
-    # If an event have more than 2 inputs, the second would be to address and the third would be amount
-    if len(input) > 2:
-        to_address = input[1]
-        amount = input[2]
-
-    # If an event have 2 inputs and have data, amount is normally data and the second input would be to address
-    elif len(input) == 2 and trace['data']:
-        amount = trace['data'][0]
-        to_address = input[1]
-    elif len(input) == 2:
-        from_address = '0x' + '0' * 40
-        to_address = input[0]
-        amount = 1
-    # If an event have less than 2 inputs and have data, this transfer may be from null.
-    elif trace['data']:
-        amount = trace['data'][0]
-        from_address = trace['address']
-        to_address = input[0]
-
-    # if have no information, ignore it.
-    else:
-        amount = 0
-        to_address = '0x' + '0' * 40
-    return from_address, to_address, amount
+# dict to store token exchange rate
+rate_dict = {}
 
 
 # For the output dict, remove zero values and empty values
@@ -160,16 +54,19 @@ def remove_zeros(total_dict):
 
 
 # collect tokens from decoded invocation tree
-def collect_token(time_stamp, edpool, folder_prefix):
+def collect_token(block_number, edpool, folder_prefix):
     # collect balance change of each transaction
     total_dict = {}
 
     # get the default token name
     token = chain_dict[edpool.chain]
-
     # collect token flows of each transaction
     flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
+
+    # get original token exchange rate
     rpc = edpool.endpoint_by_chain()
+    w3 = Web3(Web3.HTTPProvider(rpc))
+    rate_dict[token] = get_rate('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', block_number, w3, decimal=18, rate_dict = rate_dict)
     jsonlist = listdir(folder_prefix + '/invocation_tree')
     for i in jsonlist:
         file = open(folder_prefix + '/invocation_tree/' + i)
@@ -190,8 +87,8 @@ def collect_token(time_stamp, edpool, folder_prefix):
                     input = trace['input']
 
                     # event name as transfer refers to token transfer
-                    if event_name.lower() == 'transfer':
-                        currency, decimal = get_currency(trace['address'], rpc)
+                    if event_name.lower() == 'transfer' and len(input) != 0:
+                        currency, decimal = get_currency(trace['address'], block_number - 1, rpc, rate_dict)
                         from_address, to_address, amount = find_address_transfer_event(trace, input)
                         if isinstance(amount, int):
                             value = amount / pow(10, decimal)
@@ -200,7 +97,7 @@ def collect_token(time_stamp, edpool, folder_prefix):
 
                     # event name as withdrawal refers to token withdraw
                     elif event_name.lower() == 'withdrawal' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                        currency, decimal = get_currency(trace['address'], rpc)
+                        currency, decimal = get_currency(trace['address'], block_number - 1, rpc, rate_dict)
                         from_address = input[0]
                         if len(trace['data']) == 2:
                             amount = trace['data'][1]
@@ -212,7 +109,7 @@ def collect_token(time_stamp, edpool, folder_prefix):
 
                     # event name as deposit refers to token deposit
                     elif event_name.lower() == 'deposit' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                            currency, decimal = get_currency(trace['address'], rpc)
+                            currency, decimal = get_currency(trace['address'], block_number - 1, rpc, rate_dict)
                             to_address = input[0]
                             if len(trace['data']) == 2:
                                 amount = trace['data'][1]
@@ -242,14 +139,24 @@ def collect_token(time_stamp, edpool, folder_prefix):
                 address_balance = summary_dict[address]
                 for token in address_balance:
                     value = address_balance[token]
-                    rate = get_rate(time_stamp, token)
+                    rate = rate_dict[token]
                     address_balance[token] = [value, value * rate]
             total_dict[transaction_hash] = summary_dict
 
     # Remove zeros and empty address
     total_dict = remove_zeros(total_dict)
 
+    os.makedirs(folder_prefix + '/token_info', exist_ok=True)
+
     # dump balance and tokenflow
-    with open(folder_prefix + '/balance.json', 'w') as json_file:
+    with open(folder_prefix + '/token_info/balance.json', 'w') as json_file:
         json.dump(total_dict, json_file, indent=2)
-    flow.to_json(folder_prefix + '/tokenflow.json', orient='records', indent=2)
+    flow.to_json(folder_prefix + '/token_info/tokenflow.json', orient='records', indent=2)
+
+    with open(folder_prefix + '/token_info/rate_dict.json', 'w') as json_file2:
+        json.dump(rate_dict, json_file2, indent=2)
+
+    currency_dict = get_currency_dict()
+
+    with open(folder_prefix + '/token_info/currency_dict.json', 'w') as json_file3:
+        json.dump(currency_dict, json_file3, indent=2)

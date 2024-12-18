@@ -2,19 +2,6 @@ from requests.exceptions import HTTPError
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-
-# Function to recursively convert bytes to hexadecimal, lists, and dictionaries
-def convert(obj):
-    if isinstance(obj, bytes):
-        return obj.hex()
-    elif isinstance(obj, list):
-        return [convert(item) for item in obj]
-    elif isinstance(obj, dict):
-        return {convert(key): convert(value) for key, value in obj.items()}
-    else:
-        return obj
-
-
 # Function to collect transaction information and return as a DataFrame
 def collect_info(transaction_hash, edpool):
     rpc = edpool.endpoint_by_chain()
@@ -57,8 +44,9 @@ def collect_info(transaction_hash, edpool):
         'from': sender,
         'to': recipient,
         'gasUsed': receipt['gasUsed'],  # Get gas used from transaction receipt
-        'timestamp': timestamp
+        'timestamp': timestamp,
+        'blocknumber': transaction['blockNumber']
     }
 
     # Return the DataFrame containing transaction information
-    return transaction_data, timestamp
+    return transaction_data

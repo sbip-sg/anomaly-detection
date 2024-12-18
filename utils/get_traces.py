@@ -46,7 +46,7 @@ def cast_run(rpc_url, txhash, raw, output):
     # Define the command
     command = [
         'cast', 'run', txhash,
-        '-r', rpc_url, '--decode-internal', '--with-state-changes', '-j'
+        '-r', rpc_url, '--decode-internal', '-vvvvv', '--json'
     ]
 
     if 'nus' in rpc_url:
@@ -154,7 +154,8 @@ def tree_structure(dict_list):
                     'kind': 'event',
                     'decoded': log['decoded'],
                     'raw': log['raw_log'],
-                    'depth': depth
+                    'depth': depth,
+                    'parent': idx
                 }
 
                 new_event_dict['e' + str(log_idx)] = {'parent': idx, 'position': log_position, 'log_content': new_log}
@@ -186,7 +187,8 @@ def tree_structure(dict_list):
                 'refund_target': new_trace['selfdestruct_refund_target'].lower(),
                 'depth': depth + 1,
                 'kind': 'selfdestruct',
-                'value': new_trace['selfdestruct_transferred_value']
+                'value': new_trace['selfdestruct_transferred_value'],
+                'parent': idx
             }
             new_sd_dict['sd' + str(sd_idx)] = new_selfdestruct
             children.append('sd' + str(sd_idx))

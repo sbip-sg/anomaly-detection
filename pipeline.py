@@ -24,7 +24,7 @@ def main(tx_hash, chain, overwrite=False):
     edpool = EndpointPool(chain)
     # Collect basic information
     # Time stamp is for getting exchange rate
-    basic_info, time_stamp = collect_info(tx_hash, edpool)
+    basic_info = collect_info(tx_hash, edpool)
 
     with open(folder_prefix + '/basic_info.json', 'w') as json_file:
         json.dump(basic_info, json_file, indent=2)
@@ -36,7 +36,7 @@ def main(tx_hash, chain, overwrite=False):
     decode_trace_json(folder_prefix)
 
     # According to the decoded invocation tree, get token flow and balance changes.
-    collect_token(time_stamp, edpool, folder_prefix)
+    collect_token(basic_info['blocknumber'], edpool, folder_prefix)
 
     detection_result, reason = rule_based_detection(tx_hash, chain)
 

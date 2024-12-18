@@ -246,7 +246,8 @@ def guess_type(parameter):
 
     def is_bool(bool_string):
         return bool_string in ['true', 'false']
-
+    while isinstance(parameter, list):
+        parameter = parameter[0]
     if isinstance(parameter, int):
         return 'int'
     if is_bool(parameter):
@@ -323,6 +324,8 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["from"] = trace["from"]
                 new_trace["to"] = trace["to"]
                 new_trace["depth"] = trace["depth"]
+                new_trace['parent']= trace['parent']
+                new_trace['children']= trace['children']
 
                 # Move state changes into new trace
                 if 'statechanges' in trace.keys():
@@ -369,7 +372,7 @@ def decode_trace_json(folder_prefix="result"):
             # If trace is an event log
             elif trace['kind'].lower() == 'event':
                 new_trace["address"] = trace["from"]
-
+                new_trace['parent'] = trace['parent']
                 new_trace["depth"] = trace["depth"] + 1
 
                 # When foundry can decode it.

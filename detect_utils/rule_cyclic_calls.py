@@ -23,18 +23,17 @@ def has_cycle(xs):
 # 2. if the sender's balance changes by more than 10k USD
 def detect_cyclic_transaction(tx_hash, chain):
     basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
-    if not filter_transaction(basic_info):
+    trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
+    if not filter_transaction(basic_info, trace):
         return False
 
     sender = basic_info.get('from')
-
-    trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
     functions = []
 
     for call in trace:
-        if call['type'] == 'event' or 'create' in call['type'] or call['type'] == 'selfdestruct':
+        if call['type'] == 'event' or 'create' in call['type'] or call['type'] == 'selfdestruct' or call['type'] == 'staticcall':
             pass  # ignore event in this detector
-        elif 'call' in call['type']:
+        elif call['type'] == 'call' or call['type'] == 'delegatecall':
             functions.append((call['from'], call['to'], call['function']))
         else:
             print(f"Unknown trace type: {call['type']}")

@@ -7,13 +7,23 @@ def collect_from_file(tx_hash, chain, filename):
         output_json = json.load(input_json)
     return output_json
 
+def unknown_first_call(trace):
+    for element in trace:
+        if 'create' in element['type'] and len(element['location']) <= 1:
+            return True
+        if element['type'] == 'call':
+            if element['functionName'] == element['selector'] and len(element['location']) <= 3:
+                return True
+            else:
+                return False
+
 # Filter transactions by their gas usage.
-def filter_transaction(basic_info):
+def filter_transaction(basic_info, trace):
     gas_used = basic_info.get('gasUsed')
     to_address = basic_info.get('to')
     base_gas = 21000
 
-    if to_address is None:
+    if to_address == 'empty' or unknown_first_call(trace):
         # contract creation, assuming nobody hacks here
         if gas_used > base_gas * 5:  # TODO update this threshold if necessary
             return True
