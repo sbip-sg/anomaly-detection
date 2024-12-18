@@ -93,7 +93,6 @@ def check_balance(tx_hash, chain, value):
     return False
 
 # Detector containing two checks to be considered as possible hack:
-# Detector containing two checks to be considered as possible hack:
 def detect_access_control(tx_hash, chain):
     idx_dict = collect_idx(tx_hash, chain)
     skiplist = ['swap', 'transferfrom', 'deposit', 'withdraw', 'flashloan', 'receiveflashloan', 'transfer'
