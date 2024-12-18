@@ -110,8 +110,6 @@ def detect_access_control(tx_hash, chain):
                 if name in skiplist:
                     continue
             if not check_opcodes(opcodes):
-                if sum_all_value > 500000:
-                    return True
                 sum_value += idx_dict[t['call_idx']]
     if sum_value > 20000 and sum_all_value > 40000:
         return True
