@@ -36,7 +36,7 @@ def filter_transaction(basic_info, trace):
 # Detect the balance change of given address of a transaction
 def check_balance(tx_hash, chain, address):
     possible_hack = False
-    balance_change = collect_from_file(tx_hash, chain, '/balance.json')[tx_hash]
+    balance_change = collect_from_file(tx_hash, chain, '/token_info/balance.json')[tx_hash]
     if address in balance_change.keys():
         address_balance_change = balance_change.get(address)
         address_usd_change = 0
