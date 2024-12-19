@@ -1,5 +1,6 @@
-from detect_utils.tools import collect_from_file, filter_transaction, check_balance
+from detect_utils.tools import collect_from_file, filter_transaction
 
+# calculate value change rate
 def calc_ratio(numbers):
     if not numbers:  # Check for empty list
         return None  # Return None or raise an error if needed
@@ -7,8 +8,8 @@ def calc_ratio(numbers):
     smallest = min(numbers)
     return (largest - smallest) / largest
 
-# Detect whether the trace of a transaction has event named flashloan and return the receiver address list
-def total_supply(tx_hash, chain):
+# Detect total supply return values and calculate value change rate
+def get_total_supply(tx_hash, chain):
     trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
 
     total_supply = {}
@@ -44,7 +45,7 @@ def total_supply(tx_hash, chain):
 
     return total_supply
 
-
+# find the largest supply change rate
 def find_largest_number(d):
     largest = float('-inf')  # Start with the smallest possible value
     stack = [d]  # Use a stack for recursive-like traversal
@@ -57,11 +58,9 @@ def find_largest_number(d):
             largest = max(largest, current)  # Compare numeric values
     return largest
 
-# Detect whether a transaction has high range of total supply changes.
+# detect whether a transaction has high range of total supply changes.
 def detect_token_supply(tx_hash, chain):
-    basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
-
-    total_supply_dict = total_supply(tx_hash, chain)
+    total_supply_dict = get_total_supply(tx_hash, chain)
 
     basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
     trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
@@ -71,7 +70,7 @@ def detect_token_supply(tx_hash, chain):
         return False
 
     # No total supply
-    elif not total_supply:
+    elif not get_total_supply:
         return False
 
     else:

@@ -118,10 +118,9 @@ def collect_token(block_number, edpool, folder_prefix):
                             if isinstance(amount, int):
                                 summary_dict = othertransfer(summary_dict, currency, trace['address'], to_address,
                                                          amount / pow(10, decimal), flow)
-            if trace['type'] == 'call' or trace['type'] == 'staticcall' or trace['type'] == 'create' and trace['status'] != "OutOfGas":
 
-                # for local token flow, there mostly is a trace with non-zero value
-                if trace['type'] == 'call' or trace['type'] == 'staticcall' or trace['type'] == 'create' and trace["value"] != 0:
+            # for local token flow, there mostly is a trace with non-zero value
+            if trace['type'] == 'call'  or trace['type'] == 'create' and trace["value"] != 0 and trace['status'] != "OutOfGas":
                     summary_dict = deal_transfer(summary_dict, token, trace, flow)
 
             # Call is out of gas, so the following events are not available

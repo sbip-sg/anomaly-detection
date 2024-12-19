@@ -3,43 +3,64 @@ from web3 import Web3
 
 w3 = Web3(Web3.HTTPProvider('http://sbip-g3.d2.comp.nus.edu.sg:8545'))
 
+# collect all indexes where trigger high USD value transfer
 def collect_idx(tx_hash, chain):
+    # load necessary files
     trace = collect_from_file(tx_hash, chain, '/trace_json/trace_' + tx_hash + '.json')
     rate_dict = collect_from_file(tx_hash, chain, '/token_info/rate_dict.json')
     currency_dict = collect_from_file(tx_hash, chain, '/token_info/currency_dict.json')
+    # storing index relations
     idx_dict = {}
     parent_dict = {}
     event_parent_dict = {}
-    if not check_balance(tx_hash, chain, -10000):
+
+    # normally in an attack transaction, there is at least one address suffer loss.
+    if not check_balance_negative(tx_hash, chain, -10000):
         return idx_dict
 
     for element in trace:
+        # recording index relations
         if 'call' in element['kind']:
             call_idx = element['call_idx']
-            event_parent_dict[element['depth']] = element['parent']
+            to_address = element['to']
             is_delegate = element['kind'] == 'delegatecall'
+            # ignore delegate call
             if element['parent'] in parent_dict and parent_dict[element['parent']][1]:
                 true_parent = parent_dict[element['parent']][0]
-                parent_dict[call_idx] = [true_parent, is_delegate]
+                parent_dict[call_idx] = [true_parent, is_delegate, to_address]
+                event_parent_dict[element['depth']] = true_parent
             else:
-                parent_dict[call_idx] = [element['parent'], is_delegate]
+                parent_dict[call_idx] = [element['parent'], is_delegate, to_address]
+                event_parent_dict[element['depth']] = element['parent']
+        # check the usd value of a piece of trace
         usd_value = 0
+
+        # call with values
         if element['kind'] == 'call' and element['value'][3:]:
             call_idx = element['call_idx']
             amount = int(element['value'][2:], 16)
+            # get ETH exchange rate
             if 'ETH' in rate_dict:
                 try:
-                    usd_value = rate_dict['ETH'] * amount / pow(10, 18)
-                except:
+                    # Ensure rate_dict['ETH'] and amount are numbers
+                    eth_rate = float(rate_dict['ETH'])
+                    amount_value = float(amount)
+
+                    # Perform the calculation
+                    usd_value = eth_rate * amount_value / pow(10, 18)
+                except (ValueError, TypeError):
                     usd_value = 20000
             checked_idx = parent_dict[call_idx][0]
+            # need to check this call's parent
             if checked_idx not in idx_dict and isinstance(checked_idx, int):
                 idx_dict[checked_idx] = usd_value
 
+        # transfer events
         elif element['kind'] == 'event' and element['decoded']['name']:
             event_name = element['decoded']['name'].lower()
-            depth = element['depth'] - 1
+            depth = element['depth']
             if event_name == 'transfer' and depth in event_parent_dict:
+                # get token address and exchange rate
                 address = element['from']
                 if address in rate_dict:
                     decimal = 0
@@ -50,21 +71,31 @@ def collect_idx(tx_hash, chain):
                 else:
                     decimal = 0
                     rate = 0
+
+                # get exchange value
                 data = element['raw']['data'][2:]
                 if data:
                     amount = int(data, 16)
                 else:
                     amount = int(element['raw']['topics'][-1][2:], 16)
+
+                # get usd values. this has triggered overflow of int so add try.
                 try:
                     usd_value = rate * amount / pow(10, decimal)
-                except:
+                except (ValueError, TypeError):
                     usd_value = 20000
+            # need to check this event call's parent and parent of parent
             checked_idx = event_parent_dict[depth]
             if checked_idx not in idx_dict and isinstance(checked_idx, int):
                 idx_dict[checked_idx] = usd_value
-            if checked_idx in parent_dict and parent_dict[checked_idx][0] not in idx_dict and isinstance(
-                    parent_dict[checked_idx][0], int):
-                idx_dict[parent_dict[checked_idx][0]] = usd_value
+            # check whether this event call's parent has a parent with the same address
+            same_address = False
+            if checked_idx in parent_dict:
+                if parent_dict[checked_idx][0] in parent_dict:
+                    same_address = parent_dict[checked_idx][2] == parent_dict[parent_dict[checked_idx][0]][2]
+                # if not same address
+                if parent_dict[checked_idx][0] not in idx_dict and not same_address:
+                    idx_dict[parent_dict[checked_idx][0]] = usd_value
     return idx_dict
 
 
@@ -78,29 +109,32 @@ def check_opcodes(code_list):
         return True
     return False
 
-# Detect the balance change of given address of a transaction
-def check_balance(tx_hash, chain, value):
+# Detect the balance change of addresses a transaction
+def check_balance_negative(tx_hash, chain, value):
     balance_change = collect_from_file(tx_hash, chain, '/token_info/balance.json')
     if balance_change:
         balance_change = balance_change[tx_hash]
+        # check all address
         for address in balance_change:
             address_balance_change = balance_change.get(address)
             address_usd_change = 0
             for token in address_balance_change:
                 address_usd_change += address_balance_change[token][1]
+            # if here is an address that has more loss value than set value
             if address_usd_change < value:
                 return True
     return False
 
-# Detector containing two checks to be considered as possible hack:
-# Detector containing two checks to be considered as possible hack:
+# detect access control problem
 def detect_access_control(tx_hash, chain):
     idx_dict = collect_idx(tx_hash, chain)
-    skiplist = ['swap', 'transferfrom', 'deposit', 'withdraw', 'flashloan', 'receiveflashloan', 'transfer'
-                , 'multicall', 'swapuniv2', 'execute', 'fallback', 'mint', 'swapcallback', 'wrapall', 'sweeptoken'
-               ,'patchsequence', 'swapexactytfortoken', 'exectransaction']
-
+    # these call usually not have access control
+    skip_list = ['swap', 'transferfrom', 'deposit', 'withdraw', 'flashloan', 'receiveflashloan', 'transfer'
+                , 'multicall', 'swapuniv3', 'execute', 'fallback', 'mint', 'swapcallback', 'wrapall', 'sweeptoken'
+               ,'patchsequence', 'swapexactytfortoken', 'exectransaction', 'finalizeethwithdrawal']
+    # collect the trace of a transaction
     trace = collect_from_file(tx_hash, chain, '/trace_json/trace_' + tx_hash + '.json')
+    # get all USD values and USD values of call without access control
     sum_value = 0
     sum_all_value = sum(idx_dict.values())
     for t in trace:
@@ -108,12 +142,11 @@ def detect_access_control(tx_hash, chain):
             opcodes = t['opcodes']
             if t['decoded']['call_data']:
                 name = t['decoded']['call_data']['signature'].lower().split('(')[0]
-                if name in skiplist:
+                if name in skip_list:
                     continue
             if not check_opcodes(opcodes):
-                if sum_all_value > 500000:
-                    return True
                 sum_value += idx_dict[t['call_idx']]
+    # if USD values of non-access-control and all transfers exceed settings
     if sum_value > 20000 and sum_all_value > 40000:
         return True
     return False

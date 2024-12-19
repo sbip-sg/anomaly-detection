@@ -51,6 +51,10 @@ It will process the hash in your file. Make sure that there is no result folder.
 
 ## How to collect result?
 
-Open result folder and <txhash>_<chain> folder. File basic_info.json is the basic information of the transaction. File balance.json stores balance changes of transactions and file tokenflow.json stores token transfering. 
+Open result folder and hash_chain folder. File basic_info.json is the basic information of the transaction.
 
-In folder trace_json, trace_<txhash>.json stores raw result of the trace of this transaction. In folder invocation_tree, decode_trace_<txhash>.json stores detailed result of the trace.
+In folder token_info, file balance.json stores balance changes of transactions and file tokenflow.json stores token transferring. The other two files are storing exchange rates and token address relations. 
+
+In folder trace_json, trace_hash.json stores raw result of the trace of this transaction. 
+
+In folder invocation_tree, decode_trace_hash.json stores detailed result of the trace.
