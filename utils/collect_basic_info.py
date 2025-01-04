@@ -39,7 +39,7 @@ def collect_info(transaction_hash, edpool):
 
     # Construct dictionary containing transaction data
     transaction_data = {
-        'hash': transaction_hash,
+        'transaction_hash': transaction_hash,
         'value': transaction['value'] / 1e18,  # Convert value from Wei to Ether
         'from': sender,
         'to': recipient,

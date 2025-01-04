@@ -2,8 +2,8 @@ import json
 import pandas as pd
 from os import listdir
 from web3 import Web3
-from utils.collect_transfer import get_rate, get_currency, find_address_transfer_event, deal_transfer, othertransfer,get_currency_dict
-import os
+from .collect_transfer import get_rate, get_currency, find_address_transfer_event, deal_transfer, othertransfer, get_reverse_dict
+from .db_tools import append_dataframe_to_csv
 
 # Chain-currency dict
 # getting the default currency is by value, so we need prior knowledge of tokens
@@ -54,7 +54,7 @@ def remove_zeros(total_dict):
 
 
 # collect tokens from decoded invocation tree
-def collect_token(block_number, edpool, folder_prefix):
+def collect_token(tx_hash, block_number, edpool, folder_prefix):
     # collect balance change of each transaction
     total_dict = {}
 
@@ -145,17 +145,20 @@ def collect_token(block_number, edpool, folder_prefix):
     # Remove zeros and empty address
     total_dict = remove_zeros(total_dict)
 
-    os.makedirs(folder_prefix + '/token_info', exist_ok=True)
+    reverse_dict = get_reverse_dict()
+    reverse_dict['ETH'] = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+
+    flow['transaction_hash'] = tx_hash
+
+    # Add the `value` column based on reverse_dict mapping
+    flow['currency_hash'] = flow['currency'].map(reverse_dict)
+
+    # Add the `usd_value` column using the `to_usd_value` function
+    flow['usd_value'] = flow.apply(lambda row: to_usd_value(row['currency'], rate_dict, row['value']), axis=1)
 
     # dump balance and tokenflow
-    with open(folder_prefix + '/token_info/balance.json', 'w') as json_file:
-        json.dump(total_dict, json_file, indent=2)
-    flow.to_json(folder_prefix + '/token_info/tokenflow.json', orient='records', indent=2)
+    append_dataframe_to_csv(flow, folder_prefix + '/token_flow.csv', {'transaction_hash': tx_hash}, True)
 
-    with open(folder_prefix + '/token_info/rate_dict.json', 'w') as json_file2:
-        json.dump(rate_dict, json_file2, indent=2)
-
-    currency_dict = get_currency_dict()
-
-    with open(folder_prefix + '/token_info/currency_dict.json', 'w') as json_file3:
-        json.dump(currency_dict, json_file3, indent=2)
+def to_usd_value(currency, rate_dict, value):
+    rate = rate_dict[currency]
+    return value * rate

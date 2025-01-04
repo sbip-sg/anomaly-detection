@@ -7,6 +7,7 @@ abi = json.load(abi_file)
 
 # dict to store currency symbol and decimals
 currency_dict = {}
+reverse_dict = {}
 
 uniswap_file = open("utils/uniswapv2.abi.json")
 uniswap = json.load(uniswap_file)
@@ -63,6 +64,7 @@ def get_currency(hash, block_number, rpc, rate_dict):
             decimal = 0
             exchange_rate = 0
         currency_dict[hash] = (currency, decimal, exchange_rate)
+        reverse_dict[currency] = hash
         rate_dict[currency] = exchange_rate
     else:
         (currency, decimal, exchange_rate) = currency_dict[hash]
@@ -113,6 +115,8 @@ def deal_transfer(summary, currency, trace, flow):
 def get_currency_dict():
     return currency_dict
 
+def get_reverse_dict():
+    return reverse_dict
 
 # This function is from observation and would be less reliable
 # Function to find the address and amount from an event

@@ -5,14 +5,9 @@ import os
 import re
 
 try:
-    from .lookup_function import get_function_signature
+    from .db_tools import get_function_signature, get_event_db_signature
 except ImportError:
-    from lookup_function import get_function_signature
-
-try:
-    from .lookup_event import get_event_db_signature
-except ImportError:
-    from lookup_event import get_event_db_signature
+    from db_tools import get_function_signature, get_event_db_signature
 
 # Parse the structure of parameter types of a function
 def parse_structure(structure):
