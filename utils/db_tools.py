@@ -73,20 +73,39 @@ def get_function_signature(function_hash: str):
         return None
 
 
-def save_new_line(entity: dict, filename: str, primary_keys: list):
+def save_new_line(entity: dict, filename: str, primary_keys: list, appending: bool = False):
+    """
+    Saves a single entity (dictionary) to a CSV file, optionally adding an ID column if appending is True.
+
+    Parameters:
+    - entity (dict): The entity to save.
+    - filename (str): The CSV file to save to.
+    - primary_keys (list): The primary keys to check for duplicates.
+    - appending (bool): If True, adds an 'id' column as a unique primary key.
+    """
     # Check if file format is correct
     if not filename.endswith('.csv'):
         print("Error: File format must be .csv")
         return
 
     # Check if primary keys are valid
-    if not all(key in entity for key in primary_keys):
+    if not all(key in entity for key in primary_keys) and not appending:
         print("Error: All primary keys must be present in the entity.")
         return
 
     file_exists = os.path.isfile(filename)
 
     try:
+        # If appending, determine the next unique ID
+        if appending:
+            next_id = 1
+            if file_exists:
+                with open(filename, mode='r', newline='', encoding='utf-8') as file:
+                    reader = csv.DictReader(file)
+                    ids = [int(row['id']) for row in reader if 'id' in row]
+                    next_id = max(ids) + 1 if ids else 1
+            entity['id'] = next_id
+
         # If the file exists, read it to check for duplicates
         if file_exists:
             with open(filename, mode='r', newline='', encoding='utf-8') as file:
@@ -99,7 +118,10 @@ def save_new_line(entity: dict, filename: str, primary_keys: list):
 
         # Open the file in append mode to add the new line
         with open(filename, mode='a', newline='', encoding='utf-8') as file:
-            writer = csv.DictWriter(file, fieldnames=entity.keys())
+            fieldnames = list(entity.keys())
+            if appending and 'id' not in fieldnames:
+                fieldnames.append('id')
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
             # Write the header if the file is new
             if not file_exists:
                 writer.writeheader()
@@ -110,7 +132,8 @@ def save_new_line(entity: dict, filename: str, primary_keys: list):
         print(f"Error saving data: {e}")
 
 
-def save_multi_lines(entities: list, filename: str, primary_keys: list):
+
+def save_multi_lines(entities: list, filename: str, primary_keys: list, appending: bool = False):
     """
     Saves multiple entities (dictionaries) to a CSV file, checking for duplicates based on primary keys.
 
@@ -118,6 +141,7 @@ def save_multi_lines(entities: list, filename: str, primary_keys: list):
     - entities (list): A list of entities (dictionaries) to save.
     - filename (str): The CSV file to save to.
     - primary_keys (list): The primary keys to check for duplicates.
+    - appending (bool): If True, adds an 'id' column as a unique primary key.
     """
     # Check if file format is correct
     if not filename.endswith('.csv'):
@@ -125,16 +149,33 @@ def save_multi_lines(entities: list, filename: str, primary_keys: list):
         return
 
     # Check if primary keys are valid for all entities
-    if not all(all(key in entity for key in primary_keys) for entity in entities):
+    if not all(all(key in entity for key in primary_keys) for entity in entities) and not appending:
         print("Error: All primary keys must be present in each entity.")
         return
 
     file_exists = os.path.isfile(filename)
 
     try:
+        # If appending, calculate the next unique ID
+        next_id = 1
+        if appending and file_exists:
+            with open(filename, mode='r', newline='', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                ids = [int(row['id']) for row in reader if 'id' in row]
+                next_id = max(ids) + 1 if ids else 1
+
+        # Assign IDs to entities if appending
+        if appending:
+            for entity in entities:
+                entity['id'] = next_id
+                next_id += 1
+
         # Open the file in append mode to add new lines
         with open(filename, mode='a', newline='', encoding='utf-8') as file:
-            writer = csv.DictWriter(file, fieldnames=entities[0].keys())
+            fieldnames = list(entities[0].keys())
+            if appending and 'id' not in fieldnames:
+                fieldnames.append('id')
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
 
             # Write the header if the file is new
             if not file_exists:
@@ -142,7 +183,7 @@ def save_multi_lines(entities: list, filename: str, primary_keys: list):
 
             # Loop through each entity and check for duplicates
             for entity in entities:
-                # If file exists, check for duplicates
+                duplicate = False
                 if file_exists:
                     with open(filename, mode='r', newline='', encoding='utf-8') as check_file:
                         reader = csv.DictReader(check_file)
@@ -150,11 +191,9 @@ def save_multi_lines(entities: list, filename: str, primary_keys: list):
                             # Check if all primary key values match
                             if all(row[key] == str(entity[key]) for key in primary_keys):
                                 print(f"Duplicate entry found for entity {entity}. Not inserting.")
+                                duplicate = True
                                 break
-                        else:
-                            writer.writerow(entity)
-                            print(f"Data for {entity} successfully saved to {filename}.")
-                else:
+                if not duplicate:
                     writer.writerow(entity)
                     print(f"Data for {entity} successfully saved to {filename}.")
 

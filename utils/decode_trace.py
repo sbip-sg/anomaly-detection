@@ -3,6 +3,7 @@ from os import listdir
 from eth_abi import decode
 import os
 import re
+from .db_tools import save_new_line, save_multi_lines
 
 try:
     from .db_tools import get_function_signature, get_event_db_signature
@@ -290,10 +291,6 @@ def input_parameter(inputs, parameters, inner = False):
 
 # Function to decode trace JSON files
 def decode_trace_json(transaction_hash, formal_result, folder_prefix="result"):
-    # dumping decoded traces and event to invocation_tree folder
-    json_file_path = folder_prefix + '/invocation_tree/'
-    os.makedirs(json_file_path, exist_ok=True)
-
     # Get list of JSON files in trace_json directory with raw traces
     invocation_tree = []
     locations = [-1]
@@ -322,7 +319,7 @@ def decode_trace_json(transaction_hash, formal_result, folder_prefix="result"):
 
             # Move state changes into new trace
             if 'statechanges' in trace.keys():
-                new_trace["statechanges"] = trace['statechanges']
+                save_multi_lines(trace['statechanges'], folder_prefix+'/state_changes.csv', ['id'], True)
 
             # When foundry can decode it.
             func_hash = trace['data'][2:10]
@@ -362,6 +359,8 @@ def decode_trace_json(transaction_hash, formal_result, folder_prefix="result"):
                     new_trace["input"] = decode_input(func_hash, input_hash)
             new_trace["output"] = decode_input(func_hash, trace['output'][2:])
 
+            save_new_line(new_trace, folder_prefix+'/calls.csv', ['id'], True)
+
         # If trace is an event log
         elif trace['kind'].lower() == 'event':
             new_trace["address"] = trace["from"]
@@ -386,6 +385,8 @@ def decode_trace_json(transaction_hash, formal_result, folder_prefix="result"):
             # For events, foundry do not give significant parameters
             new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:])
             new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
+
+            save_new_line(new_trace, folder_prefix+'/events.csv', ['id'], True)
 
         # If trace is a create log
         elif 'create' in trace['kind'].lower():
@@ -412,8 +413,6 @@ def decode_trace_json(transaction_hash, formal_result, folder_prefix="result"):
         invocation_tree.append(new_trace)
 
     # Dump the decoded invocation tree to a json file
-    with open(json_file_path + 'decode_' + transaction_hash, 'w') as jsonfile:
-        json.dump(invocation_tree, jsonfile, default=convert_bytes_to_string, indent=2)
     print('decode_invocation_tree_finished', transaction_hash)
 
     return invocation_tree
