@@ -22,11 +22,12 @@ def main(tx_hash, chain, overwrite=False):
 
     save_new_line(basic_info, folder_prefix + '/basic_info.csv', ['transaction_hash'])
 
+    new_hash = tx_hash + '_' + chain
     # Collect traces (raw invocation tree)
-    collect_trace(tx_hash, edpool, folder_prefix)
+    formal_result = collect_trace(new_hash, edpool, folder_prefix)
 
     # Decode trace JSON and extract information from invocation tree
-    decode_trace_json(folder_prefix)
+    decode_trace_json(new_hash, formal_result, folder_prefix)
 
     # According to the decoded invocation tree, get token flow and balance changes.
     # collect_token(tx_hash, basic_info['blocknumber'], edpool, folder_prefix)

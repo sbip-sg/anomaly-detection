@@ -45,7 +45,7 @@ def cast_run(rpc_url, txhash, raw, output):
     print('Foundry Start')
     # Define the command
     command = [
-        'cast', 'run', txhash,
+        'cast', 'run', txhash.split('_')[0],
         '-r', rpc_url, '--decode-internal', '-vvvvv', '--json'
     ]
 
@@ -71,11 +71,7 @@ def cast_run(rpc_url, txhash, raw, output):
     # with open(raw, 'w') as raw_file:
     #   json.dump(json_output, raw_file, indent = 2)
 
-    formal_result = original_json(json_output['arena'])
-
-    # Write the filtered output to a file
-    with open(output, 'w') as json_file:
-        json.dump(formal_result, json_file, indent=2)
+    formal_result = original_json(json_output['arena'], txhash)
 
     # Return the loaded JSON from the filtered output
     print('Foundry End')
@@ -97,7 +93,7 @@ def collect_trace(transaction_hash, edpool, folder_prefix="result"):
     while True:
         try:
             # Initialize Web3 instance with the RPC provider
-            cast_run(rpc, transaction_hash, 'raw', filename)
+            formal_result = cast_run(rpc, transaction_hash, 'raw', filename)
             break
         except subprocess.CalledProcessError as e:
             rpc = edpool.mark_endpoint_broken(rpc)
@@ -109,10 +105,10 @@ def collect_trace(transaction_hash, edpool, folder_prefix="result"):
             # Handle other unexpected exceptions
 
         print('trace_finished', transaction_hash)
-
+    return formal_result
 
 # Used to Transform New Version of Foundry Output to Clear Json
-def tree_structure(dict_list):
+def tree_structure(dict_list, transaction_hash):
     # Collect the new calls
     new_element_dict = {}
     new_event_dict = {}
@@ -150,6 +146,7 @@ def tree_structure(dict_list):
                 # The position is where the log is supposed to be in the call's children.
                 log_position = log['position']
                 new_log = {
+                    'transaction_hash': transaction_hash,
                     'from': event_address,
                     'kind': 'event',
                     'decoded': log['decoded'],
@@ -163,6 +160,8 @@ def tree_structure(dict_list):
         statechanges, opcodes = collect_state_changes(new_trace['steps'])
         # Collect the new call
         new_call = {
+            'transaction_hash': transaction_hash,
+            'call_idx': idx,
             'from': new_trace['caller'].lower(),
             'to': new_trace['address'].lower(),
             'depth': depth,
@@ -178,11 +177,11 @@ def tree_structure(dict_list):
             'status': new_trace['status'],
             'decoded': new_trace['decoded'],
             'parent': parent,
-            'children': copy_children,
-            'call_idx': idx
+            'children': copy_children
         }
         if new_trace['selfdestruct_address']:
             new_selfdestruct = {
+                'transaction_hash': transaction_hash,
                 'address': new_trace['selfdestruct_address'].lower(),
                 'refund_target': new_trace['selfdestruct_refund_target'].lower(),
                 'depth': depth + 1,
@@ -200,9 +199,9 @@ def tree_structure(dict_list):
 
     return new_element_dict, new_event_dict, new_sd_dict, tree_relation
 
-def original_json(dict_list):
+def original_json(dict_list, transaction_hash):
     # Get the tree related information
-    new_element_dict, new_event_dict, new_sd_dict, tree_relation = tree_structure(dict_list)
+    new_element_dict, new_event_dict, new_sd_dict, tree_relation = tree_structure(dict_list, transaction_hash)
     new_element_list = []
 
     # Insert events in its position
