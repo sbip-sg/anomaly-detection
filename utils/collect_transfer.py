@@ -25,8 +25,13 @@ def get_rate(address, block_number, w3, decimal, rate_dict):
         second_address = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 
     # Get contract sawp amount
-    method = contract.functions.getAmountsOut(pow(10, decimal), [address, second_address])
-    result = method.call(block_identifier=block_number)
+    try:
+        method = contract.functions.getAmountsOut(pow(10, decimal), [address, second_address])
+        result = method.call(block_identifier=block_number)
+    except error as e:
+        print('uniswap error:', e)
+        return 0
+
 
     # warped ether to USDT
     if address == '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2':
