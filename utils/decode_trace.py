@@ -321,6 +321,7 @@ def decode_trace_json(folder_prefix="result"):
                 new_trace["depth"] = trace["depth"]
                 new_trace['parent']= trace['parent']
                 new_trace['children']= trace['children']
+                new_trace["call_idx"] = trace['call_idx']
 
                 # Move state changes into new trace
                 if 'statechanges' in trace.keys():
