@@ -11,18 +11,17 @@ currency_dict = {}
 uniswap_file = open("utils/uniswapv2.abi.json")
 uniswap = json.load(uniswap_file)
 
-def get_rate(address, block_number, w3, decimal, rate_dict):
-    # uniswap v2 address
-    contract_address = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+def get_rate(address, contract_address, usdt_address, local_token_address, local_name,
+             block_number, w3, decimal, rate_dict):
     contract = w3.eth.contract(address=contract_address, abi=uniswap)
 
-    # warped ether
-    if address == '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2':
+    # local token
+    if address == local_token_address:
         # USDT
-        second_address = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+        second_address = usdt_address
     else:
-        # warped ether
-        second_address = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+        # local token
+        second_address = local_token_address
 
     # Get contract sawp amount
     try:
@@ -34,14 +33,14 @@ def get_rate(address, block_number, w3, decimal, rate_dict):
 
 
     # warped ether to USDT
-    if address == '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2':
+    if address == local_token_address:
         return result[1] / 1e6
     else:
         # token to warped ether to USDT
-        return rate_dict['ETH'] * result[1] / 1e18
+        return rate_dict[local_name] * result[1] / 1e18
 
 # Get the currency symbol and decimals by the contract
-def get_currency(hash, block_number, rpc, rate_dict):
+def get_currency(hash, block_number,chain, rpc, rate_dict):
     hash = hash.lower()
     if hash not in currency_dict:
         w3 = Web3(Web3.HTTPProvider(rpc))
@@ -57,11 +56,12 @@ def get_currency(hash, block_number, rpc, rate_dict):
             decimal = contract.functions.decimals().call()
             if 'usd' in currency.lower() and len(currency.lower()) <= 6:
                 exchange_rate = 1
-            elif 'eth' in currency.lower() and len(currency.lower()) <= 6:
+            elif chain == 'eth' and 'eth' in currency.lower() and len(currency.lower()) <= 6:
                 exchange_rate = rate_dict['ETH']
             else:
                 # Get exchange rate
-                exchange_rate = get_rate(address, block_number, w3, decimal)
+                exchange_rate = get_rate(address, contract_table[chain], usdt_table[chain], local_token_table[chain],
+                                         local_name_table[chain], block_number, w3, decimal, rate_dict)
         except Exception as e:
             print('Error: can not get transfer currency', hash.lower())
             currency = hash
