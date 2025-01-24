@@ -1,6 +1,9 @@
 from detect_utils.tools import collect_from_file
 from utils.collect_transfer import find_address_transfer_event
 
+def rounded_number(number):
+    return round(number, 2)
+
 def transform_basic(tx_hash, chain):
     basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
     output = ""
@@ -16,7 +19,7 @@ def transform_basic(tx_hash, chain):
     from_add, to_add = basic_info['from'], basic_info['to']
 
     output += f"The sender is {from_add} and the receiver is {to_add}.\n"
-    return output
+    return output, from_add, to_add
 
 def get_sub_output(t):
     sub_output = f"{t['from']} calls {t["function"]} of {t['to']}"
@@ -63,7 +66,7 @@ def collect_event(t, currency_dict):
                 value = amount / pow(10, decimal)
                 event_output += f' Transfer {str(value)} {currency} from {transfer_from} to {transfer_to}'
                 if exchange_rate != 0:
-                    event_output += f' in {str(value * exchange_rate)} USD'
+                    event_output += f' in {str(rounded_number(value * exchange_rate))} USD'
             else:
                 event_output += f' Transfer unknown {currency} in {amount} from {transfer_from} to {transfer_to}'
             event_output += '.'
@@ -109,9 +112,50 @@ def transform_trace(tx_hash, chain):
             d_index += 1
     return calls
 
+def generate_balance(token: str, value: float, usd_amount: float):
+    known = not token.startswith('0x')
+    use_usd = usd_amount != 0
+    token_output = ""
+    if value >= 0:
+        token_output += "Gain"
+    else:
+        token_output += "Lose"
+    if not known:
+        token_output += " unknown"
+    token_output += f" {token} in amount {abs(value)}"
+    if use_usd:
+        token_output += f" as {rounded_number(abs(usd_amount))} USD"
+    return token_output + '. '
+
+def transform_balance(tx_hash, chain, from_add, to_add):
+    balance_change = collect_from_file(tx_hash, chain, '/token_info/balance.json')[tx_hash]
+    outputs = []
+    for address in balance_change:
+        if address == from_add:
+            address_info = f"The balance change of sender {address}:"
+        elif address == to_add:
+            address_info = f"The balance change of receiver {address}:"
+        else:
+            address_info = f"The balance change of {address}:"
+        token_dict = balance_change[address]
+        for token in token_dict:
+            value, usd_amount = token_dict[token]
+            try:
+                token_output = generate_balance(token, value, usd_amount)
+            except Exception:
+                print('token info exception')
+                token_output = ''
+            address_info += token_output
+        outputs.append(address_info)
+    return outputs
+
 def generate_output(tx_hash, chain, folder_prefix):
+    basic_info, from_add, to_add = transform_basic(tx_hash, chain)
     call_dict = transform_trace(tx_hash, chain)
-    result = transform_basic(tx_hash, chain) + "The call trace and events are listed below,\n" + "\n".join(str(value) for value in call_dict.values())
+    result = basic_info + "The call trace and events are listed below,\n" + "\n".join(str(value) for value in call_dict.values())
+    balance_output = transform_balance(tx_hash, chain, from_add, to_add)
+    if balance_output:
+        result += "\nThe balance changes are listed below,\n" + "\n".join(balance_output)
     with open(folder_prefix + "/output.txt", "w") as file:
         file.write(result)
     return True
