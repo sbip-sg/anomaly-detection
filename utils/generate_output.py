@@ -33,8 +33,8 @@ def transform_basic(tx_hash, chain):
 def get_sub_output(t):
     sub_output = f"{shorten_address(t['from'])} calls {t["function"]} of {shorten_address(t['to'])}"
     inputs = t["input"]
-    if inputs:
-        sub_output += f" with parameters {str(inputs)}"
+    #if inputs:
+    #    sub_output += f" with parameters {str(inputs)}"
     f_outputs = t["output"]
     if f_outputs:
         sub_output += f" output {str(f_outputs)}"
