@@ -140,7 +140,7 @@ def convert_bytes_to_string(obj):
 
 
 # When we do not know parameter types, we manually separate inputs.
-def decode_unknown_input(chunks, data=False, event=True):
+def decode_unknown_input(chunks, data=False, event=True, transfer = False):
     input_list = []
     # There are 3 situations
     # Decoding event data or trace inputs
@@ -158,14 +158,17 @@ def decode_unknown_input(chunks, data=False, event=True):
         count_of_zeros = len(line) - len(line.lstrip('0'))  # Count leading zeros
         # Address: normally length == 40, considering starting with zeros, we have a buffer for 10 zeros.
         # The possibility of missing an address is 1/2^40, which means that is mostly impossible.
-        if count_of_zeros >= 24 and count_of_zeros < 35:  # Address type
-            input_list.append(decode(['address'], bytes.fromhex(line))[0])
-        # Number: We consider that the biggest number is 16^28 more than 10e33 and for normal wei = 1e18
-        # Normally most numbers are no bigger than 1e15
-        elif count_of_zeros >= 35 and count_of_zeros < 64:  # uint256 type
-            input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
-        # null address
-        elif count_of_zeros == 64:  # Address type
+        if not transfer:
+            if count_of_zeros >= 24 and count_of_zeros < 35:  # Address type
+                input_list.append(decode(['address'], bytes.fromhex(line))[0])
+            # Number: We consider that the biggest number is 16^28 more than 10e33 and for normal wei = 1e18
+            # Normally most numbers are no bigger than 1e15
+            elif count_of_zeros >= 35 and count_of_zeros < 64:  # uint256 type
+                input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
+            # null address
+            elif count_of_zeros == 64:  # Address type
+                input_list.append(decode(['address'], bytes.fromhex(line))[0])
+        else:
             input_list.append(decode(['address'], bytes.fromhex(line))[0])
     return input_list
 
@@ -387,8 +390,12 @@ def decode_trace_json(folder_prefix="result"):
                         new_trace["function"] = func_hash
 
                 # For events, foundry do not give significant parameters
-                new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:])
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
+                if new_trace['data'] and new_trace["function"].lower() == 'transfer':
+                    istransfer = True
+                else:
+                    istransfer = False
+                new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:], transfer=istransfer)
 
             # If trace is a create log
             elif 'create' in trace['kind'].lower():
