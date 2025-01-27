@@ -4,6 +4,15 @@ from utils.collect_transfer import find_address_transfer_event
 def rounded_number(number):
     return round(number, 2)
 
+def shorten_address(address):
+    if isinstance(address, str):
+        if address.startswith('0x') and len(address) == 42:
+            return address[:10]
+        else:
+            return address
+    else:
+        raise TypeError('Non-string as address')
+
 def transform_basic(tx_hash, chain):
     basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
     output = ""
@@ -18,11 +27,11 @@ def transform_basic(tx_hash, chain):
 
     from_add, to_add = basic_info['from'], basic_info['to']
 
-    output += f"The sender is {from_add} and the receiver is {to_add}.\n"
+    output += f"The sender is {shorten_address(from_add)} and the receiver is {shorten_address(to_add)}.\n"
     return output, from_add, to_add
 
 def get_sub_output(t):
-    sub_output = f"{t['from']} calls {t["function"]} of {t['to']}"
+    sub_output = f"{shorten_address(t['from'])} calls {t["function"]} of {shorten_address(t['to'])}"
     inputs = t["input"]
     if inputs:
         sub_output += f" with parameters {str(inputs)}"
@@ -42,14 +51,14 @@ def get_sub_output(t):
         sub_output = sub_output[:-1] + '.'
     if t["value"] != 0 and t['status'] != "OutOfGas":
         amount = t["value"] / 1e18
-        sub_output += f"{t['from']} sends {str(amount)} ETH to {t['to']}."
+        sub_output += f"{shorten_address(t['from'])} sends {str(amount)} ETH to {shorten_address(t['to'])}."
     return sub_output
 
 def collect_event(t, currency_dict):
     event_name = t['function']
     topics = t['input']
     event_data = t['data']
-    event_output = f' Generate {t['function']} event from {t['address']}'
+    event_output = f' Generate {t['function']} event from {shorten_address(t['address'])}'
     if topics:
         event_output += f" with topics {str(topics)}"
     if event_data:
@@ -64,11 +73,11 @@ def collect_event(t, currency_dict):
                 (currency, decimal, exchange_rate) = (t['address'], 0, 0)
             if decimal != 0:
                 value = amount / pow(10, decimal)
-                event_output += f' Transfer {str(value)} {currency} from {transfer_from} to {transfer_to}'
+                event_output += f' Transfer {str(value)} {currency} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
                 if exchange_rate != 0:
                     event_output += f' in {str(rounded_number(value * exchange_rate))} USD'
             else:
-                event_output += f' Transfer unknown {currency} in {amount} from {transfer_from} to {transfer_to}'
+                event_output += f' Transfer unknown {currency} in {amount} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
             event_output += '.'
     elif event_name.lower() == 'withdrawal' and event_data and topics and t[
         'address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
@@ -78,7 +87,7 @@ def collect_event(t, currency_dict):
         else:
             amount = event_data[0]
         if isinstance(amount, int):
-            event_output += f' {withdrawal_address} withdraws {str(amount / 1e18)} ETH from Wrapped ETH.'
+            event_output += f' {shorten_address(withdrawal_address)} withdraws {str(amount / 1e18)} ETH from Wrapped ETH.'
     elif event_name.lower() == 'deposit' and event_data and topics and t[
         'address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
         deposit_address = topics[0]
@@ -87,7 +96,7 @@ def collect_event(t, currency_dict):
         else:
             amount = event_data[0]
         if isinstance(amount, int):
-            event_output += f' {deposit_address} deposits {str(amount / 1e18)} ETH to Wrapped ETH.'
+            event_output += f' {shorten_address(deposit_address)} deposits {str(amount / 1e18)} ETH to Wrapped ETH.'
     return event_output
 
 def transform_trace(tx_hash, chain):
@@ -105,10 +114,10 @@ def transform_trace(tx_hash, chain):
             if parent in calls:
                 calls[parent] += collect_event(t, currency_dict)
         elif 'create' in t['type']:
-            calls['c' + str(c_index)] = f'{t["from"]} creates {t['to']} funding {str(t["value"]/ 1e18)} ETH with {t['data']}'
+            calls['c' + str(c_index)] = f'{shorten_address(t["from"])} creates {shorten_address(t['to'])} funding {str(t["value"]/ 1e18)} ETH with {t['data']}'
             c_index += 1
         elif 'selfdestruct' in t['type']:
-            calls['d' + str(d_index)] = f'{t["address"]} self-destructs refunding {str(t["value"]/ 1e18)} ETH to {t["refund_target"]}'
+            calls['d' + str(d_index)] = f'{shorten_address(t["address"])} self-destructs refunding {str(t["value"]/ 1e18)} ETH to {shorten_address(t["refund_target"])}'
             d_index += 1
     return calls
 
@@ -132,11 +141,11 @@ def transform_balance(tx_hash, chain, from_add, to_add):
     outputs = []
     for address in balance_change:
         if address == from_add:
-            address_info = f"The balance change of sender {address}:"
+            address_info = f"The balance change of sender {shorten_address(address)}:"
         elif address == to_add:
-            address_info = f"The balance change of receiver {address}:"
+            address_info = f"The balance change of receiver {shorten_address(address)}:"
         else:
-            address_info = f"The balance change of {address}:"
+            address_info = f"The balance change of {shorten_address(address)}:"
         token_dict = balance_change[address]
         for token in token_dict:
             value, usd_amount = token_dict[token]
