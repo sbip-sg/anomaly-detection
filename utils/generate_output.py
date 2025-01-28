@@ -2,9 +2,11 @@ from detect_utils.tools import collect_from_file
 from utils.collect_transfer import find_address_transfer_event
 import json
 
+# Make USD amount recognized by AI correctly
 def rounded_number(number):
     return round(number, 2)
 
+# Shorten address length to 10 (4bytes)
 def shorten_address(address):
     if isinstance(address, str):
         if address.startswith('0x') and len(address) == 42:
@@ -14,29 +16,35 @@ def shorten_address(address):
     else:
         raise TypeError('Non-string as address')
 
+# Basic information to text
 def transform_basic(tx_hash, chain):
     basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
     outputs = {'transactionHash': tx_hash, 'chain': chain, 'value': basic_info['value'],
                'gasUsed': basic_info['gasUsed'], 'fromAddress': shorten_address(basic_info['from']), 'toAddress': shorten_address(basic_info['to'])}
     return outputs
 
+# Transform a call to text
 def get_sub_output(t, call_key):
     sub_output = {'call_index': call_key, 'function': t["function"], 'fromAddress': shorten_address(t['from']), 'toAddress': shorten_address(t['to']), 'callType': t['type'],
                   'output': t["output"]}
     # sub_output['parameters'] = t['parameters']
     if t['statechanges']:
         sub_output['stateChanges'] = t['statechanges']
+    # Value means having ETH transferring
     if t["value"] != 0 and t['status'] != "OutOfGas":
         amount = t["value"] / 1e18
         sub_output['ETHSending'] = amount
     return sub_output
 
+# Transform an event to text
 def collect_event(t, currency_dict):
     event_name = t['function']
     topics = t['input']
     event_data = t['data']
     event_output = {'eventName': t["function"], 'contractAddress': shorten_address(t['address']), 'data': t['data']}
     # sub_output['topics'] = t['topics']
+
+    # When this event shows transferring tokens
     if event_name.lower() == 'transfer' and len(topics) != 0:
         transfer_from, transfer_to, amount = find_address_transfer_event(t, topics)
         if isinstance(amount, int):
@@ -50,6 +58,8 @@ def collect_event(t, currency_dict):
             if exchange_rate != 0:
                 event_output['transfer']['USDValue'] = rounded_number(value * exchange_rate)
 
+    # Special case: withdraw from Wrapped ETH (withdraw eth by sending WETH)
+    # Adding information since no token flow related call or event is here
     elif event_name.lower() == 'withdrawal' and event_data and topics and t[
         'address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
         withdrawal_address = topics[0]
@@ -59,6 +69,7 @@ def collect_event(t, currency_dict):
             amount = event_data[0]
         if isinstance(amount, int):
             event_output['withdrawal'] = {'withdrawAddress': shorten_address(withdrawal_address), 'value': amount / 1e18}
+    # Special case: deposit to Wrapped ETH (deposit eth and receive WETH), similar to above one
     elif event_name.lower() == 'deposit' and event_data and topics and t[
         'address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
         deposit_address = topics[0]
@@ -70,6 +81,7 @@ def collect_event(t, currency_dict):
             event_output['deposit'] = {'depositAddress': shorten_address(deposit_address), 'value': amount / 1e18}
     return event_output
 
+# Trace to text
 def transform_trace(tx_hash, chain):
     trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
     currency_dict = collect_from_file(tx_hash, chain, '/token_info/currency_dict.json')
@@ -97,6 +109,7 @@ def transform_trace(tx_hash, chain):
             d_index += 1
     return calls
 
+# Single balance change to text
 def generate_balance(token: str, value: float, usd_amount: float):
     known = not token.startswith('0x')
     use_usd = usd_amount != 0
@@ -107,6 +120,7 @@ def generate_balance(token: str, value: float, usd_amount: float):
         token_output['USDValue'] = rounded_number(usd_amount)
     return token_output
 
+# balance changes to text
 def transform_balance(tx_hash, chain):
     balance_change = collect_from_file(tx_hash, chain, '/token_info/balance.json')[tx_hash]
     outputs = {}
@@ -119,10 +133,11 @@ def transform_balance(tx_hash, chain):
             value, usd_amount = token_dict[token]
             try:
                 balance_list.append(generate_balance(token, value, usd_amount))
-            except Exception:
-                print('token info exception')
+            except Exception as e:
+                print('token info exception', e)
         outputs[address] = balance_list
     return outputs
+
 
 def generate_output(tx_hash, chain, folder_prefix):
     basic_info = transform_basic(tx_hash, chain)
