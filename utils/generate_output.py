@@ -138,7 +138,7 @@ def transform_balance(tx_hash, chain):
         outputs[address] = balance_list
     return outputs
 
-
+# combine three dictionaries in a json
 def generate_output(tx_hash, chain, folder_prefix):
     basic_info = transform_basic(tx_hash, chain)
     call_dict = transform_trace(tx_hash, chain)
