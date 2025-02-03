@@ -8,15 +8,15 @@ def generate_message(json_data: dict):
     messages = [
         {"role": "user", "content": "Please analyze the following Ethereum transaction for being exploit."},
         {"role": "user",
-         "content": "Transaction is stored in json form and we provide 3 detailed parts of transaction information."},
+         "content": "Transaction is stored in text form and we provide 3 detailed parts of transaction information."},
         {"role": "user", "content": "First part is the basic information:"},
         {"role": "user", "content": json_data['transactionInfo']},
         {"role": "user", "content": "Second part is the trace:"},
         {"role": "user", "content": json_data['trace']},
-        {"role": "user", "content": "Third part is the trace:"},
+        {"role": "user", "content": "Third part is the token changes of each address:"},
         {"role": "user", "content": json_data['balanceChanges']},
         {"role": "user",
-         "content": "Check for suspicious patterns and provide a risk assessment. Return a score between 0 - 100, with 60 indicates that it requires human checkings."},
+         "content": "Check for suspicious patterns and provide a risk assessment. Return a score between 0 - 100, with 60 indicates that it requires human checking."},
     ]
 
     return messages
