@@ -51,7 +51,8 @@ def main(tx_hash, chain, use_chatgpt=False, overwrite=False):
 
     generate_output(tx_hash, chain, folder_prefix)
 
-    if use_chatgpt and detection_result:
+    # if use_chatgpt and detection_result:
+    if use_chatgpt:
         try:
             chatgpt_detect(tx_hash, folder_prefix)
         except Exception as e:
