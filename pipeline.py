@@ -8,11 +8,12 @@ from utils.get_rpc import EndpointPool
 from utils.generate_output import generate_output
 from detect_utils.detect_all import rule_based_detection
 from detect_utils.chatgpt_detect import chatgpt_detect
+from detect_utils.deepseekv3_detect import deepseekv3_detect
 import json
 
 
 # Get transaction information by hash
-def main(tx_hash, chain, overwrite=False, use_chatgpt=False):
+def main(tx_hash, chain, overwrite=False, use_llm=False):
     folder_prefix = f'result/{tx_hash}_{chain}'
     # Create result directory if it doesn't exist
     if overwrite:
@@ -52,9 +53,10 @@ def main(tx_hash, chain, overwrite=False, use_chatgpt=False):
     generate_output(tx_hash, chain, folder_prefix)
 
     # if use_chatgpt and detection_result:
-    if use_chatgpt:
+    if use_llm:
         try:
-            chatgpt_detect(tx_hash, folder_prefix)
+            # chatgpt_detect(tx_hash, folder_prefix)
+            deepseekv3_detect(tx_hash, folder_prefix)
         except Exception as e:
             print('Chatgpt Error:', e)
 
