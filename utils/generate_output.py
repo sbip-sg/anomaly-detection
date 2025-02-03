@@ -188,10 +188,10 @@ def generate_output(tx_hash, chain, folder_prefix):
     balance_output = transform_balance(tx_hash, chain, from_add, to_add)
     trace = "\n".join(str(value) for value in call_dict.values())
     # mostly API will have 128000 token limit
-    if len(trace) > 120000:
-        if len(trace) > 120000:
-            trace = trace[:120000] + "\n"
     result_dict = {"transactionInfo": basic_info, "trace": trace, "balanceChanges": "\n".join(balance_output)}
+    if len(str(result_dict)) > 128000:
+        limit = 126000 - len(basic_info) - len("\n".join(balance_output))
+        result_dict["trace"] = trace[:limit]
     with open(folder_prefix + f"/output_{tx_hash}.json", "w") as json_file:
         json.dump(result_dict, json_file, indent = 2)
     return True
