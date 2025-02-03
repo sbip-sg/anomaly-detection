@@ -192,7 +192,7 @@ def generate_output(tx_hash, chain, folder_prefix):
         if len(trace) > 120000:
             trace = trace[:120000] + "\n"
     result_dict = {"transactionInfo": basic_info, "trace": trace, "balanceChanges": "\n".join(balance_output)}
-    with open(folder_prefix + "/output.json", "w") as json_file:
+    with open(folder_prefix + f"/output_{tx_hash}.json", "w") as json_file:
         json.dump(result_dict, json_file, indent = 2)
     return True
 
