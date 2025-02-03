@@ -1,5 +1,6 @@
 import json
 from openai import OpenAI
+import time
 
 # Set your API key to environmental variable OPENAI_API_KEY
 
@@ -31,15 +32,21 @@ def chatgpt_detect(tx_hash, folder_prefix):
     messages = generate_message(json_data)
     client = OpenAI()
 
+    start_time = time.time()  # Start time tracking
+
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=messages,
         temperature=0
     )
 
+    end_time = time.time()  # End time tracking
+    elapsed_time = end_time - start_time  # Calculate elapsed time
+
     generated_text = response.choices[0].message.content
 
     print(generated_text)
+    print(f"Response time: {elapsed_time:.2f} seconds")
 
     # Save output to a text file
     with open(output_file, "w", encoding="utf-8") as txt_file:
