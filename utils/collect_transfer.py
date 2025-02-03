@@ -28,7 +28,7 @@ def get_rate(address, block_number, w3, decimal, rate_dict):
     try:
         method = contract.functions.getAmountsOut(pow(10, decimal), [address, second_address])
         result = method.call(block_identifier=block_number)
-    except error as e:
+    except Exception as e:
         print('uniswap error:', e)
         return 0
 

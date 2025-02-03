@@ -54,7 +54,7 @@ def remove_zeros(total_dict):
 
 
 # collect tokens from decoded invocation tree
-def collect_token(block_number, edpool, folder_prefix):
+def collect_token(transaction_hash, o_from_add, o_to_add, block_number, edpool, folder_prefix):
     # collect balance change of each transaction
     total_dict = {}
 
@@ -123,6 +123,14 @@ def collect_token(block_number, edpool, folder_prefix):
             if trace['type'] == 'call'  or trace['type'] == 'create' and trace["value"] != 0 and trace['status'] != "OutOfGas":
                     summary_dict = deal_transfer(summary_dict, token, trace, flow)
 
+            if trace['type'] == 'selfdestruct' and trace["value"] != 0:
+                    new_trace = {
+                        'from': trace['address'],
+                        'to': trace['refund_target'],
+                        'value': trace['value']
+                    }
+                    summary_dict = deal_transfer(summary_dict, token, new_trace, flow)
+
             # Call is out of gas, so the following events are not available
             if trace['type'] == 'call' and trace['status'] == "OutOfGas":
                 out_of_gas = True
@@ -133,7 +141,6 @@ def collect_token(block_number, edpool, folder_prefix):
         if len(summary_dict) != 0:
 
             # Process of getting exchange rate, currently not available
-            transaction_hash = i.split("_")[2].split(".")[0]
             for address in summary_dict.keys():
                 address_balance = summary_dict[address]
                 for token in address_balance:
@@ -146,7 +153,21 @@ def collect_token(block_number, edpool, folder_prefix):
     total_dict = remove_zeros(total_dict)
 
     os.makedirs(folder_prefix + '/token_info', exist_ok=True)
+    inner_dict = total_dict[transaction_hash]
+    special_keys = [o_from_add, o_to_add]  # Keys to prioritize
 
+    # Custom sorting
+    total_dict[transaction_hash] = dict(
+        sorted(
+            inner_dict.items(),
+            key=lambda item: (
+                item[0] not in special_keys,  # First, ensure special keys come first
+                list(inner_dict.keys()).index(item[0]) if item[0] in special_keys else float('inf'),
+                # Maintain original order for special keys
+                item[0]  # Sort other keys alphabetically
+            )
+        )
+    )
     # dump balance and tokenflow
     with open(folder_prefix + '/token_info/balance.json', 'w') as json_file:
         json.dump(total_dict, json_file, indent=2)
