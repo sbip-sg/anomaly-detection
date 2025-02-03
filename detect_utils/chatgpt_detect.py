@@ -1,8 +1,7 @@
 import json
 from openai import OpenAI
 
-# Set your API key
-api_key = "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"
+# Set your API key to environmental variable OPENAI_API_KEY
 
 def generate_message(json_data: dict):
     messages = [
@@ -30,9 +29,7 @@ def chatgpt_detect(tx_hash, folder_prefix):
         json_data = json.load(json_file)
 
     messages = generate_message(json_data)
-    client = OpenAI(
-        api_key=api_key,
-    )
+    client = OpenAI()
 
     response = client.chat.completions.create(
         model="gpt-4o",
