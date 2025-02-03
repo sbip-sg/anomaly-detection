@@ -36,7 +36,8 @@ def chatgpt_detect(tx_hash, folder_prefix):
 
     response = client.chat.completions.create(
         model="gpt-4o",
-        messages=messages
+        messages=messages,
+        temperature=0
     )
 
     generated_text = response.choices[0].message.content
