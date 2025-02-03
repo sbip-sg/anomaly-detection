@@ -52,14 +52,17 @@ def main(tx_hash, chain, use_chatgpt=False, overwrite=False):
     generate_output(tx_hash, chain, folder_prefix)
 
     if use_chatgpt and detection_result:
-        chatgpt_detect(tx_hash, folder_prefix)
+        try:
+            chatgpt_detect(tx_hash, folder_prefix)
+        except Exception as e:
+            print('Chatgpt Error:', e)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("tx_hash", help="Path to the input file")
     parser.add_argument("chain", help="Transaction chain name")
     # use chatgpt to detect
-    parser.add_argument("-llm", "--llm_detect", action="store_false", help="Use chatgpt to detect")
+    parser.add_argument("-llm", "--llm_detect", action="store_true", help="Use chatgpt to detect")
     # overwrite existing result
     parser.add_argument("-o", "--overwrite", action="store_true", help="Overwrite existing result")
     args = parser.parse_args()

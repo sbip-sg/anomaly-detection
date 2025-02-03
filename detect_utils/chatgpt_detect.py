@@ -41,6 +41,8 @@ def chatgpt_detect(tx_hash, folder_prefix):
 
     generated_text = response.choices[0].message.content
 
+    print(generated_text)
+
     # Save output to a text file
     with open(output_file, "w", encoding="utf-8") as txt_file:
         txt_file.write(generated_text)
