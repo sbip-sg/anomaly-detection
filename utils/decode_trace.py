@@ -391,10 +391,7 @@ def decode_trace_json(folder_prefix="result"):
 
                 # For events, foundry do not give significant parameters
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
-                if new_trace['data'] and new_trace["function"].lower() == 'transfer':
-                    istransfer = True
-                else:
-                    istransfer = False
+                istransfer = new_trace['data'] and new_trace["function"].lower() == 'transfer'
                 new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:], transfer=istransfer)
 
             # If trace is a create log

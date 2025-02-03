@@ -12,7 +12,7 @@ import json
 
 
 # Get transaction information by hash
-def main(tx_hash, chain, use_chatgpt=False, overwrite=False):
+def main(tx_hash, chain, overwrite=False, use_chatgpt=False):
     folder_prefix = f'result/{tx_hash}_{chain}'
     # Create result directory if it doesn't exist
     if overwrite:
@@ -67,4 +67,4 @@ if __name__ == "__main__":
     # overwrite existing result
     parser.add_argument("-o", "--overwrite", action="store_true", help="Overwrite existing result")
     args = parser.parse_args()
-    main(args.tx_hash, args.chain, args.llm_detect, args.overwrite)
+    main(args.tx_hash, args.chain, args.overwrite, args.llm_detect)

@@ -20,11 +20,7 @@ def shorten_address(address):
 def transform_basic(tx_hash, chain):
     basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
     value = basic_info['value']
-    # value == 0 separated as a special case for LLM to understand
-    if value == 0:
-        output = "This transaction has no eth transfer value, "
-    else:
-        output = f"This transaction is sent with {value} eth, "
+    output = f"This transaction is sent with {value} eth, "
 
     gas_usage = basic_info['gasUsed']
     output += f"used {gas_usage} gas. "
@@ -144,14 +140,9 @@ def generate_balance(token: str, value: float, usd_amount: float):
     known = not token.startswith('0x')
     use_usd = usd_amount != 0
     # Confirm AI knowing this is the change
-    if value >= 0:
-        token_output = "Gain"
-    else:
-        token_output = "Lose"
+    token_output = f"+{value}" if value >= 0 else f"{value}"
     # Inform AI that this token is not known.
-    if not known:
-        token_output += " unknown"
-    token_output += f" {token} in amount {abs(value)}"
+    token_output += f" unknown {token}" if not known else f" {token}"
     # If we know the USD value of this change.
     if use_usd:
         token_output += f" as {rounded_number(abs(usd_amount))} USD"
