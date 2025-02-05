@@ -5,17 +5,43 @@ import time
 # Prepare the API request
 url = "http://137.132.92.202:4097/api/generate"
 
+
 def generate_message(json_data: dict):
     messages = (
-        "Please analyze the following Ethereum transaction for being exploit."
-        "Transaction is stored in text form and we provide 3 detailed parts of transaction information."
-        "First part is the basic information:"
-        f"{json_data['transactionInfo']}"
-        "Second part is the trace:"
-        f"{json_data['trace']}"
-        "Third part is the token changes of each address:"
-        f"{json_data['balanceChanges']}"
-        "Check for suspicious patterns and provide a risk assessment. Return a score between 0 - 100, with 60 indicates that it requires human checking."
+        "You are an advanced Ethereum transaction security analyst. Your task is to analyze the following Ethereum transaction for potential exploits, suspicious behaviors, or attack patterns. "
+        "The transaction is broken down into three detailed sections:\n\n"
+
+        "1️⃣ **Basic Information:**\n"
+        f"{json_data['transactionInfo']}\n\n"
+
+        "2️⃣ **Execution Trace:**\n"
+        f"{json_data['trace']}\n\n"
+
+        "3️⃣ **Token Balance Changes:**\n"
+        f"{json_data['balanceChanges']}\n\n"
+
+        "### **Analysis Instructions:**\n"
+        "- Look for common exploit patterns such as reentrancy attacks, sandwich attacks, price manipulation, flash loan exploits, or MEV-related behaviors.\n"
+        "- Identify unusual contract interactions, self-destruct mechanisms, or unexpected gas usage.\n"
+        "- Assess whether token movements indicate potential wash trading or money laundering.\n\n"
+
+        "### **Risk Assessment Criteria:**\n"
+        "Provide a risk score between **0 and 100** based on your analysis:\n"
+        "- **0-30:** Low risk, likely a normal transaction.\n"
+        "- **31-59:** Medium risk, possible anomalies but no strong exploit indicators.\n"
+        "- **60-100:** High risk, requires human review due to strong exploit signs.\n\n"
+
+        "### **Expected Response Format:**\n"
+        "Return your assessment in the following structured format:\n"
+        "```\n"
+        "{\n"
+        '  "risk_score": 75,\n'
+        '  "verdict": "Potential exploit detected due to reentrancy attack",\n'
+        '  "reasoning": "The trace indicates multiple reentrant calls within the same transaction.",\n'
+        '  "recommendation": "Further manual review is advised. Consider blocking associated addresses."\n'
+        "}\n"
+        "```\n"
+        "Now, please analyze the transaction and return your findings."
     )
 
     return messages
@@ -32,7 +58,10 @@ def deepseekv3_detect(tx_hash, folder_prefix):
     payload = {
         "model": "nezahatkorkmaz/deepseek-v3:latest",
         "stream": False,
-        "prompt": messages
+        "prompt": messages,
+        "options": {
+            "num_ctx": 70000
+        }
     }
 
     start_time = time.time()  # Start time tracking
@@ -44,8 +73,6 @@ def deepseekv3_detect(tx_hash, folder_prefix):
     elapsed_time = end_time - start_time  # Calculate elapsed time
 
     generated_text = response.json().get('response')
-
-    print(generated_text)
     print(f"Response time: {elapsed_time:.2f} seconds")
 
     # Save output to a text file

@@ -17,14 +17,10 @@ class EndpointPool:
                 # "https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134"
                 ],
         "optimism": ["https://op-pokt.nodies.app"],
-        "fantom": ["https://rpc.ftm.tools"],
         "arbitrum": ["https://rpc.ankr.com/arbitrum"],
         "bsc": ["https://bscrpc.com"],
-        "moonriver": ["https://moonriver.public.blastapi.io"],
-        "gnosis": ["https://gnosis-rpc.publicnode.com"],
         "avalanche": ["https://avalanche.drpc.org"],
         "polygon": ["https://rpc.ankr.com/polygon"],
-        "celo": ["https://1rpc.io/celo"],
         "base": ["https://developer-access-mainnet.base.org"]
     }
 

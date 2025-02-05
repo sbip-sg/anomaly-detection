@@ -13,13 +13,8 @@ chain_dict = {
     "base": "ETH",
     "bsc": "BNB",
     "eth": "ETH",
-    "fantom": "FTM",
-    "Fuse Mainnet": "FUSE",
-    "gnosis": "XDAI",
-    "moonriver": "MOVR",
     "optimism": "ETH",
     "polygon": "MATIC",
-    "celo": "CELO"
 }
 
 # dict to store token exchange rate

@@ -61,9 +61,10 @@ def get_currency(hash, block_number, rpc, rate_dict):
                 exchange_rate = rate_dict['ETH']
             else:
                 # Get exchange rate
-                exchange_rate = get_rate(address, block_number, w3, decimal)
+                exchange_rate = get_rate(address, block_number, w3, decimal, rate_dict)
         except Exception as e:
             print('Error: can not get transfer currency', hash.lower())
+            print('Error:',e)
             currency = hash
             decimal = 0
             exchange_rate = 0
