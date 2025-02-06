@@ -35,9 +35,8 @@ def chatgpt_detect(tx_hash, folder_prefix):
     start_time = time.time()  # Start time tracking
 
     response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-        temperature=0
+        model="o3-mini",
+        messages=messages
     )
 
     end_time = time.time()  # End time tracking

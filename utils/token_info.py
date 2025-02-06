@@ -162,3 +162,5 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
 
     with open(folder_prefix + '/token_info/currency_dict.json', 'w') as json_file3:
         json.dump(currency_dict, json_file3, indent=2)
+
+    return main_token
