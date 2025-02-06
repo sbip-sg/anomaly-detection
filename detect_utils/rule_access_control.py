@@ -4,18 +4,18 @@ from web3 import Web3
 w3 = Web3(Web3.HTTPProvider('http://sbip-g3.d2.comp.nus.edu.sg:8545'))
 
 # collect all indexes where trigger high USD value transfer
-def collect_idx(tx_hash, chain):
+def collect_idx(tx_hash, folder_prefix):
     # load necessary files
-    trace = collect_from_file(tx_hash, chain, '/trace_json/trace_' + tx_hash + '.json')
-    rate_dict = collect_from_file(tx_hash, chain, '/token_info/rate_dict.json')
-    currency_dict = collect_from_file(tx_hash, chain, '/token_info/currency_dict.json')
+    trace = collect_from_file(folder_prefix, '/trace_json/trace_' + tx_hash + '.json')
+    rate_dict = collect_from_file(folder_prefix, '/token_info/rate_dict.json')
+    currency_dict = collect_from_file(folder_prefix, '/token_info/currency_dict.json')
     # storing index relations
     idx_dict = {}
     parent_dict = {}
     event_parent_dict = {}
 
     # normally in an attack transaction, there is at least one address suffer loss.
-    if not check_balance_negative(tx_hash, chain, -10000):
+    if not check_balance_negative(tx_hash, folder_prefix, -10000):
         return idx_dict
 
     for element in trace:
@@ -110,8 +110,8 @@ def check_opcodes(code_list):
     return False
 
 # Detect the balance change of addresses a transaction
-def check_balance_negative(tx_hash, chain, value):
-    balance_change = collect_from_file(tx_hash, chain, '/token_info/balance.json')
+def check_balance_negative(tx_hash, folder_prefix, value):
+    balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')
     if balance_change:
         balance_change = balance_change[tx_hash]
         # check all address
@@ -126,14 +126,14 @@ def check_balance_negative(tx_hash, chain, value):
     return False
 
 # detect access control problem
-def detect_access_control(tx_hash, chain):
-    idx_dict = collect_idx(tx_hash, chain)
+def detect_access_control(tx_hash, folder_prefix):
+    idx_dict = collect_idx(tx_hash, folder_prefix)
     # these call usually not have access control
     skip_list = ['swap', 'transferfrom', 'deposit', 'withdraw', 'flashloan', 'receiveflashloan', 'transfer'
                 , 'multicall', 'swapuniv3', 'execute', 'fallback', 'mint', 'swapcallback', 'wrapall', 'sweeptoken'
                ,'patchsequence', 'swapexactytfortoken', 'exectransaction', 'finalizeethwithdrawal']
     # collect the trace of a transaction
-    trace = collect_from_file(tx_hash, chain, '/trace_json/trace_' + tx_hash + '.json')
+    trace = collect_from_file(folder_prefix, '/trace_json/trace_' + tx_hash + '.json')
     # get all USD values and USD values of call without access control
     sum_value = 0
     sum_all_value = sum(idx_dict.values())

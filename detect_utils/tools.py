@@ -1,8 +1,7 @@
 import json
 
 # Get information of a transaction from the collected files
-def collect_from_file(tx_hash, chain, filename):
-    folder_prefix = f'result/{tx_hash}_{chain}'
+def collect_from_file(folder_prefix, filename):
     with open(folder_prefix + filename) as input_json:
         output_json = json.load(input_json)
     return output_json
@@ -34,9 +33,9 @@ def filter_transaction(basic_info, trace):
     return False
 
 # Detect the balance change of given address of a transaction
-def check_balance(tx_hash, chain, address):
+def check_balance(folder_prefix, address):
     possible_hack = False
-    balance_change = collect_from_file(tx_hash, chain, '/token_info/balance.json')[tx_hash]
+    balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
     if address in balance_change.keys():
         address_balance_change = balance_change.get(address)
         address_usd_change = 0

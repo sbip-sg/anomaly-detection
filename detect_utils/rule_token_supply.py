@@ -9,8 +9,8 @@ def calc_ratio(numbers):
     return (largest - smallest) / largest
 
 # Detect total supply return values and calculate value change rate
-def get_total_supply(tx_hash, chain):
-    trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
+def get_total_supply(tx_hash, folder_prefix):
+    trace = collect_from_file(folder_prefix, '/invocation_tree/decode_trace_' + tx_hash + '.json')
 
     total_supply = {}
 
@@ -59,11 +59,11 @@ def find_largest_number(d):
     return largest
 
 # detect whether a transaction has high range of total supply changes.
-def detect_token_supply(tx_hash, chain):
-    total_supply_dict = get_total_supply(tx_hash, chain)
+def detect_token_supply(tx_hash, folder_prefix):
+    total_supply_dict = get_total_supply(tx_hash, folder_prefix)
 
-    basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
-    trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
+    basic_info = collect_from_file(folder_prefix, '/basic_info.json')
+    trace = collect_from_file(folder_prefix, '/invocation_tree/decode_trace_' + tx_hash + '.json')
 
     # Gas usage not passed
     if not filter_transaction(basic_info, trace):

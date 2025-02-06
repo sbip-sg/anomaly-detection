@@ -17,8 +17,8 @@ def shorten_address(address):
         raise TypeError('Non-string as address')
 
 # Basic information to text
-def transform_basic(tx_hash, chain):
-    basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
+def transform_basic(folder_prefix):
+    basic_info = collect_from_file(folder_prefix, '/basic_info.json')
     value = basic_info['value']
     output = f"This transaction is sent with {value} eth, "
 
@@ -111,9 +111,9 @@ def collect_event(t, currency_dict):
     return event_output
 
 # Trace to text
-def transform_trace(tx_hash, chain):
-    trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
-    currency_dict = collect_from_file(tx_hash, chain, '/token_info/currency_dict.json')
+def transform_trace(tx_hash, folder_prefix):
+    trace = collect_from_file(folder_prefix, '/invocation_tree/decode_trace_' + tx_hash + '.json')
+    currency_dict = collect_from_file(folder_prefix, '/token_info/currency_dict.json')
     calls = {}
     c_index = 0
     d_index = 0
@@ -149,8 +149,8 @@ def generate_balance(token: str, value: float, usd_amount: float):
     return token_output + '. '
 
 # balance changes to text
-def transform_balance(tx_hash, chain, from_add, to_add):
-    balance_change = collect_from_file(tx_hash, chain, '/token_info/balance.json')[tx_hash]
+def transform_balance(tx_hash, folder_prefix, from_add, to_add):
+    balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
     outputs = []
     for address in balance_change:
         # Emphasise that some addresses are special.
@@ -173,10 +173,10 @@ def transform_balance(tx_hash, chain, from_add, to_add):
     return outputs
 
 # combine three text in a json
-def generate_output(tx_hash, chain, folder_prefix):
-    basic_info, from_add, to_add = transform_basic(tx_hash, chain)
-    call_dict = transform_trace(tx_hash, chain)
-    balance_output = transform_balance(tx_hash, chain, from_add, to_add)
+def generate_output(tx_hash, folder_prefix):
+    basic_info, from_add, to_add = transform_basic(folder_prefix)
+    call_dict = transform_trace(tx_hash, folder_prefix)
+    balance_output = transform_balance(tx_hash, folder_prefix, from_add, to_add)
     trace = "\n".join(str(value) for value in call_dict.values())
     # mostly API will have 128000 token limit
     result_dict = {"transactionInfo": basic_info, "trace": trace, "balanceChanges": "\n".join(balance_output)}

@@ -17,7 +17,7 @@ class EndpointPool:
                 # "https://mainnet.infura.io/v3/0377f17d56934a059be55f9d96fe5134"
                 ],
         "optimism": ["https://op-pokt.nodies.app"],
-        "arbitrum": ["https://rpc.ankr.com/arbitrum"],
+        # "arbitrum": ["https://rpc.ankr.com/arbitrum"],
         "bsc": ["https://bscrpc.com"],
         "avalanche": ["https://avalanche.drpc.org"],
         "polygon": ["https://rpc.ankr.com/polygon"],

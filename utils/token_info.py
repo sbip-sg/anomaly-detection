@@ -2,20 +2,9 @@ import json
 import pandas as pd
 from os import listdir
 from web3 import Web3
-from utils.collect_transfer import get_rate, get_currency, find_address_transfer_event, deal_transfer, othertransfer,get_currency_dict
+from utils.collect_transfer import find_address_transfer_event, deal_transfer, othertransfer
+from utils.collect_currency import get_currency, get_main_token, get_currency_dict
 import os
-
-# Chain-currency dict
-# getting the default currency is by value, so we need prior knowledge of tokens
-chain_dict = {
-    "arbitrum": "ETH",
-    "avalanche": "AVAX",
-    "base": "ETH",
-    "bsc": "BNB",
-    "eth": "ETH",
-    "optimism": "ETH",
-    "polygon": "MATIC",
-}
 
 # dict to store token exchange rate
 rate_dict = {}
@@ -49,19 +38,17 @@ def remove_zeros(total_dict):
 
 
 # collect tokens from decoded invocation tree
-def collect_token(transaction_hash, o_from_add, o_to_add, block_number, edpool, folder_prefix):
+def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, edpool, folder_prefix):
     # collect balance change of each transaction
     total_dict = {}
-
-    # get the default token name
-    token = chain_dict[edpool.chain]
     # collect token flows of each transaction
     flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
 
     # get original token exchange rate
     rpc = edpool.endpoint_by_chain()
     w3 = Web3(Web3.HTTPProvider(rpc))
-    rate_dict[token] = get_rate('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', block_number, w3, decimal=18, rate_dict = rate_dict)
+    # get the default token name
+    main_token, rate_dict[main_token], wrapped_token, rate_dict[wrapped_token] = get_main_token(chain, block_number - 1, w3)
     jsonlist = listdir(folder_prefix + '/invocation_tree')
     for i in jsonlist:
         file = open(folder_prefix + '/invocation_tree/' + i)
@@ -83,7 +70,7 @@ def collect_token(transaction_hash, o_from_add, o_to_add, block_number, edpool, 
 
                     # event name as transfer refers to token transfer
                     if event_name.lower() == 'transfer' and len(input) != 0:
-                        currency, decimal = get_currency(trace['address'], block_number - 1, rpc, rate_dict)
+                        currency, decimal = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
                         from_address, to_address, amount = find_address_transfer_event(trace, input)
                         if isinstance(amount, int):
                             value = amount / pow(10, decimal)
@@ -92,7 +79,7 @@ def collect_token(transaction_hash, o_from_add, o_to_add, block_number, edpool, 
 
                     # event name as withdrawal refers to token withdraw
                     elif event_name.lower() == 'withdrawal' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                        currency, decimal = get_currency(trace['address'], block_number - 1, rpc, rate_dict)
+                        currency, decimal = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
                         from_address = input[0]
                         if len(trace['data']) == 2:
                             amount = trace['data'][1]
@@ -116,7 +103,7 @@ def collect_token(transaction_hash, o_from_add, o_to_add, block_number, edpool, 
 
             # for local token flow, there mostly is a trace with non-zero value
             if trace['type'] == 'call'  or trace['type'] == 'create' and trace["value"] != 0 and trace['status'] != "OutOfGas":
-                    summary_dict = deal_transfer(summary_dict, token, trace, flow)
+                    summary_dict = deal_transfer(summary_dict, main_token, trace, flow)
 
             if trace['type'] == 'selfdestruct' and trace["value"] != 0:
                     new_trace = {
@@ -124,7 +111,7 @@ def collect_token(transaction_hash, o_from_add, o_to_add, block_number, edpool, 
                         'to': trace['refund_target'],
                         'value': trace['value']
                     }
-                    summary_dict = deal_transfer(summary_dict, token, new_trace, flow)
+                    summary_dict = deal_transfer(summary_dict, main_token, new_trace, flow)
 
             # Call is out of gas, so the following events are not available
             if trace['type'] == 'call' and trace['status'] == "OutOfGas":

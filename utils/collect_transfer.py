@@ -1,80 +1,3 @@
-import json
-from web3 import Web3
-
-# Abi file to call contract for symbol and decimals
-abi_file = open("utils/erc20.abi.json")
-abi = json.load(abi_file)
-
-# dict to store currency symbol and decimals
-currency_dict = {}
-
-uniswap_file = open("utils/uniswapv2.abi.json")
-uniswap = json.load(uniswap_file)
-
-def get_rate(address, block_number, w3, decimal, rate_dict):
-    # uniswap v2 address
-    contract_address = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
-    contract = w3.eth.contract(address=contract_address, abi=uniswap)
-
-    # warped ether
-    if address == '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2':
-        # USDT
-        second_address = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
-    else:
-        # warped ether
-        second_address = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-
-    # Get contract sawp amount
-    try:
-        method = contract.functions.getAmountsOut(pow(10, decimal), [address, second_address])
-        result = method.call(block_identifier=block_number)
-    except Exception as e:
-        print('uniswap error:', e)
-        return 0
-
-
-    # warped ether to USDT
-    if address == '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2':
-        return result[1] / 1e6
-    else:
-        # token to warped ether to USDT
-        return rate_dict['ETH'] * result[1] / 1e18
-
-# Get the currency symbol and decimals by the contract
-def get_currency(hash, block_number, rpc, rate_dict):
-    hash = hash.lower()
-    if hash not in currency_dict:
-        w3 = Web3(Web3.HTTPProvider(rpc))
-        try:
-            address = Web3.to_checksum_address(hash)
-            contract = w3.eth.contract(
-                address=address,
-                abi=abi,
-            )
-            # Get symbol
-            currency = contract.functions.symbol().call()
-            # Get decimals
-            decimal = contract.functions.decimals().call()
-            if 'usd' in currency.lower() and len(currency.lower()) <= 6:
-                exchange_rate = 1
-            elif 'eth' in currency.lower() and len(currency.lower()) <= 6:
-                exchange_rate = rate_dict['ETH']
-            else:
-                # Get exchange rate
-                exchange_rate = get_rate(address, block_number, w3, decimal, rate_dict)
-        except Exception as e:
-            print('Error: can not get transfer currency', hash.lower())
-            print('Error:',e)
-            currency = hash
-            decimal = 0
-            exchange_rate = 0
-        currency_dict[hash] = (currency, decimal, exchange_rate)
-        rate_dict[currency] = exchange_rate
-    else:
-        (currency, decimal, exchange_rate) = currency_dict[hash]
-    return currency, decimal
-
-
 # Build a function to inject information to a summary dict
 def update_summary(summary, address, currency, amount):
     # if new address
@@ -115,9 +38,6 @@ def deal_transfer(summary, currency, trace, flow):
         flow.loc[len(flow)] = [from_address, to_address, currency, amount]
 
     return summary
-
-def get_currency_dict():
-    return currency_dict
 
 
 # This function is from observation and would be less reliable
