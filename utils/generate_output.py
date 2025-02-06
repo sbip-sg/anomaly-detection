@@ -178,7 +178,7 @@ def generate_output(tx_hash, folder_prefix):
     call_dict = transform_trace(tx_hash, folder_prefix)
     balance_output = transform_balance(tx_hash, folder_prefix, from_add, to_add)
     trace = "\n".join(str(value) for value in call_dict.values())
-    # mostly API will have 128000 token limit
+    # 64000 tokens for deepseek v3
     result_dict = {"transactionInfo": basic_info, "trace": trace, "balanceChanges": "\n".join(balance_output)}
     if len(str(result_dict)) > 64000:
         limit = 62000 - len(basic_info) - len("\n".join(balance_output))

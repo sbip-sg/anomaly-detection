@@ -71,7 +71,7 @@ def get_currency(address, chain, block_number, w3, rate_dict):
                 checksum_address = Web3.to_checksum_address(address)
                 exchange_rate = get_rate(checksum_address, chain, block_number, w3, decimal)
         except Exception as e:
-            print('Error: can not get exchange_rate', address)
+            print('Error:', e, ',can not get exchange_rate', address)
             exchange_rate = 0
         currency_dict[address] = (currency, decimal, exchange_rate)
         rate_dict[currency] = exchange_rate

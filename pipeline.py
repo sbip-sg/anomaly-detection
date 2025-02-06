@@ -53,12 +53,12 @@ def main(tx_hash, chain, overwrite=False, use_llm=False):
     generate_output(tx_hash, folder_prefix)
 
     # if use_chatgpt and detection_result:
-    # if use_llm:
-    #    try:
-    #        # chatgpt_detect(tx_hash, folder_prefix)
-    #        deepseekv3_detect(tx_hash, folder_prefix)
-    #    except Exception as e:
-    #        print('Chatgpt Error:', e)
+    if use_llm:
+        try:
+            # chatgpt_detect(tx_hash, folder_prefix)
+            deepseekv3_detect(tx_hash, folder_prefix)
+        except Exception as e:
+            print('Chatgpt Error:', e)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

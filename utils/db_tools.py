@@ -1,7 +1,5 @@
 import plyvel
 import os
-import csv
-import pandas as pd
 
 db_path = os.environ.get('EVENT_DB_PATH')
 event_db = None

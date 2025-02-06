@@ -66,12 +66,12 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
             if not out_of_gas:
                 if trace['type'] == 'event':
                     event_name = trace["function"]
-                    input = trace['input']
+                    input_value = trace['input']
 
                     # event name as transfer refers to token transfer
-                    if event_name.lower() == 'transfer' and len(input) != 0:
+                    if event_name.lower() == 'transfer' and len(input_value) != 0:
                         currency, decimal = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
-                        from_address, to_address, amount = find_address_transfer_event(trace, input)
+                        from_address, to_address, amount = find_address_transfer_event(trace, input_value)
                         if isinstance(amount, int):
                             value = amount / pow(10, decimal)
                             summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
@@ -80,7 +80,7 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
                     # event name as withdrawal refers to token withdraw
                     elif event_name.lower() == 'withdrawal' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
                         currency, decimal = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
-                        from_address = input[0]
+                        from_address = input_value[0]
                         if len(trace['data']) == 2:
                             amount = trace['data'][1]
                         else:
@@ -91,8 +91,8 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
 
                     # event name as deposit refers to token deposit
                     elif event_name.lower() == 'deposit' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                            currency, decimal = get_currency(trace['address'], block_number - 1, rpc, rate_dict)
-                            to_address = input[0]
+                            currency, decimal = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
+                            to_address = input_value[0]
                             if len(trace['data']) == 2:
                                 amount = trace['data'][1]
                             else:
