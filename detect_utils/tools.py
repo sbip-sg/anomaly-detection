@@ -33,7 +33,7 @@ def filter_transaction(basic_info, trace):
     return False
 
 # Detect the balance change of given address of a transaction
-def check_balance(folder_prefix, address):
+def check_balance(tx_hash, folder_prefix, address):
     possible_hack = False
     balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
     if address in balance_change.keys():

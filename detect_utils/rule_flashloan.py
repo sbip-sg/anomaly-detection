@@ -1,7 +1,7 @@
 from detect_utils.tools import collect_from_file, filter_transaction, check_balance
 
 # Detect whether the trace of a transaction has event named flashloan and return the receiver address list
-def has_flashloan(folder_prefix):
+def has_flashloan(tx_hash, folder_prefix):
     trace = collect_from_file(folder_prefix, '/invocation_tree/decode_trace_' + tx_hash + '.json')
 
     address_list = []
@@ -26,7 +26,7 @@ def has_flashloan(folder_prefix):
 def detect_flashloan_transaction(tx_hash, folder_prefix):
     basic_info = collect_from_file(folder_prefix, '/basic_info.json')
     trace = collect_from_file(folder_prefix, '/invocation_tree/decode_trace_' + tx_hash + '.json')
-    address_list = has_flashloan(folder_prefix)
+    address_list = has_flashloan(tx_hash, folder_prefix)
 
     # Gas usage not passed
     if not filter_transaction(basic_info, trace):
@@ -44,7 +44,7 @@ def detect_flashloan_transaction(tx_hash, folder_prefix):
 
         # Detect incomes of addresses
         for address in address_list:
-            if check_balance(folder_prefix, address):
+            if check_balance(tx_hash, folder_prefix, address):
                 possible_hack = True
 
         return possible_hack

@@ -40,6 +40,6 @@ def detect_cyclic_transaction(tx_hash, folder_prefix):
 
     possible_hack = False
     if has_cycle(functions) is not None:
-        possible_hack = check_balance(folder_prefix, sender)
+        possible_hack = check_balance(tx_hash, folder_prefix, sender)
 
     return possible_hack
