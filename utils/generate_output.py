@@ -129,10 +129,10 @@ def transform_trace(tx_hash, folder_prefix, main_token, chain):
             if parent in calls:
                 calls[parent] += collect_event(t, currency_dict, chain)
         elif 'create' in t['type']:
-            calls['c' + str(c_index)] = f'{shorten_address(t["from"])} creates {shorten_address(t['to'])} funding {str(t["value"]/ 1e18)} {main_token} with {t['data']}'
+            calls['c' + str(c_index)] = f'{shorten_address(t["from"])} creates {shorten_address(t['to'])} funding {str(t["value"]/ 1e18)} {main_token}.'
             c_index += 1
         elif 'selfdestruct' in t['type']:
-            calls['d' + str(d_index)] = f'{shorten_address(t["address"])} self-destructs refunding {str(t["value"]/ 1e18)} {main_token} to {shorten_address(t["refund_target"])}'
+            calls['d' + str(d_index)] = f'{shorten_address(t["address"])} self-destructs refunding {str(t["value"]/ 1e18)} {main_token} to {shorten_address(t["refund_target"])}.'
             d_index += 1
     return calls
 
