@@ -6,7 +6,7 @@ import time
 
 def generate_message(json_data: dict):
     messages = [
-        {"role": "user", "content": "Please analyze the following Ethereum transaction for being exploit."},
+        {"role": "user", "content": "Please analyze the following EVM blockchain transaction for being exploit."},
         {"role": "user",
          "content": "Transaction is stored in text form and we provide 3 detailed parts of transaction information."},
         {"role": "user", "content": "First part is the basic information:"},
