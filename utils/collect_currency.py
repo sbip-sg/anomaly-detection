@@ -26,7 +26,7 @@ def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int)
     contract = w3.eth.contract(address=contract_address, abi=uniswap)
 
     # Ensure decimals are reduced in the same scale but not below 6
-    min_decimal = 6
+    min_decimal = 3
     scale_factor = min(decimal, wrapped_decimal) - min_decimal
     if scale_factor > 0:
         decimal -= scale_factor
@@ -89,7 +89,7 @@ def get_main_token(chain, block_number, w3):
     usdc_decimal = chain_token_info['usdc_decimal']
     wrapped_decimal = chain_token_info['wrapped_decimal']
     # Ensure decimals are reduced in the same scale but not below 6
-    min_decimal = 6
+    min_decimal = 3
     scale_factor = min(usdc_decimal, wrapped_decimal) - min_decimal
     if scale_factor >= 0:
         usdc_decimal_new = usdc_decimal - scale_factor
