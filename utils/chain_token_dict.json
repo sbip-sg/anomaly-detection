@@ -35,12 +35,39 @@
     "usdc_decimal": 18,
     "wrapped_decimal": 18
   },
+  "celo": {
+    "chainToken": "CELO",
+    "uniswapV2Address": "0x1421bDe4B10e8dd459b3BCb598810B1337D56842",
+    "usdcAddress": "0xef4229c8c3250C675F21BCefa42f58EfbfF6002a",
+    "wrappedToken": "CELO",
+    "wrappedAddress": "0x471EcE3750Da237f93B8E339c536989b8978a438",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  },
   "eth": {
     "chainToken": "ETH",
     "uniswapV2Address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
     "usdcAddress": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
     "wrappedToken": "WETH",
     "wrappedAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  },
+  "fantom": {
+    "chainToken": "FTM",
+    "uniswapV2Address": "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506",
+    "usdcAddress": "0x28a92dde19D9989F39A49905d7C9C2FAc7799bDf",
+    "wrappedToken": "WFTM",
+    "wrappedAddress": "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  },
+  "gnosis": {
+    "chainToken": "XDAI",
+    "uniswapV2Address": "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506",
+    "usdcAddress": "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83",
+    "wrappedToken": "WXDAI",
+    "wrappedAddress": "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d",
     "usdc_decimal": 6,
     "wrapped_decimal": 18
   },
