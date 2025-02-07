@@ -17,10 +17,10 @@ def shorten_address(address):
         raise TypeError('Non-string as address')
 
 # Basic information to text
-def transform_basic(tx_hash, chain):
-    basic_info = collect_from_file(tx_hash, chain, '/basic_info.json')
+def transform_basic(folder_prefix, chain, main_token):
+    basic_info = collect_from_file(folder_prefix, '/basic_info.json')
     value = basic_info['value']
-    output = f"This transaction is sent with {value} eth, "
+    output = f"This transaction is sent with {value} {main_token} on {chain} blockchain, "
 
     gas_usage = basic_info['gasUsed']
     output += f"used {gas_usage} gas. "
@@ -32,7 +32,7 @@ def transform_basic(tx_hash, chain):
     return output, from_add, to_add
 
 # Transform a call to text
-def get_sub_output(t):
+def get_sub_output(t, main_token):
     sub_output = f"{shorten_address(t['from'])} calls {t["function"]} of {shorten_address(t['to'])}"
     inputs = t["input"]
     if inputs:
@@ -45,23 +45,23 @@ def get_sub_output(t):
         sub_output += f" as a {t['type']}"
     sub_output += "."
     # Add state changes
-    if t['statechanges']:
-        sub_output += f" Contract states are changed as:"
-        for change in t['statechanges']:
-            # Explain sload and sstore
-            if change['reason'] == "SLOAD":
-                sub_output += f" load {change['value']} in {change['key']},"
-            elif change['reason'] == "SSTORE":
-                sub_output += f" store {change['value']} over {change['had_value']} in {change['key']},"
-        sub_output = sub_output[:-1] + '.'
+    #if t['statechanges']:
+    #    sub_output += f" Contract states are changed as:"
+    #    for change in t['statechanges']:
+    #        # Explain sload and sstore
+    #        if change['reason'] == "SLOAD":
+    #            sub_output += f" load {change['value']} in {change['key']},"
+    #        elif change['reason'] == "SSTORE":
+    #            sub_output += f" store {change['value']} over {change['had_value']} in {change['key']},"
+    #    sub_output = sub_output[:-1] + '.'
     # Value means having ETH transferring
     if t["value"] != 0 and t['status'] != "OutOfGas":
         amount = t["value"] / 1e18
-        sub_output += f"{shorten_address(t['from'])} sends {str(amount)} ETH to {shorten_address(t['to'])}."
+        sub_output += f"{shorten_address(t['from'])} sends {str(amount)} {main_token} to {shorten_address(t['to'])}."
     return sub_output
 
 # Transform an event to text
-def collect_event(t, currency_dict):
+def collect_event(t, currency_dict, chain):
     event_name = t['function']
     topics = t['input']
     event_data = t['data']
@@ -89,49 +89,50 @@ def collect_event(t, currency_dict):
             event_output += '.'
     # Special case: withdraw from Wrapped ETH (withdraw eth by sending WETH)
     # Adding information since no token flow related call or event is here
-    elif event_name.lower() == 'withdrawal' and event_data and topics and t[
-        'address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-        withdrawal_address = topics[0]
-        if len(event_data) == 2:
-            amount = event_data[1]
-        else:
-            amount = event_data[0]
-        if isinstance(amount, int):
-            event_output += f' {shorten_address(withdrawal_address)} withdraws {str(amount / 1e18)} ETH from Wrapped ETH.'
-    # Special case: deposit to Wrapped ETH (deposit eth and receive WETH), similar to above one
-    elif event_name.lower() == 'deposit' and event_data and topics and t[
-        'address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-        deposit_address = topics[0]
-        if len(event_data) == 2:
-            amount = event_data[1]
-        else:
-            amount = event_data[0]
-        if isinstance(amount, int):
-            event_output += f' {shorten_address(deposit_address)} deposits {str(amount / 1e18)} ETH to Wrapped ETH.'
+    if chain == 'eth':
+        if event_name.lower() == 'withdrawal' and event_data and topics and t[
+            'address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
+            withdrawal_address = topics[0]
+            if len(event_data) == 2:
+                amount = event_data[1]
+            else:
+                amount = event_data[0]
+            if isinstance(amount, int):
+                event_output += f' {shorten_address(withdrawal_address)} withdraws {str(amount / 1e18)} ETH from Wrapped ETH.'
+        # Special case: deposit to Wrapped ETH (deposit eth and receive WETH), similar to above one
+        elif event_name.lower() == 'deposit' and event_data and topics and t[
+            'address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
+            deposit_address = topics[0]
+            if len(event_data) == 2:
+                amount = event_data[1]
+            else:
+                amount = event_data[0]
+            if isinstance(amount, int):
+                event_output += f' {shorten_address(deposit_address)} deposits {str(amount / 1e18)} ETH to Wrapped ETH.'
     return event_output
 
 # Trace to text
-def transform_trace(tx_hash, chain):
-    trace = collect_from_file(tx_hash, chain, '/invocation_tree/decode_trace_' + tx_hash + '.json')
-    currency_dict = collect_from_file(tx_hash, chain, '/token_info/currency_dict.json')
+def transform_trace(tx_hash, folder_prefix, main_token, chain):
+    trace = collect_from_file(folder_prefix, '/invocation_tree/decode_trace_' + tx_hash + '.json')
+    currency_dict = collect_from_file(folder_prefix, '/token_info/currency_dict.json')
     calls = {}
     c_index = 0
     d_index = 0
     for t in trace:
         if 'call' in t['type']:
             call_key = t["call_idx"]
-            calls[call_key] = get_sub_output(t)
+            calls[call_key] = get_sub_output(t, main_token)
 
         # Adding event to its original call for LLM comprehension
         elif 'event' in t['type']:
             parent = t['parent']
             if parent in calls:
-                calls[parent] += collect_event(t, currency_dict)
+                calls[parent] += collect_event(t, currency_dict, chain)
         elif 'create' in t['type']:
-            calls['c' + str(c_index)] = f'{shorten_address(t["from"])} creates {shorten_address(t['to'])} funding {str(t["value"]/ 1e18)} ETH with {t['data']}'
+            calls['c' + str(c_index)] = f'{shorten_address(t["from"])} creates {shorten_address(t['to'])} funding {str(t["value"]/ 1e18)} {main_token}.'
             c_index += 1
         elif 'selfdestruct' in t['type']:
-            calls['d' + str(d_index)] = f'{shorten_address(t["address"])} self-destructs refunding {str(t["value"]/ 1e18)} ETH to {shorten_address(t["refund_target"])}'
+            calls['d' + str(d_index)] = f'{shorten_address(t["address"])} self-destructs refunding {str(t["value"]/ 1e18)} {main_token} to {shorten_address(t["refund_target"])}.'
             d_index += 1
     return calls
 
@@ -149,8 +150,8 @@ def generate_balance(token: str, value: float, usd_amount: float):
     return token_output + '. '
 
 # balance changes to text
-def transform_balance(tx_hash, chain, from_add, to_add):
-    balance_change = collect_from_file(tx_hash, chain, '/token_info/balance.json')[tx_hash]
+def transform_balance(tx_hash, folder_prefix, from_add, to_add):
+    balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
     outputs = []
     for address in balance_change:
         # Emphasise that some addresses are special.
@@ -173,15 +174,15 @@ def transform_balance(tx_hash, chain, from_add, to_add):
     return outputs
 
 # combine three text in a json
-def generate_output(tx_hash, chain, folder_prefix):
-    basic_info, from_add, to_add = transform_basic(tx_hash, chain)
-    call_dict = transform_trace(tx_hash, chain)
-    balance_output = transform_balance(tx_hash, chain, from_add, to_add)
+def generate_output(tx_hash, chain, folder_prefix, main_token):
+    basic_info, from_add, to_add = transform_basic(folder_prefix, chain, main_token)
+    call_dict = transform_trace(tx_hash, folder_prefix, main_token, chain)
+    balance_output = transform_balance(tx_hash, folder_prefix, from_add, to_add)
     trace = "\n".join(str(value) for value in call_dict.values())
-    # mostly API will have 128000 token limit
+    # 64000 tokens for deepseek v3
     result_dict = {"transactionInfo": basic_info, "trace": trace, "balanceChanges": "\n".join(balance_output)}
-    if len(str(result_dict)) > 128000:
-        limit = 126000 - len(basic_info) - len("\n".join(balance_output))
+    if len(str(result_dict)) > 64000:
+        limit = 62000 - len(basic_info) - len("\n".join(balance_output))
         result_dict["trace"] = trace[:limit]
     with open(folder_prefix + f"/output_{tx_hash}.json", "w") as json_file:
         json.dump(result_dict, json_file, indent = 2)

@@ -6,7 +6,7 @@ import time
 
 def generate_message(json_data: dict):
     messages = [
-        {"role": "user", "content": "Please analyze the following Ethereum transaction for being exploit."},
+        {"role": "user", "content": "Please analyze the following EVM blockchain transaction for being exploit."},
         {"role": "user",
          "content": "Transaction is stored in text form and we provide 3 detailed parts of transaction information."},
         {"role": "user", "content": "First part is the basic information:"},
@@ -35,9 +35,8 @@ def chatgpt_detect(tx_hash, folder_prefix):
     start_time = time.time()  # Start time tracking
 
     response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-        temperature=0
+        model="o3-mini",
+        messages=messages
     )
 
     end_time = time.time()  # End time tracking

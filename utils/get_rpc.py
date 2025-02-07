@@ -20,7 +20,7 @@ class EndpointPool:
         "fantom": ["https://rpc.ftm.tools"],
         "arbitrum": ["https://rpc.ankr.com/arbitrum"],
         "bsc": ["https://bscrpc.com"],
-        "moonriver": ["https://moonriver.public.blastapi.io"],
+        #"moonriver": ["https://moonriver.public.blastapi.io"],
         "gnosis": ["https://gnosis-rpc.publicnode.com"],
         "avalanche": ["https://avalanche.drpc.org"],
         "polygon": ["https://rpc.ankr.com/polygon"],
@@ -36,7 +36,7 @@ class EndpointPool:
         self.broken_endpoints[chain] = {}
 
     def mark_endpoint_broken(self, endpoint):
-        '''Mark the endpoint as broken at the current timestamp.'''
+        # Mark the endpoint as broken at the current timestamp.
         self.endpoints.remove(endpoint)
         now = time.time()
         if endpoint not in self.broken_endpoints[self.chain]:
@@ -47,7 +47,7 @@ class EndpointPool:
         return self.endpoint_by_chain()
 
     def reload_endpoint(self):
-        '''Put the broken endpoints back to the usable endpoint, if the cooldown time has passed'''
+        # Put the broken endpoints back to the usable endpoint, if the cooldown time has passed
         now = time.time()
 
         if not self.broken_endpoints[self.chain]:
@@ -59,7 +59,7 @@ class EndpointPool:
 
     def endpoint_by_chain(self):
 
-        '''Get first available endpoint to use, or raise `FindEndpointException` if no more usable endpoint available'''
+        # Get first available endpoint to use, or raise `FindEndpointException` if no more usable endpoint available
         if not self.endpoints:
             self.reload_endpoint()
             if not self.endpoints:

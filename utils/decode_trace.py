@@ -18,7 +18,7 @@ def parse_structure(structure):
             return {"type": element}
 
         # Match a list type (e.g., 'type[]' or 'type[n]')
-        match_list = re.fullmatch(r'(.*)\[(\d*)\]', element)
+        match_list = re.fullmatch(r'(.*)\[(\d*)]', element)
         if match_list:
             inner_type = parse_element(match_list.group(1).strip())  # Recursively parse the inner type
             size = match_list.group(2)  # Size, '' for infinite lists
@@ -72,7 +72,8 @@ def process_function(function):
         return function_name, parameters
 
     # The function is not simple function(parameters)
-    except:
+    except Exception as e:
+        print('Function structure not unified:', e)
         return function, {}
 
 # Function to check if parentheses are balanced in a string
@@ -124,7 +125,7 @@ def decode_input(function_text, input_hash):
                     for value in values:
                         input_list.append(value)
                 except Exception as e:
-                    print(f"Error: {function_text} input hash can not be decoded")
+                    print(f"Error: {function_text} input hash can not be decoded.", e)
                     input_list = decode_unknown_input(input_hash, data=True, event=False)
         # Otherwise, we use above function to guess the input 64 digits.
         elif len(input_hash) != 0:
@@ -159,11 +160,11 @@ def decode_unknown_input(chunks, data=False, event=True, transfer = False):
         # Address: normally length == 40, considering starting with zeros, we have a buffer for 10 zeros.
         # The possibility of missing an address is 1/2^40, which means that is mostly impossible.
         if not transfer:
-            if count_of_zeros >= 24 and count_of_zeros < 35:  # Address type
+            if 24 <= count_of_zeros < 35:  # Address type
                 input_list.append(decode(['address'], bytes.fromhex(line))[0])
             # Number: We consider that the biggest number is 16^28 more than 10e33 and for normal wei = 1e18
             # Normally most numbers are no bigger than 1e15
-            elif count_of_zeros >= 35 and count_of_zeros < 64:  # uint256 type
+            elif 35 <= count_of_zeros < 64:  # uint256 type
                 input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
             # null address
             elif count_of_zeros == 64:  # Address type
@@ -178,14 +179,14 @@ def parse_grouped_elements(input_str):
     if '\"' in input_str:
         return [input_str]
     if 'ecrecover:' in input_str.lower():
-        input_str = re.findall(r'\[(.*?)\]', input_str)[0]
+        input_str = re.findall(r'\[(.*?)]', input_str)[0]
     # Replace ', ' with ','
     input_str = input_str.replace(', ', ',')
     # Replace patterns like 'number [number e number]' or 'number [number.number e number]' with just 'number'
-    input_str = re.sub(r'(\d+)\s*\[\d+(\.\d+)?e\d+\]', r'\1', input_str)
+    input_str = re.sub(r'(\d+)\s*\[\d+(\.\d+)?e\d+]', r'\1', input_str)
 
     # Replace patterns like '-number [-number e number]' or '-number [-number.number e number]' with just '-number'
-    input_str = re.sub(r'(-\d+)\s*\[-\d+(\.\d+)?e\d+\]', r'\1', input_str)
+    input_str = re.sub(r'(-\d+)\s*\[-\d+(\.\d+)?e\d+]', r'\1', input_str)
     # input lower
     input_str = input_str.lower()
 
@@ -305,9 +306,8 @@ def decode_trace_json(folder_prefix="result"):
         tx = json.load(file)
         locations = [-1]
         for trace in tx:
-            new_trace = {}
+            new_trace = {"type": trace['kind'].lower()}
             # extract all kinds of information
-            new_trace["type"] = trace['kind'].lower()
             if 'gas_used' in trace.keys():
                 new_trace["gasUsed"] = trace["gas_used"]
             if 'value' in trace.keys():

@@ -8,11 +8,12 @@ from utils.get_rpc import EndpointPool
 from utils.generate_output import generate_output
 from detect_utils.detect_all import rule_based_detection
 from detect_utils.chatgpt_detect import chatgpt_detect
+from detect_utils.deepseekv3_detect import deepseekv3_detect
 import json
 
 
 # Get transaction information by hash
-def main(tx_hash, chain, overwrite=False, use_chatgpt=False):
+def main(tx_hash, chain, overwrite=False, use_llm=False):
     folder_prefix = f'result/{tx_hash}_{chain}'
     # Create result directory if it doesn't exist
     if overwrite:
@@ -38,9 +39,9 @@ def main(tx_hash, chain, overwrite=False, use_chatgpt=False):
     decode_trace_json(folder_prefix)
 
     # According to the decoded invocation tree, get token flow and balance changes.
-    collect_token(tx_hash, basic_info['from'], basic_info['to'], basic_info['blocknumber'], edpool, folder_prefix)
+    main_token = collect_token(tx_hash, chain, basic_info['from'], basic_info['to'], basic_info['blocknumber'], edpool, folder_prefix)
 
-    detection_result, reason = rule_based_detection(tx_hash, chain)
+    detection_result, reason = rule_based_detection(tx_hash, folder_prefix)
 
     basic_info['detection_result'] = detection_result
     basic_info['reason'] = reason
@@ -49,12 +50,13 @@ def main(tx_hash, chain, overwrite=False, use_chatgpt=False):
     with open(folder_prefix + '/basic_info.json', 'w') as json_file:
         json.dump(basic_info, json_file, indent=2)
 
-    generate_output(tx_hash, chain, folder_prefix)
+    generate_output(tx_hash, chain, folder_prefix, main_token)
 
     # if use_chatgpt and detection_result:
-    if use_chatgpt:
+    if use_llm:
         try:
             chatgpt_detect(tx_hash, folder_prefix)
+            # deepseekv3_detect(tx_hash, folder_prefix)
         except Exception as e:
             print('Chatgpt Error:', e)
 

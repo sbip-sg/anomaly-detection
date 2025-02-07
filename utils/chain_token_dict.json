@@ -1,0 +1,92 @@
+{
+  "arbitrum": {
+    "chainToken": "ETH",
+    "uniswapV2Address": "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506",
+    "usdcAddress": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+    "wrappedToken": "WETH",
+    "wrappedAddress": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  },
+  "avalanche": {
+    "chainToken": "AVAX",
+    "uniswapV2Address": "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24",
+    "usdcAddress": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+    "wrappedToken": "WAVAX",
+    "wrappedAddress": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  },
+  "base": {
+    "chainToken": "ETH",
+    "uniswapV2Address": "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24",
+    "usdcAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "wrappedToken": "WETH",
+    "wrappedAddress": "0x4200000000000000000000000000000000000006",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  },
+  "bsc": {
+    "chainToken": "BNB",
+    "uniswapV2Address": "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24",
+    "usdcAddress": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+    "wrappedToken": "WBNB",
+    "wrappedAddress": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+    "usdc_decimal": 18,
+    "wrapped_decimal": 18
+  },
+  "celo": {
+    "chainToken": "CELO",
+    "uniswapV2Address": "0x1421bDe4B10e8dd459b3BCb598810B1337D56842",
+    "usdcAddress": "0xef4229c8c3250C675F21BCefa42f58EfbfF6002a",
+    "wrappedToken": "CELO",
+    "wrappedAddress": "0x471EcE3750Da237f93B8E339c536989b8978a438",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  },
+  "eth": {
+    "chainToken": "ETH",
+    "uniswapV2Address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+    "usdcAddress": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "wrappedToken": "WETH",
+    "wrappedAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  },
+  "fantom": {
+    "chainToken": "FTM",
+    "uniswapV2Address": "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506",
+    "usdcAddress": "0x28a92dde19D9989F39A49905d7C9C2FAc7799bDf",
+    "wrappedToken": "WFTM",
+    "wrappedAddress": "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  },
+  "gnosis": {
+    "chainToken": "XDAI",
+    "uniswapV2Address": "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506",
+    "usdcAddress": "0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83",
+    "wrappedToken": "WXDAI",
+    "wrappedAddress": "0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  },
+  "optimism": {
+    "chainToken": "ETH",
+    "uniswapV2Address": "0x4A7b5Da61326A6379179b40d00F57E5bbDC962c2",
+    "usdcAddress": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
+    "wrappedToken": "WETH",
+    "wrappedAddress": "0x4200000000000000000000000000000000000006",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  },
+  "polygon": {
+    "chainToken": "POL",
+    "uniswapV2Address": "0xedf6066a2b290C185783862C7F4776A2C8077AD1",
+    "usdcAddress": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+    "wrappedToken": "WPOL",
+    "wrappedAddress": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    "usdc_decimal": 6,
+    "wrapped_decimal": 18
+  }
+}
