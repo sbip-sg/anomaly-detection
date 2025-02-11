@@ -2,9 +2,41 @@ from detect_utils.tools import collect_from_file
 from utils.collect_transfer import find_address_transfer_event
 import json
 
-# Make USD amount recognized by AI correctly
-def rounded_number(number):
-    return round(number, 2)
+
+def rounded_number(number, usd_mode=False):
+    """
+    Rounds the number based on the selected mode.
+
+    Usd Mode: Always rounds to two decimal places.
+    Other Value Mode:
+        - If number >= 1, rounds to two decimal places.
+        - If number < 1, rounds to two significant figures.
+
+    :param number: The number to round (float or int)
+    :param usd_mode: Boolean flag to determine USD rounding mode.
+    :return: The rounded number
+    """
+    try:
+        if not isinstance(number, (int, float)):
+            print(f"Not a number: {number}")
+            return 0
+
+        if usd_mode:
+            return round(number, 2)
+        else:
+            if abs(number) >= 1:
+                return round(number, 2)
+            elif number == 0:
+                return 0.0
+            else:
+                from math import log10, floor
+                significant_figures = 2
+                order = floor(log10(abs(number)))
+                return round(number, -order + (significant_figures - 1))
+    except ValueError as e:
+        print(e)
+        return None
+
 
 # Shorten address length to 10 (4bytes)
 def shorten_address(address):
@@ -17,10 +49,14 @@ def shorten_address(address):
         raise TypeError('Non-string as address')
 
 # Basic information to text
-def transform_basic(folder_prefix, chain, main_token):
+def transform_basic(folder_prefix, chain, main_token, main_token_rate):
     basic_info = collect_from_file(folder_prefix, '/basic_info.json')
     value = basic_info['value']
-    output = f"This transaction is sent with {value} {main_token} on {chain} blockchain, "
+    output = f"This transaction is sent with {rounded_number(value)} {main_token} on {chain} blockchain"
+    if value != 0:
+        output += f" as {rounded_number(value*main_token_rate, usd_mode=True)} USD"
+    output += ', '
+
 
     gas_usage = basic_info['gasUsed']
     output += f"used {gas_usage} gas. "
@@ -32,7 +68,7 @@ def transform_basic(folder_prefix, chain, main_token):
     return output, from_add, to_add
 
 # Transform a call to text
-def get_sub_output(t, main_token):
+def get_sub_output(t, main_token, main_token_rate):
     sub_output = f"{shorten_address(t['from'])} calls {t["function"]} of {shorten_address(t['to'])}"
     inputs = t["input"]
     if inputs:
@@ -56,12 +92,13 @@ def get_sub_output(t, main_token):
     #    sub_output = sub_output[:-1] + '.'
     # Value means having ETH transferring
     if t["value"] != 0 and t['status'] != "OutOfGas":
-        amount = t["value"] / 1e18
-        sub_output += f"{shorten_address(t['from'])} sends {str(amount)} {main_token} to {shorten_address(t['to'])}."
+        amount = rounded_number(t["value"] / 1e18)
+        usd_amount = rounded_number(t["value"] / 1e18 * main_token_rate, usd_mode=True)
+        sub_output += f"{shorten_address(t['from'])} sends {amount} {main_token} as {usd_amount} USD to {shorten_address(t['to'])}."
     return sub_output
 
 # Transform an event to text
-def collect_event(t, currency_dict, chain):
+def collect_event(t, currency_dict, chain, main_token_rate):
     event_name = t['function']
     topics = t['input']
     event_data = t['data']
@@ -81,9 +118,9 @@ def collect_event(t, currency_dict, chain):
                 (currency, decimal, exchange_rate) = (t['address'], 0, 0)
             if decimal != 0:
                 value = amount / pow(10, decimal)
-                event_output += f' Transfer {str(value)} {currency} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
+                event_output += f' Transfer {rounded_number(value)} {currency} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
                 if exchange_rate != 0:
-                    event_output += f' in {str(rounded_number(value * exchange_rate))} USD'
+                    event_output += f' as {rounded_number(value * exchange_rate, usd_mode=True)} USD'
             else:
                 event_output += f' Transfer unknown {currency} in {amount} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
             event_output += '.'
@@ -98,7 +135,7 @@ def collect_event(t, currency_dict, chain):
             else:
                 amount = event_data[0]
             if isinstance(amount, int):
-                event_output += f' {shorten_address(withdrawal_address)} withdraws {str(amount / 1e18)} ETH from Wrapped ETH.'
+                event_output += f' {shorten_address(withdrawal_address)} withdraws {rounded_number(amount / 1e18)} ETH as {rounded_number(main_token_rate * amount / 1e18, usd_mode=True)} USD from Wrapped ETH.'
         # Special case: deposit to Wrapped ETH (deposit eth and receive WETH), similar to above one
         elif event_name.lower() == 'deposit' and event_data and topics and t[
             'address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
@@ -108,11 +145,11 @@ def collect_event(t, currency_dict, chain):
             else:
                 amount = event_data[0]
             if isinstance(amount, int):
-                event_output += f' {shorten_address(deposit_address)} deposits {str(amount / 1e18)} ETH to Wrapped ETH.'
+                event_output += f' {shorten_address(deposit_address)} deposits {rounded_number(amount / 1e18)} ETH as {rounded_number(main_token_rate * amount / 1e18, usd_mode=True)} USD to Wrapped ETH.'
     return event_output
 
 # Trace to text
-def transform_trace(tx_hash, folder_prefix, main_token, chain):
+def transform_trace(tx_hash, folder_prefix, main_token, chain, main_token_rate):
     trace = collect_from_file(folder_prefix, '/invocation_tree/decode_trace_' + tx_hash + '.json')
     currency_dict = collect_from_file(folder_prefix, '/token_info/currency_dict.json')
     calls = {}
@@ -121,18 +158,22 @@ def transform_trace(tx_hash, folder_prefix, main_token, chain):
     for t in trace:
         if 'call' in t['type']:
             call_key = t["call_idx"]
-            calls[call_key] = get_sub_output(t, main_token)
+            calls[call_key] = get_sub_output(t, main_token, main_token_rate)
 
         # Adding event to its original call for LLM comprehension
         elif 'event' in t['type']:
             parent = t['parent']
             if parent in calls:
-                calls[parent] += collect_event(t, currency_dict, chain)
+                calls[parent] += collect_event(t, currency_dict, chain, main_token_rate)
         elif 'create' in t['type']:
-            calls['c' + str(c_index)] = f'{shorten_address(t["from"])} creates {shorten_address(t['to'])} funding {str(t["value"]/ 1e18)} {main_token}.'
+            c_value = rounded_number(t["value"]/ 1e18)
+            USD_value = rounded_number(main_token_rate * t["value"] / 1e18, usd_mode=True)
+            calls['c' + str(c_index)] = f'{shorten_address(t["from"])} creates {shorten_address(t['to'])} funding {c_value} {main_token} as {USD_value} USD.'
             c_index += 1
         elif 'selfdestruct' in t['type']:
-            calls['d' + str(d_index)] = f'{shorten_address(t["address"])} self-destructs refunding {str(t["value"]/ 1e18)} {main_token} to {shorten_address(t["refund_target"])}.'
+            d_value = rounded_number(t["value"]/ 1e18)
+            USD_value = rounded_number(main_token_rate * t["value"] / 1e18, usd_mode=True)
+            calls['d' + str(d_index)] = f'{shorten_address(t["address"])} self-destructs refunding {d_value} {main_token} as {USD_value} USD to {shorten_address(t["refund_target"])}.'
             d_index += 1
     return calls
 
@@ -141,12 +182,13 @@ def generate_balance(token: str, value: float, usd_amount: float):
     known = not token.startswith('0x')
     use_usd = usd_amount != 0
     # Confirm AI knowing this is the change
-    token_output = f"+{value}" if value >= 0 else f"{value}"
+    output_value = rounded_number(value)
+    token_output = f"+{output_value}" if value >= 0 else f"{output_value}"
     # Inform AI that this token is not known.
-    token_output += f" unknown {token}" if not known else f" {token}"
+    token_output += f" unknown {shorten_address(token)}" if not known else f" {token}"
     # If we know the USD value of this change.
     if use_usd:
-        token_output += f" as {rounded_number(abs(usd_amount))} USD"
+        token_output += f" as {rounded_number(abs(usd_amount), usd_mode=True)} USD"
     return token_output + '. '
 
 # balance changes to text
@@ -175,8 +217,13 @@ def transform_balance(tx_hash, folder_prefix, from_add, to_add):
 
 # combine three text in a json
 def generate_output(tx_hash, chain, folder_prefix, main_token):
-    basic_info, from_add, to_add = transform_basic(folder_prefix, chain, main_token)
-    call_dict = transform_trace(tx_hash, folder_prefix, main_token, chain)
+    rate_dict = collect_from_file(folder_prefix, '/token_info/rate_dict.json')
+    if main_token in rate_dict:
+        main_token_rate = rate_dict[main_token]
+    else:
+        main_token_rate = 0
+    basic_info, from_add, to_add = transform_basic(folder_prefix, chain, main_token, main_token_rate)
+    call_dict = transform_trace(tx_hash, folder_prefix, main_token, chain, main_token_rate)
     balance_output = transform_balance(tx_hash, folder_prefix, from_add, to_add)
     trace = "\n".join(str(value) for value in call_dict.values())
     # 64000 tokens for deepseek v3
