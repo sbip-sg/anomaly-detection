@@ -230,11 +230,17 @@ def generate_output(tx_hash, chain, folder_prefix, main_token):
     call_dict = transform_trace(tx_hash, folder_prefix, main_token, chain, main_token_rate)
     balance_output = transform_balance(tx_hash, folder_prefix, from_add, to_add)
     trace = "\n".join(str(value) for value in call_dict.values())
-    # 64000 tokens for deepseek v3
-    result_dict = {"transactionInfo": basic_info, "trace": trace, "balanceChanges": "\n".join(balance_output)}
-    if len(str(result_dict)) > 64000:
-        limit = 62000 - len(basic_info) - len("\n".join(balance_output))
-        result_dict["trace"] = trace[:limit]
+    balances = "\n".join(balance_output)
+
+    trace_size = count_tokens(trace)
+    balance_size = count_tokens(balances)
+    if trace_size + balance_size > 20000:
+        limit = 80000 - len(basic_info) - len(balances)
+        trace = trace[:limit]
+        while count_tokens(trace) > 20000 - balance_size:
+            trace = trace[:-1000]
+    result_dict = {"transactionInfo": basic_info, "trace": trace, "balanceChanges": balances}
+
     with open(folder_prefix + f"/output_{tx_hash}.json", "w") as json_file:
         json.dump(result_dict, json_file, indent = 2)
     return True
