@@ -2,6 +2,7 @@ from detect_utils.tools import collect_from_file
 from utils.collect_transfer import find_address_transfer_event
 import json
 import tiktoken
+import re
 
 def count_tokens(text, model="o1-"):
     encoding = tiktoken.encoding_for_model(model)
@@ -71,15 +72,47 @@ def transform_basic(folder_prefix, chain, main_token, main_token_rate):
     # Deliver addresses to balance changes
     return output, from_add, to_add
 
+def flatten(nested_list):
+    """Flattens a nested list into a single list."""
+    flat_list = []
+
+    def recurse(sublist):
+        for item in sublist:
+            if isinstance(item, list):
+                recurse(item)
+            else:
+                flat_list.append(item)
+
+    recurse(nested_list)
+    return flat_list
+
+def deal_input(input_string):
+    if not isinstance(input_string, str):
+        try:
+            input_string = str(input_string)
+        except Exception as e:
+            raise ValueError(f"An value error occurred in inputs: {e}")
+    if input_string.startswith('0x') and len(input_string) == 42:
+        input_string = shorten_address(input_string)
+    elif input_string.startswith('0x') and len(input_string) > 20:
+        input_string = '[bytes]'
+    return input_string
+
+
+def process_inputs(inputs):
+    flatten_inputs = flatten(inputs)
+    processed_inputs = [deal_input(item) for item in flatten_inputs]
+    return " ".join(processed_inputs)  # Join into a single string
+
 # Transform a call to text
 def get_sub_output(t, main_token, main_token_rate):
     sub_output = f"{shorten_address(t['from'])} calls {t["function"]} of {shorten_address(t['to'])}"
     inputs = t["input"]
     if inputs:
-        sub_output += f" with parameters {str(inputs)}"
-    f_outputs = t["output"]
+        sub_output += f" with parameters {process_inputs(inputs)}"
+    f_outputs = [str(out_item) for out_item in t["output"]]
     if f_outputs:
-        sub_output += f" output {str(f_outputs)}"
+        sub_output += f" output {" ".join(flatten(f_outputs))}"
     # Delegate call and static call
     if t['type'] != 'call':
         sub_output += f" as a {t['type']}"
@@ -108,9 +141,9 @@ def collect_event(t, currency_dict, chain, main_token_rate):
     event_data = t['data']
     event_output = f' Generate {t['function']} event from {shorten_address(t['address'])}'
     if topics:
-        event_output += f" with topics {str(topics)}"
+        event_output += f" with topics {process_inputs(topics)}"
     if event_data:
-        event_output += f" output data {str(event_data)}"
+        event_output += f" output data {process_inputs(event_data)}"
     event_output += '.'
     # When this event shows transferring tokens
     if event_name.lower() == 'transfer' and len(topics) != 0:
@@ -229,8 +262,8 @@ def generate_output(tx_hash, chain, folder_prefix, main_token):
     basic_info, from_add, to_add = transform_basic(folder_prefix, chain, main_token, main_token_rate)
     call_dict = transform_trace(tx_hash, folder_prefix, main_token, chain, main_token_rate)
     balance_output = transform_balance(tx_hash, folder_prefix, from_add, to_add)
-    trace = "\n".join(str(value) for value in call_dict.values())
-    balances = "\n".join(balance_output)
+    trace = "\n ".join(str(value) for value in call_dict.values())
+    balances = "\n ".join(balance_output)
 
     trace_size = count_tokens(trace)
     balance_size = count_tokens(balances)
