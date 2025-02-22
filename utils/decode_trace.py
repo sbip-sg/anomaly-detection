@@ -345,6 +345,9 @@ def decode_trace_json(folder_prefix="result"):
                         new_args.append(arg)
                     new_trace["input"] = new_args
                     if len(new_args) == 0 and len(trace['data'][10:]) != 0:
+                        if func_hash == "52bbbe29":
+                            new_trace["function"] = \
+                                "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)"
                         new_trace["input"] = decode_input(new_trace["function"], input_hash)
                         new_trace["decodeStatue"] = "database"
                     else:

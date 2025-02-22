@@ -47,7 +47,7 @@ The input data is transaction hash starting with "0x".
 ``` bash
 python pipeline.py <txhash> <chain> -o (-llm)
 ```
-It will process the hash in your file. Make sure that there is no result folder.
+It will process the hash in your file.
 
 -llm is optional and it uses chatgpt to detect the transaction (not free-usage).
 

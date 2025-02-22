@@ -1,17 +1,15 @@
 import json
 from web3 import Web3
 
-# Abi file to call contract for symbol and decimals
-abi_file = open("utils/erc20.abi.json")
-abi = json.load(abi_file)
+def load_json(filepath):
+    """Utility function to load a JSON file safely."""
+    with open(filepath, "r", encoding="utf-8") as file:
+        return json.load(file)
 
-# Abi file to call contract for uniswapV2
-uniswap_file = open("utils/uniswapv2.abi.json")
-uniswap = json.load(uniswap_file)
-
-# File storing token info in all chains
-chain_info_file = open("utils/chain_token_dict.json")
-chain_info = json.load(chain_info_file)
+# Load ABI files and token info using the function
+abi = load_json("utils/erc20.abi.json")  # ABI for ERC-20 contract
+uniswap = load_json("utils/uniswapv2.abi.json")  # ABI for UniswapV2
+chain_info = load_json("utils/chain_token_dict.json")  # Token info for all chains
 
 # dict to store currency symbol and decimals
 currency_dict = {}
