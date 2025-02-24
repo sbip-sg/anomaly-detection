@@ -348,6 +348,10 @@ def decode_trace_json(folder_prefix="result"):
                         if func_hash == "52bbbe29":
                             new_trace["function"] = \
                                 "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)"
+                            new_trace["functionName"] = "swap"
+                        else:
+                            new_trace["function"] =  get_function_signature(func_hash)
+                            new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
                         new_trace["input"] = decode_input(new_trace["function"], input_hash)
                         new_trace["decodeStatue"] = "database"
                     else:
