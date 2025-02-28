@@ -60,6 +60,12 @@ def main(tx_hash, chain, overwrite=False, use_llm=False):
         except Exception as e:
             print('Chatgpt Error:', e)
 
+def is_tx(tx_line: str):
+    if isinstance(tx_line, str):
+        if len(tx_line) == 66 and tx_line.startswith("0x"):
+            return True
+    return False
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("tx_hash", help="Path to the input file")
@@ -69,4 +75,15 @@ if __name__ == "__main__":
     # overwrite existing result
     parser.add_argument("-o", "--overwrite", action="store_true", help="Overwrite existing result")
     args = parser.parse_args()
-    main(args.tx_hash, args.chain, args.overwrite, args.llm_detect)
+    if "," in args.tx_hash:
+        tx_hashes = args.tx_hash.split(",")
+        print(f'Collecting data for {len(tx_hashes)} transactions')
+        for tx_hash in tx_hashes:
+            if is_tx(tx_hash):
+                print(f'Collecting data for {tx_hash}')
+                main(tx_hash, args.chain, args.overwrite, args.llm_detect)
+    else:
+        if is_tx(args.tx_hash):
+            main(args.tx_hash, args.chain, args.overwrite, args.llm_detect)
+        else:
+            raise ValueError("not a transaction hash")
