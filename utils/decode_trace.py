@@ -61,8 +61,10 @@ def parse_structure(structure):
     return parse_element(structure)
 
 def process_function(function):
+    if not function or not isinstance(function,str):
+        return 'invalid function', {}
     # Can not determine the function of this hash
-    if function.find(';') != -1:
+    if function.find(';') != -1 or function.find('(') == -1:
         return function, {}
     try:
         # Separate function name and parameters
