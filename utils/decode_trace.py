@@ -116,7 +116,7 @@ def decode_input(function_text, input_hash):
     if len(input_hash) % 64 == 0:
         # If decoded function name is only one(possible to find several function sharing same 4bytes)
         # and function_text have parameters, we use decode from eth_abi package to decode them
-        if len(function_text.split('(', 1)) != 1 and len(input_hash) != 0 and len(function_text.split(';')) == 1:
+        if isinstance(function_text, str) and len(function_text.split('(', 1)) != 1 and len(input_hash) != 0 and len(function_text.split(';')) == 1:
             start_index = function_text.find('(')
             end_index = function_text.rfind(')')
             raw_parameters = function_text[start_index + 1:end_index]
