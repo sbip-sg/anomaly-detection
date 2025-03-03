@@ -23,10 +23,10 @@ def filter_transaction(basic_info, trace):
 
     if to_address == 'empty' or unknown_first_call(trace):
         # contract creation, assuming nobody hacks here
-        if gas_used > 90000:
+        if gas_used > 90000: # 5% of attack samples
             return True
 
-    if gas_used > 140000:
+    if gas_used > 140000: # 10% of attack samples
         return True
 
     return False
