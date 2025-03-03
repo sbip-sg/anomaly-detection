@@ -20,14 +20,13 @@ def unknown_first_call(trace):
 def filter_transaction(basic_info, trace):
     gas_used = basic_info.get('gasUsed')
     to_address = basic_info.get('to')
-    base_gas = 21000
 
     if to_address == 'empty' or unknown_first_call(trace):
         # contract creation, assuming nobody hacks here
-        if gas_used > base_gas * 5:  # TODO update this threshold if necessary
+        if gas_used > 90000:  # TODO update this threshold if necessary
             return True
 
-    if gas_used > base_gas * 10:  # TODO update this threshold if necessary
+    if gas_used > 140000:
         return True
 
     return False
@@ -41,7 +40,7 @@ def check_balance(tx_hash, folder_prefix, address):
         address_usd_change = 0
         for token in address_balance_change:
             address_usd_change += address_balance_change[token][1]
-        possible_hack = address_usd_change > 10000  # 10k USD
+        possible_hack = address_usd_change > 8000  # 10k USD
     return possible_hack
 
 # Detect the balance change of all addresses of a transaction
