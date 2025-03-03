@@ -135,7 +135,10 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
     total_dict = remove_zeros(total_dict)
 
     os.makedirs(folder_prefix + '/token_info', exist_ok=True)
-    inner_dict = total_dict[transaction_hash]
+    if transaction_hash in total_dict:
+        inner_dict = total_dict[transaction_hash]
+    else:
+        inner_dict = {}
     special_keys = [o_from_add, o_to_add]  # Keys to prioritize
 
     # Custom sorting

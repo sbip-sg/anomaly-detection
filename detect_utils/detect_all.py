@@ -32,10 +32,10 @@ def rule_based_detection(tx_hash, folder_prefix):
 
     la_tx = False
     ela_tx = False
-    if check_balance_all(tx_hash, folder_prefix, 25000):
+    if check_balance_all(tx_hash, folder_prefix, 25000): # 25k USD, 20% of the samples
         print('Large Amount Transaction')
         la_tx = True
-    if check_balance_all(tx_hash, folder_prefix, 300000):
+    if check_balance_all(tx_hash, folder_prefix, 300000): # 300k USD, 60% of the samples
         ela_tx = True
         print('Extreme Large Amount Transaction')
 
