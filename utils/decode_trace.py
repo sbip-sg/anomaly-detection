@@ -172,7 +172,10 @@ def decode_unknown_input(chunks, data=False, event=True, transfer = False):
             elif count_of_zeros == 64:  # Address type
                 input_list.append(decode(['address'], bytes.fromhex(line))[0])
         else:
-            input_list.append(decode(['address'], bytes.fromhex(line))[0])
+            if len(input_list) < 2:
+                input_list.append(decode(['address'], bytes.fromhex(line))[0])
+            else:
+                transfer = False
     return input_list
 
 
@@ -400,7 +403,7 @@ def decode_trace_json(folder_prefix="result"):
 
                 # For events, foundry do not give significant parameters
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
-                istransfer = new_trace['data'] and new_trace["function"].lower() == 'transfer'
+                istransfer = new_trace["function"].lower() == 'transfer'
                 new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:], transfer=istransfer)
 
             # If trace is a create log

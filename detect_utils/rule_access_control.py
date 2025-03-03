@@ -85,17 +85,18 @@ def collect_idx(tx_hash, folder_prefix):
                 except (ValueError, TypeError):
                     usd_value = 20000
             # need to check this event call's parent and parent of parent
-            checked_idx = event_parent_dict[depth]
-            if checked_idx not in idx_dict and isinstance(checked_idx, int):
-                idx_dict[checked_idx] = usd_value
-            # check whether this event call's parent has a parent with the same address
-            same_address = False
-            if checked_idx in parent_dict:
-                if parent_dict[checked_idx][0] in parent_dict:
-                    same_address = parent_dict[checked_idx][2] == parent_dict[parent_dict[checked_idx][0]][2]
-                # if not same address
-                if parent_dict[checked_idx][0] not in idx_dict and not same_address:
-                    idx_dict[parent_dict[checked_idx][0]] = usd_value
+            if depth in event_parent_dict:
+                checked_idx = event_parent_dict[depth]
+                if checked_idx not in idx_dict and isinstance(checked_idx, int):
+                    idx_dict[checked_idx] = usd_value
+                # check whether this event call's parent has a parent with the same address
+                same_address = False
+                if checked_idx in parent_dict:
+                    if parent_dict[checked_idx][0] in parent_dict:
+                        same_address = parent_dict[checked_idx][2] == parent_dict[parent_dict[checked_idx][0]][2]
+                    # if not same address
+                    if parent_dict[checked_idx][0] not in idx_dict and not same_address:
+                        idx_dict[parent_dict[checked_idx][0]] = usd_value
     return idx_dict
 
 
