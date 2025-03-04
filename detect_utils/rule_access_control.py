@@ -15,7 +15,7 @@ def collect_idx(tx_hash, folder_prefix):
     event_parent_dict = {}
 
     # normally in an attack transaction, there is at least one address suffer loss.
-    if not check_balance_negative(tx_hash, folder_prefix, -8000):
+    if not check_balance_negative(tx_hash, folder_prefix, -8000):  # 8k USD, 10% of the samples
         return idx_dict
 
     for element in trace:
