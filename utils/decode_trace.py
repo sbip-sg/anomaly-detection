@@ -306,9 +306,9 @@ def decode_trace_json(folder_prefix="result"):
     # Get list of JSON files in trace_json directory with raw traces
     jsonlist = listdir(folder_prefix + '/trace_json')
     for i in jsonlist:
-        file = open(folder_prefix + '/trace_json/' + i)
+        with open(folder_prefix + '/trace_json/' + i) as f:
+            tx = json.load(f)
         invocation_tree = []
-        tx = json.load(file)
         locations = [-1]
         for trace in tx:
             new_trace = {"type": trace['kind'].lower()}
@@ -403,7 +403,7 @@ def decode_trace_json(folder_prefix="result"):
 
                 # For events, foundry do not give significant parameters
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
-                istransfer = new_trace["function"].lower() in ['transfer', 'deposit', 'withdrawal']
+                istransfer = new_trace["function"].lower() in ['transfer', 'deposit', 'withdrawal'] and len(trace['raw']['topics']) > 2
                 new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:], transfer=istransfer)
 
             # If trace is a create log

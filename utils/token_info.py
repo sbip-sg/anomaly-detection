@@ -51,11 +51,11 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
     main_token, rate_dict[main_token], wrapped_token, rate_dict[wrapped_token] = get_main_token(chain, block_number - 1, w3)
     jsonlist = listdir(folder_prefix + '/invocation_tree')
     for i in jsonlist:
-        file = open(folder_prefix + '/invocation_tree/' + i)
+        with open(folder_prefix + '/invocation_tree/' + i) as f:
+            traces = json.load(f)
 
         # summary dict for this transaction
         summary_dict = {}
-        traces = json.load(file)
 
         # memory for out of gas
         out_of_gas = False
