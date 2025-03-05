@@ -46,7 +46,10 @@ def rounded_number(number, usd_mode=False):
 def shorten_address(address):
     if isinstance(address, str):
         if address.startswith('0x') and len(address) == 42:
-            return address[:10]
+            result = address[:10]
+            if result == "0x00000000":
+                result = address[-10:]
+            return result
         else:
             return address
     else:
@@ -266,11 +269,13 @@ def generate_output(tx_hash, chain, folder_prefix, main_token):
 
     trace_size = count_tokens(trace)
     balance_size = count_tokens(balances)
-    if trace_size + balance_size > 20000:
+    if trace_size + balance_size > 40000:
         limit = 80000 - len(basic_info) - len(balances)
         trace = trace[:limit]
-        while count_tokens(trace) > 20000 - balance_size:
-            trace = trace[:-1000]
+        if balance_size < 40000:
+            while count_tokens(trace) > 40000 - balance_size:
+                trace = trace[:-4000]
+
     result_dict = {"transactionInfo": basic_info, "trace": trace, "balanceChanges": balances}
 
     with open(folder_prefix + f"/output_{tx_hash}.json", "w") as json_file:
