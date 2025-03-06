@@ -20,13 +20,14 @@ def unknown_first_call(trace):
 def filter_transaction(basic_info, trace):
     gas_used = basic_info.get('gasUsed')
     to_address = basic_info.get('to')
+    basic_transfer = 21000
 
     if to_address == 'empty' or unknown_first_call(trace):
         # contract creation, assuming nobody hacks here
-        if gas_used > 90000: # 5% of attack samples
+        if gas_used > 5 * basic_transfer:
             return True
 
-    if gas_used > 140000: # 10% of attack samples
+    if gas_used > 10 * basic_transfer: # Complexity detection for flash loan and reentrancy
         return True
 
     return False
@@ -40,7 +41,7 @@ def check_balance(tx_hash, folder_prefix, address):
         address_usd_change = 0
         for token in address_balance_change:
             address_usd_change += address_balance_change[token][1]
-        possible_hack = address_usd_change > 8000  # 8k USD, 10% of the samples
+        possible_hack = address_usd_change > 27000  # more strict filtered in SVM
     return possible_hack
 
 # Detect the balance change of all addresses of a transaction

@@ -41,11 +41,11 @@ def main(tx_hash, chain, overwrite=False, use_llm=False):
     # According to the decoded invocation tree, get token flow and balance changes.
     main_token = collect_token(tx_hash, chain, basic_info['from'], basic_info['to'], basic_info['blocknumber'], edpool, folder_prefix)
 
-    detection_result, reason, la_tx, ela_tx = rule_based_detection(tx_hash, folder_prefix)
+    detection_result, reason, la_tx = rule_based_detection(tx_hash, folder_prefix)
 
     basic_info['detection_result'] = detection_result
     basic_info['reason'] = reason
-    basic_info['large_amount'] = {"50000":la_tx, "500000": ela_tx}
+    basic_info['large_amount'] = la_tx # 63k USD, the hard margin of linear SVM
 
     # Save basic information
     with open(folder_prefix + '/basic_info.json', 'w') as json_file:

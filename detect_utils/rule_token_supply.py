@@ -62,15 +62,8 @@ def find_largest_number(d):
 def detect_token_supply(tx_hash, folder_prefix):
     total_supply_dict = get_total_supply(tx_hash, folder_prefix)
 
-    basic_info = collect_from_file(folder_prefix, '/basic_info.json')
-    trace = collect_from_file(folder_prefix, '/invocation_tree/decode_trace_' + tx_hash + '.json')
-
-    # Gas usage not passed
-    if not filter_transaction(basic_info, trace):
-        return False
-
     # No total supply
-    elif not get_total_supply:
+    if not get_total_supply:
         return False
 
     else:

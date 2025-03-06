@@ -137,7 +137,6 @@ def detect_access_control(tx_hash, folder_prefix):
     trace = collect_from_file(folder_prefix, '/trace_json/trace_' + tx_hash + '.json')
     # get all USD values and USD values of call without access control
     sum_value = 0
-    sum_all_value = sum(idx_dict.values())
     for t in trace:
         if 'call' in t['kind'] and t['call_idx'] in idx_dict:
             opcodes = t['opcodes']

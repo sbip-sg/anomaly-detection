@@ -31,12 +31,8 @@ def rule_based_detection(tx_hash, folder_prefix):
         reason.append('Lack Access Control Detected')
 
     la_tx = False
-    ela_tx = False
-    if check_balance_all(tx_hash, folder_prefix, 50000): # 50k USD, combining result of normal and attack samples
+    if check_balance_all(tx_hash, folder_prefix, 63000): # 63k USD, the hard margin of SVM
         print('Large Amount Transaction')
         la_tx = True
-    if check_balance_all(tx_hash, folder_prefix, 300000): # 300k USD, 60% of the samples
-        ela_tx = True
-        print('Extreme Large Amount Transaction')
 
-    return detection_result, reason, la_tx, ela_tx
+    return detection_result, reason, la_tx
