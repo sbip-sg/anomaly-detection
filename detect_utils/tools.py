@@ -52,6 +52,6 @@ def check_balance_all(tx_hash, folder_prefix, threshold):
         address_usd_change = 0
         for token in address_balance_change:
             address_usd_change += address_balance_change[token][1]
-        suspicious = address_usd_change > threshold
+        suspicious = abs(address_usd_change) > threshold
         if suspicious:
             return suspicious
