@@ -43,9 +43,10 @@ def collect_info(transaction_hash, edpool):
         'value': transaction['value'] / 1e18,  # Convert value from Wei to Ether
         'from': sender,
         'to': recipient,
+        'gasLimit': transaction['gas'],  # Get gas limit from transaction receipt
         'gasUsed': receipt['gasUsed'],  # Get gas used from transaction receipt
         'timestamp': timestamp,
-        'blocknumber': transaction['blockNumber']
+        '4byteData': transaction['input'][:10]
     }
 
     # Return the DataFrame containing transaction information

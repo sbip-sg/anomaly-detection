@@ -7,6 +7,7 @@ from utils.token_info import collect_token
 from utils.get_rpc import EndpointPool
 from utils.generate_output import generate_output
 from utils.collect_block import collect_block_all
+from detect_utils.bytes_detection import detect_4bytes
 from detect_utils.detect_all import rule_based_detection
 from detect_utils.chatgpt_detect import chatgpt_detect
 import json
@@ -85,9 +86,11 @@ def main(block_number, chain, overwrite=False):
 
     # Convert to DataFrame and save to CSV
     if tx_data:
-        df = pd.DataFrame(tx_data)
+        tx_df = pd.DataFrame(tx_data)
+        suspicious_list = detect_4bytes(tx_df)
         csv_file = f"{folder_prefix}/transactions.csv"
-        df.to_csv(csv_file, index=False)
+        tx_df.to_csv(csv_file, index=False)
+        print(suspicious_list)
 
         print(f"CSV file created: {csv_file}")
     else:
@@ -108,12 +111,12 @@ if __name__ == "__main__":
         block_numbers = args.tx_hash.split(",")
         print(f'Collecting data for {len(block_numbers)} transactions')
         for block_number in block_numbers:
-            if isinstance(block_number, int):
+            if isinstance(block_number, str) and block_number.isdigit():
                 print(f'Collecting data for block {block_number}')
                 main(block_number, args.chain, args.overwrite)
     else:
         block_number = args.block_number
-        if isinstance(block_number, int):
+        if isinstance(block_number, str) and block_number.isdigit():
             main(block_number, args.chain, args.overwrite)
         else:
             raise ValueError("not a transaction hash")

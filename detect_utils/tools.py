@@ -1,5 +1,10 @@
 import json
 
+def load_json(filepath):
+    """Utility function to load a JSON file safely."""
+    with open(filepath, "r", encoding="utf-8") as file:
+        return json.load(file)
+
 # Get information of a transaction from the collected files
 def collect_from_file(folder_prefix, filename):
     with open(folder_prefix + filename) as input_json:
