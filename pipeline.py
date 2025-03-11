@@ -6,14 +6,14 @@ from utils.decode_trace import decode_trace_json
 from utils.token_info import collect_token
 from utils.get_rpc import EndpointPool
 from utils.generate_output import generate_output
+from utils.collect_block import collect_block_all
 from detect_utils.detect_all import rule_based_detection
 from detect_utils.chatgpt_detect import chatgpt_detect
-from detect_utils.deepseekv3_detect import deepseekv3_detect
 import json
-
+import pandas as pd
 
 # Get transaction information by hash
-def main(tx_hash, chain, overwrite=False, use_llm=False):
+def collect_tx(tx_hash, chain, overwrite=False, use_llm=False):
     folder_prefix = f'result/{tx_hash}_{chain}'
     # Create result directory if it doesn't exist
     if overwrite:
@@ -26,7 +26,6 @@ def main(tx_hash, chain, overwrite=False, use_llm=False):
 
     edpool = EndpointPool(chain)
     # Collect basic information
-    # Time stamp is for getting exchange rate
     basic_info = collect_info(tx_hash, edpool)
 
     with open(folder_prefix + '/basic_info.json', 'w') as json_file:
@@ -67,24 +66,54 @@ def is_tx(tx_line: str):
             return True
     return False
 
+def main(block_number, chain, overwrite=False):
+    os.makedirs('result', exist_ok=True)
+
+    folder_prefix = f'result/{block_number}_{chain}'
+    # Create result directory if it doesn't exist
+    if overwrite:
+        print(f'Deleting result folder to overwrite {block_number} on {chain}')
+        os.system(f'rm -rf {folder_prefix}')
+
+    os.makedirs(folder_prefix, exist_ok=True)
+
+    edpool = EndpointPool(chain)
+    tx_list = collect_block_all(block_number, edpool)
+
+    # Collect transaction details
+    tx_data = [collect_info(tx_hash, edpool) for tx_hash in tx_list]
+
+    # Convert to DataFrame and save to CSV
+    if tx_data:
+        df = pd.DataFrame(tx_data)
+        csv_file = f"{folder_prefix}/transactions.csv"
+        df.to_csv(csv_file, index=False)
+
+        print(f"CSV file created: {csv_file}")
+    else:
+        print("No transactions found.")
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("tx_hash", help="Path to the input file")
-    parser.add_argument("chain", help="Transaction chain name")
+    parser.add_argument("block_number", help="Ethereum block number")
+    parser.add_argument("chain", help="Ethereum block chain name")
     # use chatgpt to detect
     parser.add_argument("-llm", "--llm_detect", action="store_true", help="Use chatgpt to detect")
     # overwrite existing result
     parser.add_argument("-o", "--overwrite", action="store_true", help="Overwrite existing result")
     args = parser.parse_args()
-    if "," in args.tx_hash:
-        tx_hashes = args.tx_hash.split(",")
-        print(f'Collecting data for {len(tx_hashes)} transactions')
-        for tx_hash in tx_hashes:
-            if is_tx(tx_hash):
-                print(f'Collecting data for {tx_hash}')
-                main(tx_hash, args.chain, args.overwrite, args.llm_detect)
+    if "," in args.block_number:
+        block_numbers = args.tx_hash.split(",")
+        print(f'Collecting data for {len(block_numbers)} transactions')
+        for block_number in block_numbers:
+            if isinstance(block_number, int):
+                print(f'Collecting data for block {block_number}')
+                main(block_number, args.chain, args.overwrite)
     else:
-        if is_tx(args.tx_hash):
-            main(args.tx_hash, args.chain, args.overwrite, args.llm_detect)
+        block_number = args.block_number
+        if isinstance(block_number, int):
+            main(block_number, args.chain, args.overwrite)
         else:
             raise ValueError("not a transaction hash")
