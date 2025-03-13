@@ -109,7 +109,7 @@ def main(block_number, chain, overwrite=False):
                 to_address = selected_tx.iloc[0]['to']
                 gas_used = selected_tx.iloc[0]['gasUsed']
                 main_token = collect_token(tx_hash, chain, from_address, to_address,
-                                           block_number, edpool, tx_folder_prefix)
+                                           int(block_number), edpool, tx_folder_prefix)
                 detection_result, reason, la_tx = rule_based_detection(tx_hash, gas_used,
                                                     from_address, to_address, tx_folder_prefix)
                 if detection_result:
