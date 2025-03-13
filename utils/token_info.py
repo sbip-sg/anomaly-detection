@@ -57,67 +57,73 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
         # summary dict for this transaction
         summary_dict = {}
 
-        # memory for out of gas
-        out_of_gas = False
+        # memory reverted trace
+        revert_idx_list = []
 
         for trace in traces:
             # starting with reverted and out-of-gas check
+            if trace['type'] == 'call':
+                if trace["status"].lower() == 'revert' or trace["parent"] in revert_idx_list:
+                    revert_idx_list.append(trace['call_idx'])
+                    revert_idx_list.extend(trace['children'])
+
             # event does not show successful status, only to see whether last call is successful
-            if not out_of_gas:
-                if trace['type'] == 'event':
-                    event_name = trace["function"]
-                    input_value = trace['input']
+            if trace['type'] == 'event' and trace['parent'] not in revert_idx_list:
+                event_name = trace["function"]
+                input_value = trace['input']
 
-                    # event name as transfer refers to token transfer
-                    if event_name.lower() == 'transfer' and len(input_value) != 0:
-                        currency, decimal = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
-                        from_address, to_address, amount = find_address_transfer_event(trace, input_value)
-                        if isinstance(amount, int):
-                            value = amount / pow(10, decimal)
-                            summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
-                                                         value, flow)
+                # event name as transfer refers to token transfer
+                if event_name.lower() == 'transfer' and len(input_value) != 0:
+                    currency, decimal = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
+                    from_address, to_address, amount = find_address_transfer_event(trace, input_value)
+                    if isinstance(amount, int):
+                        value = amount / pow(10, decimal)
+                        summary_dict = othertransfer(summary_dict, currency, from_address, to_address,
+                                                     value, flow)
 
-                    # event name as withdrawal refers to token withdraw
-                    elif event_name.lower() == 'withdrawal' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
+                # event name as withdrawal refers to token withdraw
+                elif event_name.lower() == 'withdrawal' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
+                    currency, decimal = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
+                    from_address = input_value[0]
+                    if len(trace['data']) == 2:
+                        amount = trace['data'][1]
+                    else:
+                        amount = trace['data'][0]
+                    if isinstance(amount, int):
+                        summary_dict = othertransfer(summary_dict, currency, from_address, trace['address'],
+                                                 amount / pow(10, decimal), flow)
+
+                # event name as deposit refers to token deposit
+                elif event_name.lower() == 'deposit' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
                         currency, decimal = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
-                        from_address = input_value[0]
+                        to_address = input_value[0]
                         if len(trace['data']) == 2:
                             amount = trace['data'][1]
                         else:
                             amount = trace['data'][0]
                         if isinstance(amount, int):
-                            summary_dict = othertransfer(summary_dict, currency, from_address, trace['address'],
+                            summary_dict = othertransfer(summary_dict, currency, trace['address'], to_address,
                                                      amount / pow(10, decimal), flow)
 
-                    # event name as deposit refers to token deposit
-                    elif event_name.lower() == 'deposit' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                            currency, decimal = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
-                            to_address = input_value[0]
-                            if len(trace['data']) == 2:
-                                amount = trace['data'][1]
-                            else:
-                                amount = trace['data'][0]
-                            if isinstance(amount, int):
-                                summary_dict = othertransfer(summary_dict, currency, trace['address'], to_address,
-                                                         amount / pow(10, decimal), flow)
-
             # for local token flow, there mostly is a trace with non-zero value
-            if trace['type'] == 'call'  or trace['type'] == 'create' and trace["value"] != 0 and trace['status'] != "OutOfGas":
+            if trace['type'] == 'call'  or trace['type'] == 'create' and trace["value"] != 0:
+                if 'call_idx' in trace.keys() and trace['call_idx'] in revert_idx_list:
+                    pass
+                elif 'parent' in trace.keys() and trace['parent'] in revert_idx_list:
+                    pass
+                else:
                     summary_dict = deal_transfer(summary_dict, main_token, trace, flow)
 
             if trace['type'] == 'selfdestruct' and trace["value"] != 0:
+                if 'parent' in trace.keys() and trace['parent'] in revert_idx_list:
+                    pass
+                else:
                     new_trace = {
                         'from': trace['address'],
                         'to': trace['refund_target'],
                         'value': trace['value']
                     }
                     summary_dict = deal_transfer(summary_dict, main_token, new_trace, flow)
-
-            # Call is out of gas, so the following events are not available
-            if trace['type'] == 'call' and trace['status'] == "OutOfGas":
-                out_of_gas = True
-            else:
-                out_of_gas = False
 
         # If it has balance changes
         if len(summary_dict) != 0:
