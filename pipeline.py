@@ -104,6 +104,7 @@ def main(block_number, chain, overwrite=False):
             decode_trace_json(tx_folder_prefix)
             # Extract 'from' and 'to' addresses from the transaction DataFrame
             selected_tx = tx_df[tx_df['hash'] == tx_hash]
+            selected_tx_dict = selected_tx.to_dict(orient="records")[0]
             if not selected_tx.empty:
                 from_address = selected_tx.iloc[0]['from']
                 to_address = selected_tx.iloc[0]['to']
@@ -116,7 +117,7 @@ def main(block_number, chain, overwrite=False):
                     print(reason)
                 if la_tx:
                     print('large amount alert')
-                generate_output(tx_hash, chain, tx_folder_prefix, main_token)
+                generate_output(tx_hash, chain, selected_tx_dict, tx_folder_prefix, main_token)
 
 
         print(f"CSV file created: {csv_file}")

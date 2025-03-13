@@ -56,8 +56,7 @@ def shorten_address(address):
         raise TypeError('Non-string as address')
 
 # Basic information to text
-def transform_basic(folder_prefix, chain, main_token, main_token_rate):
-    basic_info = collect_from_file(folder_prefix, '/basic_info.json')
+def transform_basic(basic_info, chain, main_token, main_token_rate):
     value = basic_info['value']
     output = f"This transaction is sent with {rounded_number(value)} {main_token} on {chain} blockchain"
     if value != 0:
@@ -255,13 +254,13 @@ def transform_balance(tx_hash, folder_prefix, from_add, to_add):
     return outputs
 
 # combine three text in a json
-def generate_output(tx_hash, chain, folder_prefix, main_token):
+def generate_output(tx_hash, chain, basic_info_input, folder_prefix, main_token):
     rate_dict = collect_from_file(folder_prefix, '/token_info/rate_dict.json')
     if main_token in rate_dict:
         main_token_rate = rate_dict[main_token]
     else:
         main_token_rate = 0
-    basic_info, from_add, to_add = transform_basic(folder_prefix, chain, main_token, main_token_rate)
+    basic_info, from_add, to_add = transform_basic(basic_info_input, chain, main_token, main_token_rate)
     call_dict = transform_trace(tx_hash, folder_prefix, main_token, chain, main_token_rate)
     balance_output = transform_balance(tx_hash, folder_prefix, from_add, to_add)
     trace = "\n ".join(str(value) for value in call_dict.values())
