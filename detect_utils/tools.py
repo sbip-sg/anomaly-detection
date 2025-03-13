@@ -22,12 +22,10 @@ def unknown_first_call(trace):
                 return False
 
 # Filter transactions by their gas usage.
-def filter_transaction(basic_info, trace):
-    gas_used = basic_info.get('gasUsed')
-    to_address = basic_info.get('to')
+def filter_transaction(gas_used, to_address):
     basic_transfer = 21000
 
-    if to_address == 'empty' or unknown_first_call(trace):
+    if to_address == 'empty':
         # contract creation, assuming nobody hacks here
         if gas_used > 5 * basic_transfer:
             return True

@@ -11,6 +11,7 @@ from detect_utils.bytes_detection import detect_4bytes
 from detect_utils.detect_all import rule_based_detection
 from detect_utils.chatgpt_detect import chatgpt_detect
 import json
+import time
 import pandas as pd
 
 # Get transaction information by hash
@@ -81,26 +82,53 @@ def main(block_number, chain, overwrite=False):
     edpool = EndpointPool(chain)
     tx_list = collect_block_all(block_number, edpool)
 
+    block_tx_info_start_time = time.time()
     # Collect transaction details
     tx_data = [collect_info(tx_hash, edpool) for tx_hash in tx_list]
+    block_tx_info_end_time  = time.time()
+    print(f"Block transaction info collection time: {block_tx_info_end_time - block_tx_info_start_time:.2f} seconds")
 
+    detection_start_time = time.time()
     # Convert to DataFrame and save to CSV
     if tx_data:
         tx_df = pd.DataFrame(tx_data)
         suspicious_list = detect_4bytes(tx_df)
         csv_file = f"{folder_prefix}/transactions.csv"
         tx_df.to_csv(csv_file, index=False)
-        print(suspicious_list)
+        for tx_hash in suspicious_list:
+            # Collect traces (raw invocation tree)
+            tx_folder_prefix = f"{folder_prefix}/{tx_hash}"
+            os.makedirs(tx_folder_prefix, exist_ok=True)
+            collect_trace(tx_hash, edpool, tx_folder_prefix)
+            # Decode trace JSON and extract information from invocation tree
+            decode_trace_json(tx_folder_prefix)
+            # Extract 'from' and 'to' addresses from the transaction DataFrame
+            selected_tx = tx_df[tx_df['hash'] == tx_hash]
+            if not selected_tx.empty:
+                from_address = selected_tx.iloc[0]['from']
+                to_address = selected_tx.iloc[0]['to']
+                gas_used = selected_tx.iloc[0]['gasUsed']
+                main_token = collect_token(tx_hash, chain, from_address, to_address,
+                                           block_number, edpool, tx_folder_prefix)
+                detection_result, reason, la_tx = rule_based_detection(tx_hash, gas_used,
+                                                    from_address, to_address, tx_folder_prefix)
+                if detection_result:
+                    print(reason)
+                if la_tx:
+                    print('large amount alert')
+                generate_output(tx_hash, chain, tx_folder_prefix, main_token)
+
 
         print(f"CSV file created: {csv_file}")
     else:
         print("No transactions found.")
-
+    detection_end_time = time.time()
+    print(f"Total execution time: {detection_end_time - detection_start_time:.2f} seconds")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("block_number", help="Ethereum block number")
+    parser.add_argument("block_number", help="Block number for collection")
     parser.add_argument("chain", help="Ethereum block chain name")
     # use chatgpt to detect
     parser.add_argument("-llm", "--llm_detect", action="store_true", help="Use chatgpt to detect")

@@ -1,4 +1,4 @@
-from detect_utils.tools import collect_from_file, filter_transaction
+from detect_utils.tools import collect_from_file
 
 # calculate value change rate
 def calc_ratio(numbers):

@@ -5,17 +5,17 @@ from detect_utils.rule_access_control import detect_access_control
 from detect_utils.tools import check_balance_all
 
 # Combine all detections in detect_utils
-def rule_based_detection(tx_hash, folder_prefix):
+def rule_based_detection(tx_hash, gas_used, from_address, to_address, folder_prefix):
 
     detection_result = False
     reason = []
 
-    if detect_cyclic_transaction(tx_hash, folder_prefix):
+    if detect_cyclic_transaction(tx_hash,gas_used, from_address, to_address, folder_prefix):
         print('Suspicious Reentrancy Attack Detected')  # To be updated
         detection_result = True
         reason.append('Suspicious Reentrancy Attack Detected')
 
-    if detect_flashloan_transaction(tx_hash, folder_prefix):
+    if detect_flashloan_transaction(tx_hash, gas_used, from_address, to_address, folder_prefix):
         print('Suspicious Flashloan Attack Detected')  # To be updated
         detection_result = True
         reason.append('Suspicious Flashloan Attack Detected')
