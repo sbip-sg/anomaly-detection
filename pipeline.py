@@ -69,6 +69,7 @@ def is_tx(tx_line: str):
     return False
 
 def main(block_number, chain, overwrite=False):
+    time_dict = {}
     os.makedirs('result', exist_ok=True)
 
     folder_prefix = f'result/{block_number}_{chain}'
@@ -86,22 +87,29 @@ def main(block_number, chain, overwrite=False):
     # Collect transaction details
     tx_data = [collect_info(tx_hash, edpool) for tx_hash in tx_list]
     block_tx_info_end_time  = time.time()
+    time_dict['basic_info'] = block_tx_info_end_time - block_tx_info_start_time
     print(f"Block transaction info collection time: {block_tx_info_end_time - block_tx_info_start_time:.2f} seconds")
 
-    detection_start_time = time.time()
     # Convert to DataFrame and save to CSV
     if tx_data:
+        time_dict['tx_details'] = {}
         tx_df = pd.DataFrame(tx_data)
         suspicious_list = detect_4bytes(tx_df)
         csv_file = f"{folder_prefix}/transactions.csv"
         tx_df.to_csv(csv_file, index=False)
         for tx_hash in suspicious_list:
+            time_dict['tx_details'][tx_hash] = {}
+            tx_detail_start_time = time.time()
             # Collect traces (raw invocation tree)
             tx_folder_prefix = f"{folder_prefix}/{tx_hash}"
             os.makedirs(tx_folder_prefix, exist_ok=True)
             collect_trace(tx_hash, edpool, tx_folder_prefix)
+            foundry_end_time = time.time()
+            time_dict['tx_details'][tx_hash]['foundry'] = foundry_end_time - tx_detail_start_time
             # Decode trace JSON and extract information from invocation tree
             decode_trace_json(tx_folder_prefix)
+            decode_end_time = time.time()
+            time_dict['tx_details'][tx_hash]['decode'] = decode_end_time - foundry_end_time
             # Extract 'from' and 'to' addresses from the transaction DataFrame
             selected_tx = tx_df[tx_df['hash'] == tx_hash]
             selected_tx_dict = selected_tx.to_dict(orient="records")[0]
@@ -109,8 +117,11 @@ def main(block_number, chain, overwrite=False):
                 from_address = selected_tx.iloc[0]['from']
                 to_address = selected_tx.iloc[0]['to']
                 gas_used = selected_tx.iloc[0]['gasUsed']
+
                 main_token = collect_token(tx_hash, chain, from_address, to_address,
                                            int(block_number), edpool, tx_folder_prefix)
+                token_end_time = time.time()
+                time_dict['tx_details'][tx_hash]['token'] = token_end_time - decode_end_time
                 detection_result, reason, la_tx = rule_based_detection(tx_hash, gas_used,
                                                     from_address, to_address, tx_folder_prefix)
                 selected_tx_dict["detection_result"] = detection_result
@@ -118,14 +129,20 @@ def main(block_number, chain, overwrite=False):
                 selected_tx_dict["la_tx"] = la_tx
                 with open(tx_folder_prefix + f"/basic_info_{tx_hash}.json", "w") as json_file:
                     json.dump(selected_tx_dict, json_file, indent=2)
+                rule_end_time = time.time()
+                time_dict['tx_details'][tx_hash]['rule_based'] = rule_end_time - token_end_time
                 generate_output(tx_hash, chain, selected_tx_dict, tx_folder_prefix, main_token)
-
-
+                output_end_time = time.time()
+                time_dict['tx_details'][tx_hash]['output'] = output_end_time - rule_end_time
         print(f"CSV file created: {csv_file}")
     else:
         print("No transactions found.")
     detection_end_time = time.time()
-    print(f"Total execution time: {detection_end_time - detection_start_time:.2f} seconds")
+    time_dict['detection'] = detection_end_time - block_tx_info_end_time
+    time_dict['total'] = detection_end_time - block_tx_info_start_time
+    print(f"Total execution time: {detection_end_time - block_tx_info_end_time:.2f} seconds")
+    with open(folder_prefix + f"/time_analysis.json", "w") as json_file:
+        json.dump(time_dict, json_file, indent=2)
 
 
 if __name__ == "__main__":
