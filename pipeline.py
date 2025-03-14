@@ -113,10 +113,11 @@ def main(block_number, chain, overwrite=False):
                                            int(block_number), edpool, tx_folder_prefix)
                 detection_result, reason, la_tx = rule_based_detection(tx_hash, gas_used,
                                                     from_address, to_address, tx_folder_prefix)
-                if detection_result:
-                    print(reason)
-                if la_tx:
-                    print('large amount alert')
+                selected_tx_dict["detection_result"] = detection_result
+                selected_tx_dict["reason"] = reason
+                selected_tx_dict["la_tx"] = la_tx
+                with open(tx_folder_prefix + f"/basic_info_{tx_hash}.json", "w") as json_file:
+                    json.dump(selected_tx_dict, json_file, indent=2)
                 generate_output(tx_hash, chain, selected_tx_dict, tx_folder_prefix, main_token)
 
 
@@ -137,8 +138,8 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--overwrite", action="store_true", help="Overwrite existing result")
     args = parser.parse_args()
     if "," in args.block_number:
-        block_numbers = args.tx_hash.split(",")
-        print(f'Collecting data for {len(block_numbers)} transactions')
+        block_numbers = args.block_number.split(",")
+        print(f'Collecting data for {len(block_numbers)} blocks.')
         for block_number in block_numbers:
             if isinstance(block_number, str) and block_number.isdigit():
                 print(f'Collecting data for block {block_number}')

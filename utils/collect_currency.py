@@ -24,23 +24,25 @@ def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int)
     contract = w3.eth.contract(address=contract_address, abi=uniswap)
 
     # Ensure decimals are reduced in the same scale but not below 6
-    min_decimal = 8
+    min_decimal = 14
     scale_factor = min(decimal, wrapped_decimal) - min_decimal
-    if scale_factor > 0:
-        decimal -= scale_factor
-        wrapped_decimal -= scale_factor
 
-    # Get contract sawp amount
+    decimal -= scale_factor
+    wrapped_decimal -= scale_factor
+
+    # Get contract swap amount
     try:
-        method = contract.functions.getAmountsOut(pow(10, decimal), [address, wrapped_address])
+        method = contract.functions.getAmountsIn(pow(10, wrapped_decimal), [address, wrapped_address])
         result = method.call(block_identifier=block_number)
+
     except Exception as e:
         print('uniswap error:', e, [address, wrapped_address])
         return 0
 
+
     # token to warped ether to USDT
     (_, _ , exchange_rate) = currency_dict[wrapped_address.lower()]
-    return exchange_rate * result[1] / pow(10, wrapped_decimal)
+    return exchange_rate * pow(10, decimal) / result[0]
 
 # Get the currency symbol and decimals by the contract
 def get_currency(address, chain, block_number, w3, rate_dict):
