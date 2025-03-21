@@ -37,6 +37,8 @@ def collect_info(transaction_hash, edpool):
     else:
         recipient = 'empty'
 
+    input_data = str(transaction['input'][10:])
+
     # Construct dictionary containing transaction data
     transaction_data = {
         'hash': transaction_hash,
@@ -46,7 +48,9 @@ def collect_info(transaction_hash, edpool):
         'gasLimit': transaction['gas'],  # Get gas limit from transaction receipt
         'gasUsed': receipt['gasUsed'],  # Get gas used from transaction receipt
         'timestamp': timestamp,
-        '4byteData': transaction['input'][:10]
+        '4byteData': transaction['input'][:10],
+        'zeroCount': input_data.count('0'),
+        'oneCount': len(input_data) - input_data.count('0'),
     }
 
     # Return the DataFrame containing transaction information

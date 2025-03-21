@@ -9,6 +9,19 @@ try:
 except ImportError:
     from db_tools import get_function_signature, get_event_db_signature
 
+func_event_dict = {}
+
+def get_function(func_hash, is_event = False):
+    if func_hash not in func_event_dict:
+        if is_event:
+            signature = get_event_db_signature(func_hash)
+        else:
+            signature = get_function_signature(func_hash)
+        func_event_dict[func_hash] = signature
+        return signature
+    else:
+        return func_event_dict[func_hash]
+
 # Parse the structure of parameter types of a function
 def parse_structure(structure):
     def parse_element(element):
@@ -355,7 +368,7 @@ def decode_trace_json(folder_prefix="result"):
                                 "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)"
                             new_trace["functionName"] = "swap"
                         else:
-                            new_trace["function"] =  get_function_signature(func_hash)
+                            new_trace["function"] =  get_function(func_hash)
                             new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
                         new_trace["input"] = decode_input(new_trace["function"], input_hash)
                         new_trace["decodeStatue"] = "database"
@@ -365,7 +378,7 @@ def decode_trace_json(folder_prefix="result"):
                 else:
 
                     # Use function signature database to search for 4bytes
-                    func_name = get_function_signature(func_hash)
+                    func_name = get_function(func_hash)
 
                     if func_name:
                         new_trace["decodeStatue"] = "database"
@@ -395,7 +408,7 @@ def decode_trace_json(folder_prefix="result"):
                     func_hash = trace['raw']['topics'][0][2:]
 
                     # Use event signature database to search for 4bytes
-                    event_name = get_event_db_signature(func_hash)
+                    event_name = get_function(func_hash, is_event=True)
                     if event_name:
                         new_trace["function"] = event_name
                     else:
