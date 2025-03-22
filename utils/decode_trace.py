@@ -9,7 +9,23 @@ try:
 except ImportError:
     from db_tools import get_function_signature, get_event_db_signature
 
-func_event_dict = {}
+# Define the JSON file name
+FUNC_EVENT_JSON = "func_event_dict.json"
+
+# Load existing function-event dictionary from file
+def load_func_event_dict():
+    if os.path.exists(FUNC_EVENT_JSON):
+        with open(FUNC_EVENT_JSON, "r") as f:
+            return json.load(f)
+    return {}
+
+# Save function-event dictionary to file
+def save_func_event_dict():
+    with open(FUNC_EVENT_JSON, "w") as f:
+        json.dump(func_event_dict, f, indent=4)
+
+# Initialize dictionary from JSON file
+func_event_dict = load_func_event_dict()
 
 def get_function(func_hash, is_event = False):
     if func_hash not in func_event_dict:
@@ -446,4 +462,5 @@ def decode_trace_json(folder_prefix="result"):
         # Dump the decoded invocation tree to a json file
         with open(json_file_path + 'decode_' + i, 'w') as jsonfile:
             json.dump(invocation_tree, jsonfile, default=convert_bytes_to_string, indent=2)
+        save_func_event_dict()
         print('decode_invocation_tree_finished', i)

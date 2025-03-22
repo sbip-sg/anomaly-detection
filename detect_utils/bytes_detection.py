@@ -32,7 +32,8 @@ def detect_tx(transaction):
             extracted = True
             for upper in limits:
                 if float(upper) >= cosine >= float(limits[upper]):
-                    extracted = False
+                    tx_gas = transaction["gasUsed"]
+                    extracted = tx_gas > basic_limits[tx_type]["gas_limit"]
             return extracted
         else:
             return True
