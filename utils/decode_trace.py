@@ -429,7 +429,8 @@ def decode_trace_json(folder_prefix="result"):
                         new_trace["function"] = event_name
                     else:
                         new_trace["function"] = func_hash
-
+                else:
+                    new_trace["function"] = "0x"
                 # For events, foundry do not give significant parameters
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
                 istransfer = new_trace["function"].lower() in ['transfer', 'deposit', 'withdrawal'] and len(trace['raw']['topics']) > 2
