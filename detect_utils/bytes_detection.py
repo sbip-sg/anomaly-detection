@@ -45,6 +45,7 @@ def detect_4bytes(basic_info):
     basic_info['type_output'] = basic_info.apply(detect_tx, axis=1)
 
     # Get the list of transaction hashes where type_output is True
-    suspicious_list = basic_info.loc[basic_info['type_output'] == True, 'hash'].tolist()
+    suspicious_txs = basic_info.loc[basic_info['type_output'] == True]
+    suspicious_list = suspicious_txs.nlargest(3, 'gasUsed')['hash'].tolist()
 
     return suspicious_list
