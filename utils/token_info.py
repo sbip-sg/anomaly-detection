@@ -3,7 +3,7 @@ import pandas as pd
 from os import listdir
 from web3 import Web3
 from utils.collect_transfer import find_address_transfer_event, deal_transfer, othertransfer
-from utils.collect_currency import get_currency, get_main_token, get_currency_dict
+from utils.collect_currency import get_currency, get_main_token, get_currency_dict, reset_currency_dict
 import os
 
 
@@ -38,6 +38,7 @@ def remove_zeros(total_dict):
 def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, edpool, folder_prefix):
     # dict to store token exchange rate
     rate_dict = {}
+    reset_currency_dict()
     # collect balance change of each transaction
     total_dict = {}
     # collect token flows of each transaction

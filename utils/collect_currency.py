@@ -11,8 +11,12 @@ abi = load_json("utils/erc20.abi.json")  # ABI for ERC-20 contract
 uniswap = load_json("utils/uniswapv2.abi.json")  # ABI for UniswapV2
 chain_info = load_json("utils/chain_token_dict.json")  # Token info for all chains
 
-# dict to store currency symbol and decimals
+# Dict to store currency symbol and decimals
 currency_dict = {}
+
+def reset_currency_dict():
+    global currency_dict  # Refer to the outer dictionary
+    currency_dict.clear()  # Clears the dictionary instead of reassigning it
 
 def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int):
     # get chain info
