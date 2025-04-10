@@ -1,21 +1,6 @@
-import math
 from detect_utils.tools import load_json
 
-basic_limits = load_json("detect_utils/basic_limits.json")  # Gas limit restriction
-
-def cosine_similarity(v1, v2):
-    # Compute dot product
-    dot_product = v1[0] * v2[0] + v1[1] * v2[1]
-
-    # Compute magnitudes
-    magnitude_v1 = math.sqrt(v1[0] ** 2 + v1[1] ** 2)
-    magnitude_v2 = math.sqrt(v2[0] ** 2 + v2[1] ** 2)
-
-    if sum(v1) == 0 and sum(v2) == 0:
-        return 1
-    elif sum(v1) == 0 or sum(v2) == 0:
-        return 0
-    return dot_product / (magnitude_v1 * magnitude_v2)
+gas_limits = load_json("detect_utils/gas_limit.json")  # Gas limit restriction
 
 # Define your detection function
 def detect_tx(transaction):
@@ -24,17 +9,9 @@ def detect_tx(transaction):
         return True
     tx_type = transaction["4byteData"]
     if isinstance(tx_type, str) and len(tx_type) == 10:
-        if tx_type in basic_limits:
-            avg_vector = basic_limits[tx_type]["avg_vector"]
-            tx_vector = [transaction["zeroCount"], transaction["oneCount"]]
-            cosine = cosine_similarity(tx_vector, avg_vector)
-            limits = basic_limits[tx_type]["outlier_cosine"]
-            extracted = True
-            for upper in limits:
-                if float(upper) >= cosine >= float(limits[upper]):
-                    tx_gas = transaction["gasUsed"]
-                    extracted = tx_gas > basic_limits[tx_type]["gas_limit"]
-            return extracted
+        if tx_type in gas_limits:
+            tx_gas = transaction["gasUsed"]
+            return tx_gas > gas_limits[tx_type]
         else:
             return True
     else:
