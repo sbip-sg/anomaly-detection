@@ -43,7 +43,7 @@ def detect_flashloan_transaction(tx_hash, gas_used, from_address, to_address, fo
 
         # Detect incomes of addresses
         for address in address_list:
-            if check_balance(tx_hash, folder_prefix, address):
+            if check_balance(tx_hash, folder_prefix, address, 27000):
                 possible_hack = True
 
         return possible_hack

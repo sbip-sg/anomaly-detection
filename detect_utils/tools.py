@@ -36,7 +36,7 @@ def filter_transaction(gas_used, to_address):
     return False
 
 # Detect the balance change of given address of a transaction
-def check_balance(tx_hash, folder_prefix, address):
+def check_balance(tx_hash, folder_prefix, address, threshold):
     possible_hack = False
     balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
     if address in balance_change.keys():
@@ -44,7 +44,7 @@ def check_balance(tx_hash, folder_prefix, address):
         address_usd_change = 0
         for token in address_balance_change:
             address_usd_change += address_balance_change[token][1]
-        possible_hack = address_usd_change > 27000  # more strict filtered in SVM
+        possible_hack = address_usd_change > threshold  # more strict filtered in SVM
     return possible_hack
 
 # Detect the balance change of all addresses of a transaction

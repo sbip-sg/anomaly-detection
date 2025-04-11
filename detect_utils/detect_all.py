@@ -2,7 +2,7 @@ from detect_utils.rule_cyclic_calls import detect_cyclic_transaction
 from detect_utils.rule_flashloan import detect_flashloan_transaction
 from detect_utils.rule_token_supply import detect_token_supply
 from detect_utils.rule_access_control import detect_access_control
-from detect_utils.tools import check_balance_all
+from detect_utils.tools import check_balance, check_balance_all
 
 # Combine all detections in detect_utils
 def rule_based_detection(tx_hash, gas_used, from_address, to_address, folder_prefix):
@@ -31,7 +31,10 @@ def rule_based_detection(tx_hash, gas_used, from_address, to_address, folder_pre
         reason.append('Lack Access Control Detected')
 
     la_tx = False
-    if check_balance_all(tx_hash, folder_prefix, 63000): # 63k USD, the hard margin of SVM
+    # 63k USD and 27k for sender and receiver, the hard margin of SVM
+    if check_balance_all(tx_hash, folder_prefix, 63000)\
+            or check_balance(tx_hash, folder_prefix, from_address, 27000)\
+            or check_balance(tx_hash, folder_prefix, to_address, 27000):
         print('Large Amount Transaction')
         la_tx = True
 
