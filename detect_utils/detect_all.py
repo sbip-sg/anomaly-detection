@@ -32,10 +32,14 @@ def rule_based_detection(tx_hash, gas_used, from_address, to_address, folder_pre
 
     la_tx = False
     # 63k USD and 27k for sender and receiver, the hard margin of SVM
-    if check_balance_all(tx_hash, folder_prefix, 63000)\
-            or check_balance(tx_hash, folder_prefix, from_address, 27000)\
-            or check_balance(tx_hash, folder_prefix, to_address, 27000):
+    if check_balance_all(tx_hash, folder_prefix, 63000):
         print('Large Amount Transaction')
+        la_tx = True
+    elif check_balance(tx_hash, folder_prefix, from_address, 27000):
+        print('From Address Amount Transaction')
+        la_tx = True
+    elif check_balance(tx_hash, folder_prefix, to_address, 27000):
+        print('To Address Large Amount Transaction')
         la_tx = True
 
     return detection_result, reason, la_tx
