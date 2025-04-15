@@ -27,13 +27,6 @@ def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int)
     # uniswap v2 address
     contract = w3.eth.contract(address=contract_address, abi=uniswap)
 
-    # Ensure decimals are reduced in the same scale but not below 6
-    min_decimal = 12
-    scale_factor = min(decimal, wrapped_decimal) - min_decimal
-
-    decimal -= scale_factor
-    wrapped_decimal -= scale_factor
-
     # Get contract swap amount
     try:
         method = contract.functions.getAmountsIn(pow(10, wrapped_decimal), [address, wrapped_address])
