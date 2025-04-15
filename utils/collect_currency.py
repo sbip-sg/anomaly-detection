@@ -29,7 +29,7 @@ def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int)
 
     # Ensure decimals are reduced in the same scale but not below 12
     min_decimal = 12
-    if decimal > 12:
+    if decimal > min_decimal:
         scale_factor = min(decimal, wrapped_decimal) - min_decimal
         decimal -= scale_factor
         wrapped_decimal -= scale_factor
