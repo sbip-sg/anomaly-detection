@@ -46,7 +46,11 @@ def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int)
 
     # token to warped ether to USDT
     (_, _ , exchange_rate) = currency_dict[wrapped_address.lower()]
-    return exchange_rate * pow(10, decimal) / result[0]
+    token_rate = exchange_rate * pow(10, decimal) / result[0]
+    if token_rate < 150000:
+        return token_rate
+    else:
+        return 0
 
 # Get the currency symbol and decimals by the contract
 def get_currency(address, chain, block_number, w3, rate_dict):
@@ -59,7 +63,7 @@ def get_currency(address, chain, block_number, w3, rate_dict):
                 abi=abi,
             )
             # Get symbol
-            currency = contract.functions.symbol().call()
+            currency = contract.functions.name().call()
             # Get decimals
             decimal = contract.functions.decimals().call()
         except Exception as e:
@@ -68,12 +72,9 @@ def get_currency(address, chain, block_number, w3, rate_dict):
             decimal = 0
 
         try:
-            if 'usd' in currency.lower() and len(currency.lower()) <= 6:
-                exchange_rate = 1
-            else:
-                # Get exchange rate
-                checksum_address = Web3.to_checksum_address(address)
-                exchange_rate = get_rate(checksum_address, chain, block_number, w3, decimal)
+            # Get exchange rate
+            checksum_address = Web3.to_checksum_address(address)
+            exchange_rate = get_rate(checksum_address, chain, block_number, w3, decimal)
         except Exception as e:
             print('Error:', e, ',can not get exchange_rate', address)
             exchange_rate = 0
