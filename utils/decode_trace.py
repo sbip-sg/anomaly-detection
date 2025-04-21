@@ -204,6 +204,15 @@ def decode_unknown_input(chunks, data=False, event=True, transfer = False):
             if len(input_list) < 2:
                 input_list.append(decode(['address'], bytes.fromhex(line))[0])
             else:
+                if 24 <= count_of_zeros < 35:  # Address type
+                    input_list.append(decode(['address'], bytes.fromhex(line))[0])
+                # Number: We consider that the biggest number is 16^28 more than 10e33 and for normal wei = 1e18
+                # Normally most numbers are no bigger than 1e15
+                elif 35 <= count_of_zeros < 64:  # uint256 type
+                    input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
+                # null address
+                elif count_of_zeros == 64:  # Address type
+                    input_list.append(decode(['address'], bytes.fromhex(line))[0])
                 transfer = False
     return input_list
 

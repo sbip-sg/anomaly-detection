@@ -15,7 +15,33 @@ chain_info = load_json("utils/chain_token_dict.json")  # Token info for all chai
 currency_dict = {}
 
 # list to store collected currency names
-currency_list = []
+currency_address = {}
+
+# Interface IDs
+ERC721_INTERFACE_ID = "0x80ac58cd"
+ERC1155_INTERFACE_ID = "0xd9b67a26"
+
+# Minimal ERC-165 ABI to call supportsInterface
+erc165_abi = [{
+    "constant": True,
+    "inputs": [{"name": "interfaceID", "type": "bytes4"}],
+    "name": "supportsInterface",
+    "outputs": [{"name": "", "type": "bool"}],
+    "type": "function",
+}]
+
+# Dict to store NFT address
+NFT_dict = {}
+
+def is_NFT(contract_address, w3):
+    contract = w3.eth.contract(address=contract_address, abi=erc165_abi)
+
+    try:
+        is_erc721 = contract.functions.supportsInterface(ERC721_INTERFACE_ID).call()
+        is_erc1155 = contract.functions.supportsInterface(ERC1155_INTERFACE_ID).call()
+        return bool(is_erc721) or bool(is_erc1155)
+    except:
+        return False
 
 def reset_currency_dict():
     global currency_dict  # Refer to the outer dictionary
@@ -57,25 +83,34 @@ def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int)
 
 # Get the currency symbol and decimals by the contract
 def get_currency(address, chain, block_number, w3, rate_dict):
+    if address in NFT_dict:
+        return NFT_dict[address], 0, True
     address = address.lower()
     if address not in currency_dict:
+        checksum_address = Web3.to_checksum_address(address)
+        contract = w3.eth.contract(
+            address=checksum_address,
+            abi=abi,
+        )
         try:
-            checksum_address = Web3.to_checksum_address(address)
-            contract = w3.eth.contract(
-                address=checksum_address,
-                abi=abi,
-            )
             # Get symbol
             currency = contract.functions.symbol().call()
-            if currency in currency_list:
+            if currency in currency_address and currency_address[currency] != address:
                 currency = f'{currency}_{address}'
             else:
-                currency_list.append(currency)
+                currency_address[currency] = address
+        except Exception as e:
+            print('Error:', e, ' ,can not get transfer currency symbol', address)
+            currency = address
+
+        try:
             # Get decimals
             decimal = contract.functions.decimals().call()
         except Exception as e:
-            print('Error:', e, ' ,can not get transfer currency', address)
-            currency = address
+            if is_NFT(checksum_address, w3):
+                NFT_dict[address] = currency
+                return currency, 0, True
+            print('Error:', e, ' ,can not get transfer currency decimal', address)
             decimal = 0
 
         try:
@@ -89,7 +124,7 @@ def get_currency(address, chain, block_number, w3, rate_dict):
         rate_dict[currency] = exchange_rate
     else:
         (currency, decimal, exchange_rate) = currency_dict[address]
-    return currency, decimal
+    return currency, decimal, False
 
 def get_main_token(chain, block_number, w3):
     chain_token_info = chain_info[chain]
