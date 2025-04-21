@@ -118,12 +118,13 @@ def main(block_number, chain, overwrite=False):
                 to_address = selected_tx.iloc[0]['to']
                 gas_used = selected_tx.iloc[0]['gasUsed']
 
-                main_token = collect_token(tx_hash, chain, from_address, to_address,
+                main_token, NFT_transaction = collect_token(tx_hash, chain, from_address, to_address,
                                            int(block_number), edpool, tx_folder_prefix)
                 token_end_time = time.time()
                 time_dict['tx_details'][tx_hash]['token'] = token_end_time - decode_end_time
                 detection_result, reason, la_tx = rule_based_detection(tx_hash, gas_used,
                                                     from_address, to_address, tx_folder_prefix)
+                selected_tx_dict['NFT_transaction'] = NFT_transaction
                 selected_tx_dict["detection_result"] = detection_result
                 selected_tx_dict["reason"] = reason
                 selected_tx_dict["la_tx"] = la_tx

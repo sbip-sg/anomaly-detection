@@ -41,6 +41,10 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
     reset_currency_dict()
     # collect balance change of each transaction
     total_dict = {}
+
+    # indicate whether an NFT transaction
+    NFT_transaction = False
+
     # collect token flows of each transaction
     flow = pd.DataFrame(columns=['from', 'to', 'currency', 'value'])
 
@@ -78,6 +82,7 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
                     from_address, to_address, amount = find_address_transfer_event(trace, input_value)
                     if isinstance(amount, int):
                         if is_NFT:
+                            NFT_transaction = True
                             currency = f'{currency}_{amount}'
                             rate_dict[currency] = 0
                             value = 1
@@ -181,4 +186,4 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
     with open(folder_prefix + '/token_info/currency_dict.json', 'w') as json_file3:
         json.dump(currency_dict, json_file3, indent=2)
 
-    return main_token
+    return main_token, NFT_transaction
