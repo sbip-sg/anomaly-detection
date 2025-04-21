@@ -51,10 +51,11 @@ def check_balance(tx_hash, folder_prefix, address, threshold):
 def check_balance_all(tx_hash, folder_prefix, threshold):
     balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
     for address in balance_change.keys():
-        address_balance_change = balance_change.get(address)
-        address_usd_change = 0
-        for token in address_balance_change:
-            address_usd_change += address_balance_change[token][1]
-        suspicious = abs(address_usd_change) > threshold
-        if suspicious:
-            return suspicious
+        if address != '0x0000000000000000000000000000000000000000':
+            address_balance_change = balance_change.get(address)
+            address_usd_change = 0
+            for token in address_balance_change:
+                address_usd_change += address_balance_change[token][1]
+            suspicious = address_usd_change > threshold
+            if suspicious:
+                return suspicious

@@ -11,8 +11,11 @@ abi = load_json("utils/erc20.abi.json")  # ABI for ERC-20 contract
 uniswap = load_json("utils/uniswapv2.abi.json")  # ABI for UniswapV2
 chain_info = load_json("utils/chain_token_dict.json")  # Token info for all chains
 
-# Dict to store currency symbol and decimals
+# Dict to store currency addresses to names, decimals and exchange rates
 currency_dict = {}
+
+# list to store collected currency names
+currency_list = []
 
 def reset_currency_dict():
     global currency_dict  # Refer to the outer dictionary
@@ -63,7 +66,11 @@ def get_currency(address, chain, block_number, w3, rate_dict):
                 abi=abi,
             )
             # Get symbol
-            currency = contract.functions.name().call()
+            currency = contract.functions.symbol().call()
+            if currency in currency_list:
+                currency = f'{currency}_{address}'
+            else:
+                currency_list.append(currency)
             # Get decimals
             decimal = contract.functions.decimals().call()
         except Exception as e:

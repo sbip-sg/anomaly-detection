@@ -147,6 +147,6 @@ def detect_access_control(tx_hash, folder_prefix):
             if not check_opcodes(opcodes):
                 sum_value += idx_dict[t['call_idx']]
     # if USD values of non-access-control and all transfers exceed settings
-    if sum_value > 27000:  # more strict filtered in SVM
+    if sum_value > 63000:  # filtered in SVM
         return True
     return False
