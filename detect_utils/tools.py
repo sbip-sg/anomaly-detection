@@ -5,6 +5,9 @@ def load_json(filepath):
     with open(filepath, "r", encoding="utf-8") as file:
         return json.load(file)
 
+
+erc20_abi = load_json("utils/erc20.abi.json")
+
 # Get information of a transaction from the collected files
 def collect_from_file(folder_prefix, filename):
     with open(folder_prefix + filename) as input_json:
@@ -59,3 +62,26 @@ def check_balance_all(tx_hash, folder_prefix, threshold):
             suspicious = address_usd_change > threshold
             if suspicious:
                 return suspicious
+    return False
+
+def zero_rate_token(folder_prefix):
+    zero_rate_dict = {}
+    currency_dict = collect_from_file(folder_prefix, '/token_info/currency_dict.json')
+    for token_address in currency_dict:
+        token_details = currency_dict[token_address]
+        if token_details[2] == 0:
+            zero_rate_dict[token_details[0]] = token_details[3]
+    return zero_rate_dict
+
+def check_total_supply(tx_hash, folder_prefix, threshold_rate):
+    balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
+    zero_rate_dict = zero_rate_token(folder_prefix)
+    if zero_rate_dict:
+        for address in balance_change.keys():
+            address_balance_change = balance_change.get(address)
+            for token in address_balance_change:
+                if token in zero_rate_dict and zero_rate_dict[token] > 1:
+                    token_changed = abs(address_balance_change[token][0])
+                    if zero_rate_dict[token] * threshold_rate < token_changed < zero_rate_dict[token]:
+                        return True
+    return False

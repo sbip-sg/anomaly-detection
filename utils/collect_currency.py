@@ -1,4 +1,6 @@
 import json
+
+from mpmath import power
 from web3 import Web3
 
 def load_json(filepath):
@@ -74,7 +76,7 @@ def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int)
 
 
     # token to warped ether to USDT
-    (_, _ , exchange_rate) = currency_dict[wrapped_address.lower()]
+    (_, _ , exchange_rate, _) = currency_dict[wrapped_address.lower()]
     token_rate = exchange_rate * pow(10, decimal) / result[0]
     if token_rate < 150000:
         return token_rate
@@ -84,7 +86,7 @@ def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int)
 # Get the currency symbol and decimals by the contract
 def get_currency(address, chain, block_number, w3, rate_dict):
     if address in NFT_dict:
-        return NFT_dict[address], 0, True
+        return NFT_dict[address], 0, True, 0
     address = address.lower()
     if address not in currency_dict:
         checksum_address = Web3.to_checksum_address(address)
@@ -106,12 +108,14 @@ def get_currency(address, chain, block_number, w3, rate_dict):
         try:
             # Get decimals
             decimal = contract.functions.decimals().call()
+            total_supply = contract.functions.totalSupply().call()
         except Exception as e:
             if is_NFT(checksum_address, w3):
                 NFT_dict[address] = currency
-                return currency, 0, True
+                return currency, 0, True, 0
             print('Error:', e, ' ,can not get transfer currency decimal', address)
             decimal = 0
+            total_supply = 0
 
         try:
             # Get exchange rate
@@ -120,11 +124,11 @@ def get_currency(address, chain, block_number, w3, rate_dict):
         except Exception as e:
             print('Error:', e, ',can not get exchange_rate', address)
             exchange_rate = 0
-        currency_dict[address] = (currency, decimal, exchange_rate)
+        currency_dict[address] = (currency, decimal, exchange_rate, total_supply/pow(10, decimal))
         rate_dict[currency] = exchange_rate
     else:
-        (currency, decimal, exchange_rate) = currency_dict[address]
-    return currency, decimal, False
+        (currency, decimal, exchange_rate, _) = currency_dict[address]
+    return currency, decimal, False, exchange_rate
 
 def get_main_token(chain, block_number, w3):
     chain_token_info = chain_info[chain]
@@ -135,6 +139,12 @@ def get_main_token(chain, block_number, w3):
     wrapped_address = chain_token_info['wrappedAddress']
     usdc_decimal = chain_token_info['usdc_decimal']
     wrapped_decimal = chain_token_info['wrapped_decimal']
+
+    wrapped_contract = w3.eth.contract(
+        address=wrapped_address,
+        abi=abi,
+    )
+    wrapped_total_supply = wrapped_contract.functions.totalSupply().call()
     # Ensure decimals are reduced in the same scale but not below 6
     min_decimal = 3
     scale_factor = min(usdc_decimal, wrapped_decimal) - min_decimal
@@ -155,8 +165,8 @@ def get_main_token(chain, block_number, w3):
         print('uniswap error:', e, [usdc_address, wrapped_address])
         exchange_rate = 0
 
-    currency_dict[chain_token] = (chain_token, wrapped_decimal, exchange_rate)
-    currency_dict[wrapped_address.lower()] = (wrapped_token, wrapped_decimal, exchange_rate)
+    currency_dict[chain_token] = (chain_token, wrapped_decimal, exchange_rate, 1e20)
+    currency_dict[wrapped_address.lower()] = (wrapped_token, wrapped_decimal, exchange_rate, wrapped_total_supply/pow(10, wrapped_decimal))
 
     return chain_token, exchange_rate, wrapped_token, exchange_rate
 

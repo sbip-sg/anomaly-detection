@@ -151,7 +151,7 @@ def collect_event(t, currency_dict, chain, main_token_rate):
         transfer_from, transfer_to, amount = find_address_transfer_event(t, topics)
         if isinstance(amount, int):
             if t['address'] in currency_dict:
-                (currency, decimal, exchange_rate) = currency_dict[t['address']]
+                (currency, decimal, exchange_rate, _) = currency_dict[t['address']]
             else:
                 (currency, decimal, exchange_rate) = (t['address'], 0, 0)
             if decimal != 0:

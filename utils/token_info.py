@@ -78,10 +78,10 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
 
                 # event name as transfer refers to token transfer
                 if event_name.lower() == 'transfer' and len(input_value) != 0:
-                    currency, decimal, is_NFT = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
+                    currency, decimal, is_nft, _ = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
                     from_address, to_address, amount = find_address_transfer_event(trace, input_value)
                     if isinstance(amount, int):
-                        if is_NFT:
+                        if is_nft:
                             NFT_transaction = True
                             currency = f'{currency}_{amount}'
                             rate_dict[currency] = 0
@@ -93,7 +93,7 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
 
                 # event name as withdrawal refers to token withdraw
                 elif event_name.lower() == 'withdrawal' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                    currency, decimal, _ = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
+                    currency, decimal, _, _ = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
                     from_address = input_value[0]
                     if len(trace['data']) == 2:
                         amount = trace['data'][1]
@@ -105,7 +105,7 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
 
                 # event name as deposit refers to token deposit
                 elif event_name.lower() == 'deposit' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                        currency, decimal, _ = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
+                        currency, decimal, _, _ = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
                         to_address = input_value[0]
                         if len(trace['data']) == 2:
                             amount = trace['data'][1]
