@@ -112,6 +112,7 @@ def get_currency(address, chain, block_number, w3, rate_dict):
         except Exception as e:
             if is_NFT(checksum_address, w3):
                 NFT_dict[address] = currency
+                currency_dict['NFT'] = NFT_dict
                 return currency, 0, True, 0
             print('Error:', e, ' ,can not get transfer currency decimal', address)
             decimal = 0

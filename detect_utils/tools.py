@@ -68,9 +68,10 @@ def zero_rate_token(folder_prefix):
     zero_rate_dict = {}
     currency_dict = collect_from_file(folder_prefix, '/token_info/currency_dict.json')
     for token_address in currency_dict:
-        token_details = currency_dict[token_address]
-        if token_details[2] == 0:
-            zero_rate_dict[token_details[0]] = token_details[3]
+        if token_address[:2] == "0x":
+            token_details = currency_dict[token_address]
+            if token_details[2] == 0:
+                zero_rate_dict[token_details[0]] = token_details[3]
     return zero_rate_dict
 
 def check_total_supply(tx_hash, folder_prefix, threshold_rate):

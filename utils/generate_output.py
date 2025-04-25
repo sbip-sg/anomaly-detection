@@ -149,19 +149,23 @@ def collect_event(t, currency_dict, chain, main_token_rate):
     # When this event shows transferring tokens
     if event_name.lower() == 'transfer' and len(topics) != 0:
         transfer_from, transfer_to, amount = find_address_transfer_event(t, topics)
-        if isinstance(amount, int):
-            if t['address'] in currency_dict:
-                (currency, decimal, exchange_rate, _) = currency_dict[t['address']]
-            else:
-                (currency, decimal, exchange_rate) = (t['address'], 0, 0)
-            if decimal != 0:
-                value = amount / pow(10, decimal)
-                event_output += f' Transfer {rounded_number(value)} {currency} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
-                if exchange_rate != 0:
-                    event_output += f' as {rounded_number(value * exchange_rate, usd_mode=True)} USD'
-            else:
-                event_output += f' Transfer unknown {currency} in {amount} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
-            event_output += '.'
+        if 'NFT' in currency_dict and t['address'] in currency_dict['NFT']:
+            currency = currency_dict['NFT'][t['address']]
+            event_output += f' Transfer a {currency} NFT with id {amount} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
+        else:
+            if isinstance(amount, int):
+                if t['address'] in currency_dict:
+                    (currency, decimal, exchange_rate, _) = currency_dict[t['address']]
+                else:
+                    (currency, decimal, exchange_rate) = (t['address'], 0, 0)
+                if decimal != 0:
+                    value = amount / pow(10, decimal)
+                    event_output += f' Transfer {rounded_number(value)} {currency} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
+                    if exchange_rate != 0:
+                        event_output += f' as {rounded_number(value * exchange_rate, usd_mode=True)} USD'
+                else:
+                    event_output += f' Transfer unknown {currency} in {amount} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
+                event_output += '.'
     # Special case: withdraw from Wrapped ETH (withdraw eth by sending WETH)
     # Adding information since no token flow related call or event is here
     if chain == 'eth':
