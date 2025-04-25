@@ -149,10 +149,9 @@ def collect_event(t, currency_dict, chain, main_token_rate):
     # When this event shows transferring tokens
     if event_name.lower() == 'transfer' and len(topics) != 0:
         transfer_from, transfer_to, amount = find_address_transfer_event(t, topics)
-        print(transfer_from, transfer_to, amount)
         if 'NFT' in currency_dict and t['address'] in currency_dict['NFT']:
             currency = currency_dict['NFT'][t['address']]
-            event_output += f' Transfer a {currency} NFT with id {amount} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
+            event_output += f' Transfer one {currency} NFT with id {amount} from {shorten_address(transfer_from)} to {shorten_address(transfer_to)}'
         else:
             if amount == "0x0000000000000000000000000000000000000000":
                 amount = 0
