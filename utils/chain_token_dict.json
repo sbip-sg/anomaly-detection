@@ -51,7 +51,29 @@
     "wrappedToken": "WETH",
     "wrappedAddress": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     "usdc_decimal": 6,
-    "wrapped_decimal": 18
+    "wrapped_decimal": 18,
+    "mev_bots": [
+      "0x6980a47bee930a4584b09ee79ebe46484fbdbdd0",
+      "0x4ab12e7ce31857ee022f273e8580f73335a73c0b",
+      "0x6980a47bee930a4584b09ee79ebe46484fbdbdd0",
+      "0x6b75d8af000000e20b7a7ddf000ba900b4009a80",
+      "0x00000000003b3cc22af3ae1eac0440bcee416b40",
+      "0x2c10f2e3c2eaa722b78dbd9f7661ee22520554e6",
+      "0x000000d40b595b94918a28b27d1e2c66f43a51d3",
+      "0x1f2f10d1c40777ae1da742455c65828ff36df387",
+      "0xc0de235f3a51705759b045dc6d5f6218b058c5bd",
+      "0x00000000009e50a7ddb7a7b0e2ee6604fd120e49",
+      "0xe4000004000bd8006e00720000d27d1fa000d43e",
+      "0x641d3865d80ebabc5686f4ac765841c2d652f4c3",
+      "0xe8c060f8052e07423f71d445277c61ac5138a2e5",
+      "0x5ed5dd65ab0dc1bccc44eedaa40680c231faaa9f"
+    ],
+    "debt_tokens": {
+      "0x531842cebbdd378f8ee36d171d6cc9c4fcf475ec": "USD",
+      "0x6df1c1e379bc5a00a7b4c6e67a203333772f45a8": "USD",
+      "0x619beb58998ed2278e08620f97007e1116d5d25b": "USD",
+      "0xea51d7853eefb32b6ee06b1c12e6dcca88be0ffe": "WETH"
+    }
   },
   "fantom": {
     "chainToken": "FTM",

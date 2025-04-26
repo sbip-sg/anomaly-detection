@@ -10,9 +10,12 @@ from utils.collect_block import collect_block_all
 from detect_utils.bytes_detection import detect_4bytes
 from detect_utils.detect_all import rule_based_detection
 from detect_utils.chatgpt_detect import chatgpt_detect
+from detect_utils.tools import load_json
 import json
 import time
 import pandas as pd
+
+chain_info = load_json("utils/chain_token_dict.json")  # Token info for all chains
 
 # Get transaction information by hash
 def collect_tx(tx_hash, chain, overwrite=False, use_llm=False):
@@ -92,6 +95,10 @@ def main(block_number, chain, overwrite=False):
 
     # Convert to DataFrame and save to CSV
     if tx_data:
+        if 'mev_bots' in chain_info[chain.lower()]:
+            mev_bots = chain_info[chain.lower()]['mev_bots']
+        else:
+            mev_bots = []
         time_dict['tx_details'] = {}
         tx_df = pd.DataFrame(tx_data)
         suspicious_list = detect_4bytes(tx_df)
@@ -122,12 +129,18 @@ def main(block_number, chain, overwrite=False):
                                            int(block_number), edpool, tx_folder_prefix)
                 token_end_time = time.time()
                 time_dict['tx_details'][tx_hash]['token'] = token_end_time - decode_end_time
-                detection_result, reason, la_tx = rule_based_detection(tx_hash, gas_used,
+                if to_address.lower() not in mev_bots:
+                    detection_result, reason, la_tx = rule_based_detection(tx_hash, gas_used,
                                                     from_address, to_address, tx_folder_prefix)
-                selected_tx_dict['NFT_transaction'] = NFT_transaction
-                selected_tx_dict["detection_result"] = detection_result
-                selected_tx_dict["reason"] = reason
-                selected_tx_dict["la_tx"] = la_tx
+                    selected_tx_dict['NFT_transaction'] = NFT_transaction
+                    selected_tx_dict["detection_result"] = detection_result
+                    selected_tx_dict["reason"] = reason
+                    selected_tx_dict["la_tx"] = la_tx
+                else:
+                    selected_tx_dict['NFT_transaction'] = False
+                    selected_tx_dict["detection_result"] = False
+                    selected_tx_dict["reason"] = ['To address as MEV Bot']
+                    selected_tx_dict["la_tx"] = False
                 with open(tx_folder_prefix + f"/basic_info_{tx_hash}.json", "w") as json_file:
                     json.dump(selected_tx_dict, json_file, indent=2)
                 rule_end_time = time.time()

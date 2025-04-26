@@ -2,11 +2,7 @@ import json
 
 from mpmath import power
 from web3 import Web3
-
-def load_json(filepath):
-    """Utility function to load a JSON file safely."""
-    with open(filepath, "r", encoding="utf-8") as file:
-        return json.load(file)
+from detect_utils.tools import load_json
 
 # Load ABI files and token info using the function
 abi = load_json("utils/erc20.abi.json")  # ABI for ERC-20 contract
@@ -54,34 +50,46 @@ def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int)
     chain_token_info = chain_info[chain]
     contract_address = chain_token_info['uniswapV2Address']
     wrapped_address = chain_token_info['wrappedAddress']
-    wrapped_decimal = chain_token_info['wrapped_decimal']
-    # uniswap v2 address
-    contract = w3.eth.contract(address=contract_address, abi=uniswap)
-
-    # Ensure decimals are reduced in the same scale but not below 12
-    min_decimal = 12
-    if decimal > min_decimal:
-        scale_factor = min(decimal, wrapped_decimal) - min_decimal
-        decimal -= scale_factor
-        wrapped_decimal -= scale_factor
-
-    # Get contract swap amount
-    try:
-        method = contract.functions.getAmountsIn(pow(10, wrapped_decimal), [address, wrapped_address])
-        result = method.call(block_identifier=block_number)
-
-    except Exception as e:
-        print('uniswap error:', e, [address, wrapped_address])
-        return 0
-
-
     # token to warped ether to USDT
     (_, _ , exchange_rate, _) = currency_dict[wrapped_address.lower()]
-    token_rate = exchange_rate * pow(10, decimal) / result[0]
-    if token_rate < 150000:
-        return token_rate
+    wrapped_decimal = chain_token_info['wrapped_decimal']
+    if 'debt_tokens' in chain_token_info:
+        debt_tokens = chain_token_info['debt_tokens']
     else:
-        return 0
+        debt_tokens = {}
+    if address.lower() in debt_tokens:
+        d_token = debt_tokens[address.lower()]
+        if d_token == 'WETH':
+            return -1 * exchange_rate
+        else:
+            return -1
+
+    else:
+        # uniswap v2 address
+        contract = w3.eth.contract(address=contract_address, abi=uniswap)
+
+
+        # Ensure decimals are reduced in the same scale but not below 12
+        min_decimal = 12
+        if decimal > min_decimal:
+            scale_factor = min(decimal, wrapped_decimal) - min_decimal
+            decimal -= scale_factor
+            wrapped_decimal -= scale_factor
+
+        # Get contract swap amount
+        try:
+            method = contract.functions.getAmountsIn(pow(10, wrapped_decimal), [address, wrapped_address])
+            result = method.call(block_identifier=block_number)
+
+        except Exception as e:
+            print('uniswap error:', e, [address, wrapped_address])
+            return 0
+
+        token_rate = exchange_rate * pow(10, decimal) / result[0]
+        if token_rate < 150000:
+            return token_rate
+        else:
+            return 0
 
 # Get the currency symbol and decimals by the contract
 def get_currency(address, chain, block_number, w3, rate_dict):
