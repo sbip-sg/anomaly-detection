@@ -75,13 +75,14 @@ def collect_idx(tx_hash, folder_prefix):
                 # get exchange value
                 data = element['raw']['data'][2:]
                 if data:
-                    amount = int(data, 16)
+                    amount = int(data[:66], 16)
                 else:
                     amount = int(element['raw']['topics'][-1][2:], 16)
 
                 # get usd values. this has triggered overflow of int so add try.
                 try:
-                    usd_value = rate * amount / pow(10, decimal)
+                    value = amount / pow(10, decimal)
+                    usd_value = rate * value
                 except (ValueError, TypeError):
                     usd_value = 25000      # 25k USD, 20% of the samples, this happens when amount is vary large
             # need to check this event call's parent and parent of parent
