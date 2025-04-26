@@ -44,6 +44,8 @@ def is_NFT(contract_address, w3):
 def reset_currency_dict():
     global currency_dict  # Refer to the outer dictionary
     currency_dict.clear()  # Clears the dictionary instead of reassigning it
+    global NFT_dict  # Refer to the outer dictionary
+    NFT_dict.clear()  # Clears the dictionary instead of reassigning it
 
 def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int):
     # get chain info
@@ -94,6 +96,7 @@ def get_rate(address: str, chain: str, block_number: int, w3: any, decimal: int)
 # Get the currency symbol and decimals by the contract
 def get_currency(address, chain, block_number, w3, rate_dict):
     if address in NFT_dict:
+        currency_dict['NFT'] = NFT_dict
         return NFT_dict[address], 0, True, 0
     address = address.lower()
     if address not in currency_dict:
