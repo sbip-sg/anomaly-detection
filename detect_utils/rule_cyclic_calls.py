@@ -36,7 +36,7 @@ def detect_cyclic_transaction(tx_hash, gas_used, sender, to_address, folder_pref
             print(f"Unknown trace type: {call['type']}")
 
     possible_hack = False
-    if has_cycle(functions) is not None:
+    if has_cycle(functions[:500]) is not None:
         possible_hack = check_balance(tx_hash, folder_prefix, sender, 27000)
 
     return possible_hack
