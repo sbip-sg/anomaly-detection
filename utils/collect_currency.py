@@ -133,6 +133,9 @@ def get_currency(address, chain, block_number, w3, rate_dict):
             # Get exchange rate
             checksum_address = Web3.to_checksum_address(address)
             exchange_rate = get_rate(checksum_address, chain, block_number, w3, decimal)
+            # error rate removal
+            if exchange_rate * total_supply/pow(10, decimal) >= 1e13:
+                exchange_rate = 0
         except Exception as e:
             print('Error:', e, ',can not get exchange_rate', address)
             exchange_rate = 0
@@ -177,7 +180,7 @@ def get_main_token(chain, block_number, w3):
         print('uniswap error:', e, [usdc_address, wrapped_address])
         exchange_rate = 0
 
-    currency_dict[chain_token] = (chain_token, wrapped_decimal, exchange_rate, 1e20)
+    currency_dict[chain_token] = (chain_token, wrapped_decimal, exchange_rate, 2e8)
     currency_dict[wrapped_address.lower()] = (wrapped_token, wrapped_decimal, exchange_rate, wrapped_total_supply/pow(10, wrapped_decimal))
 
     return chain_token, exchange_rate, wrapped_token, exchange_rate

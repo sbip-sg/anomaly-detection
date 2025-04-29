@@ -442,8 +442,9 @@ def decode_trace_json(folder_prefix="result"):
                     new_trace["function"] = "0x"
                 # For events, foundry do not give significant parameters
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
-                istransfer = new_trace["function"].lower() in ['transfer', 'deposit', 'withdrawal'] and len(trace['raw']['topics']) > 2
-                new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:], transfer=istransfer)
+                is_transfer = (new_trace["function"].lower() in ['deposit', 'withdrawal']
+                               or (new_trace["function"].lower() == 'transfer' and len(trace['raw']['topics']) > 2))
+                new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:], transfer=is_transfer)
 
             # If trace is a create log
             elif 'create' in trace['kind'].lower():

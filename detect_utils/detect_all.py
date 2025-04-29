@@ -32,10 +32,10 @@ def rule_based_detection(tx_hash, gas_used, from_address, to_address, folder_pre
 
     la_tx = False
 
-    if check_total_supply(tx_hash, folder_prefix, 0.1):
-        print('Very large compared with total supply')  # To be updated
-        la_tx = True
-        reason.append('Large Amount Compared with Total Supply')
+    #if check_total_supply(tx_hash, folder_prefix, 0.1):
+    #    print('Very large compared with total supply')  # To be updated
+    #    la_tx = True
+    #    reason.append('Large Amount Compared with Total Supply')
 
     # 63k USD and 27k for sender and receiver, the hard margin of SVM
     if check_balance_all(tx_hash, folder_prefix, 63000):
