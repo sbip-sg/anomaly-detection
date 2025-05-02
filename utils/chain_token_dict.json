@@ -53,27 +53,104 @@
     "usdc_decimal": 6,
     "wrapped_decimal": 18,
     "mev_bots": [
-      "0x6980a47bee930a4584b09ee79ebe46484fbdbdd0",
-      "0x4ab12e7ce31857ee022f273e8580f73335a73c0b",
-      "0x6980a47bee930a4584b09ee79ebe46484fbdbdd0",
-      "0x6b75d8af000000e20b7a7ddf000ba900b4009a80",
-      "0x00000000003b3cc22af3ae1eac0440bcee416b40",
-      "0x2c10f2e3c2eaa722b78dbd9f7661ee22520554e6",
-      "0x000000d40b595b94918a28b27d1e2c66f43a51d3",
-      "0x1f2f10d1c40777ae1da742455c65828ff36df387",
       "0xc0de235f3a51705759b045dc6d5f6218b058c5bd",
-      "0x00000000009e50a7ddb7a7b0e2ee6604fd120e49",
-      "0xe4000004000bd8006e00720000d27d1fa000d43e",
+      "0xfefd05076a394f80c3e2bc10d8dca57c1584b2b0",
+      "0x1f2f10d1c40777ae1da742455c65828ff36df387",
       "0x641d3865d80ebabc5686f4ac765841c2d652f4c3",
+      "0x000000d40b595b94918a28b27d1e2c66f43a51d3",
+      "0xe4000004000bd8006e00720000d27d1fa000d43e",
+      "0x4e69a51f24f5a46919113cc78ab262da74a4611d",
+      "0x00000000009e50a7ddb7a7b0e2ee6604fd120e49",
+      "0x2c10f2e3c2eaa722b78dbd9f7661ee22520554e6",
+      "0x00000000003b3cc22af3ae1eac0440bcee416b40",
+      "0x4736b02db015dcd1a57a69c889d073b100000000",
+      "0x1f6bf8a40514268cdd6b2d03f883bee4887a98db",
       "0xe8c060f8052e07423f71d445277c61ac5138a2e5",
-      "0x5ed5dd65ab0dc1bccc44eedaa40680c231faaa9f"
+      "0x54802815f6ddb69711fbd206dc65680bf9dbcbe2",
+      "0x01bd2da640345f1c29831b7cef9a434298408172",
+      "0x4ab12e7ce31857ee022f273e8580f73335a73c0b",
+      "0x6b75d8af000000e20b7a7ddf000ba900b4009a80",
+      "0x5ed5dd65ab0dc1bccc44eedaa40680c231faaa9f",
+      "0x6980a47bee930a4584b09ee79ebe46484fbdbdd0"
     ],
     "debt_tokens": {
       "0x531842cebbdd378f8ee36d171d6cc9c4fcf475ec": "USD",
       "0x6df1c1e379bc5a00a7b4c6e67a203333772f45a8": "USD",
       "0x619beb58998ed2278e08620f97007e1116d5d25b": "USD",
+      "0xcf8d0c70c850859266f5c338b38f9d663181c314": "USD",
       "0x72e95b8931767c79ba4eee721354d6e99a61d004": "USD",
-      "0xea51d7853eefb32b6ee06b1c12e6dcca88be0ffe": "WETH"
+      "0x6c3c78838c761c6ac7be9f59fe808ea2a6e4379d": "USD",
+      "0xea51d7853eefb32b6ee06b1c12e6dcca88be0ffe": "WETH",
+      "0xf63b34710400cad3e044cffdcab00a0f32e33ecf": "WETH",
+      "0xc96113eed8cab59cd8a66813bcb0ceb29f06d2e4": "WETH"
+    },
+    "special_tokens": {
+      "weth": [
+        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "WETH"
+      ],
+      "usdc": [
+        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "USD"
+      ],
+      "usdt": [
+        "0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "USD"
+      ],
+      "dai": [
+        "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "USD"
+      ],
+      "crvusd": [
+        "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "USD"
+      ],
+      "aethwsteth": [
+        "0x0B925eD163218f6662a35e0f0371Ac234f9E9371",
+        "WETH"
+      ],
+      "aethweth": [
+        "0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8",
+        "WETH"
+      ],
+      "aethdai": [
+        "0x018008bfb33d285247A21d44E50697654f754e63",
+        "USD"
+      ],
+      "mkusd": [
+        "0x4591DBfF62656E7859Afe5e45f6f47D3669fBB28",
+        "USD"
+      ],
+      "usde": [
+        "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+        "USD"
+      ],
+      "aethusdc": [
+        "0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c",
+        "USD"
+      ],
+      "crvfraxusdp": [
+        "0xFC2838a17D8e8B1D5456E0a351B0708a09211147",
+        "USD"
+      ],
+      "susde": [
+        "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497",
+        "USD"
+      ],
+      "ausdt": [
+        "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811",
+        "USD"
+      ],
+      "reth": [
+        "0xae78736Cd615f374D3085123A210448E74Fc6393",
+        "WETH"
+      ]
+    },
+    "special_tokens2": {
+      "0xbcca60bb61934080951369a648fb03df4f96263c": [
+        "aUSDC-V2",
+        "USD"
+      ]
     }
   },
   "fantom": {

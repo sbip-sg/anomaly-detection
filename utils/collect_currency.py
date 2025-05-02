@@ -99,22 +99,39 @@ def get_currency(address, chain, block_number, w3, rate_dict):
         currency_dict['NFT'] = NFT_dict
         return NFT_dict[address], 0, True, 0
     address = address.lower()
+    # get chain info
+    chain_token_info = chain_info[chain]
+    token_eq = None
+
     if address not in currency_dict:
         checksum_address = Web3.to_checksum_address(address)
         contract = w3.eth.contract(
             address=checksum_address,
             abi=abi,
         )
-        try:
-            # Get symbol
-            currency = contract.functions.symbol().call()
-            if currency in currency_address and currency_address[currency] != address:
-                currency = f'{currency}_{address}'
-            else:
-                currency_address[currency] = address
-        except Exception as e:
-            print('Error:', e, ' ,can not get transfer currency symbol', address)
-            currency = address
+        if address in chain_token_info["special_tokens2"]:
+            token_info = chain_token_info["special_tokens2"][address]
+            currency = token_info[0]
+            token_eq = token_info[1]
+        else:
+            try:
+                # Get symbol
+                currency = contract.functions.symbol().call()
+                special_tokens = chain_token_info["special_tokens"]
+                if currency.lower() in chain_token_info["special_tokens"]:
+                    token_info = special_tokens[currency.lower()]
+                    if checksum_address != token_info[0]:
+                        currency = f'{currency}_{address}'
+                    else:
+                        token_eq = token_info[1]
+                else:
+                    if currency in currency_address and currency_address[currency] != address:
+                        currency = f'{currency}_{address}'
+                    else:
+                        currency_address[currency] = address
+            except Exception as e:
+                print('Error:', e, ' ,can not get transfer currency symbol', address)
+                currency = address
 
         try:
             # Get decimals
@@ -128,17 +145,22 @@ def get_currency(address, chain, block_number, w3, rate_dict):
             print('Error:', e, ' ,can not get transfer currency decimal', address)
             decimal = 0
             total_supply = 0
-
-        try:
-            # Get exchange rate
-            checksum_address = Web3.to_checksum_address(address)
-            exchange_rate = get_rate(checksum_address, chain, block_number, w3, decimal)
-            # error rate removal
-            if exchange_rate * total_supply/pow(10, decimal) >= 1e13:
+        if token_eq:
+            if  token_eq in rate_dict:
+                exchange_rate = rate_dict[token_eq]
+            else:
+                exchange_rate = 1 if token_eq == 'USD' else 0
+        else:
+            try:
+                # Get exchange rate
+                checksum_address = Web3.to_checksum_address(address)
+                exchange_rate = get_rate(checksum_address, chain, block_number, w3, decimal)
+                # error rate removal
+                if exchange_rate * total_supply/pow(10, decimal) >= 1e11:
+                    exchange_rate = 0
+            except Exception as e:
+                print('Error:', e, ',can not get exchange_rate', address)
                 exchange_rate = 0
-        except Exception as e:
-            print('Error:', e, ',can not get exchange_rate', address)
-            exchange_rate = 0
         currency_dict[address] = (currency, decimal, exchange_rate, total_supply/pow(10, decimal))
         rate_dict[currency] = exchange_rate
     else:

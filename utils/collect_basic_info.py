@@ -1,6 +1,5 @@
 from requests.exceptions import HTTPError
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
 
 # Function to collect transaction information and return as a DataFrame
 def collect_info(transaction_hash, edpool):
@@ -9,7 +8,6 @@ def collect_info(transaction_hash, edpool):
         try:
             # Initialize Web3 instance with the RPC provider
             w3 = Web3(Web3.HTTPProvider(rpc))
-            w3.middleware_onion.inject(geth_poa_middleware, layer=0)
             # Get transaction details
             transaction = w3.eth.get_transaction(transaction_hash)
             # Get transaction receipt
@@ -48,6 +46,7 @@ def collect_info(transaction_hash, edpool):
         'gasLimit': transaction['gas'],  # Get gas limit from transaction receipt
         'gasUsed': receipt['gasUsed'],  # Get gas used from transaction receipt
         'timestamp': timestamp,
+        'status': receipt["status"],
         '4byteData': transaction['input'][:10]
     }
 

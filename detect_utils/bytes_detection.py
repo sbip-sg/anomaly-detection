@@ -4,6 +4,8 @@ gas_limits = load_json("detect_utils/gas_limit.json")  # Gas limit restriction
 
 # Define your detection function
 def detect_tx(transaction):
+    if transaction['status'] == 0:
+        return False
     recipient = transaction['to']
     if recipient == "empty":
         return True
