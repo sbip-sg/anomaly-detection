@@ -25,10 +25,10 @@ def rule_based_detection(tx_hash, gas_used, from_address, to_address, folder_pre
         detection_result = True
         reason.append('Token Supply Abrupt Changes Detected')
 
-    if detect_access_control(tx_hash, folder_prefix):
-        print('Lack Access Control Detected')  # To be updated
-        detection_result = True
-        reason.append('Lack Access Control Detected')
+    #if detect_access_control(tx_hash, folder_prefix):
+    #    print('Lack Access Control Detected')  # To be updated
+    #    detection_result = True
+    #    reason.append('Lack Access Control Detected')
 
     la_tx = False
 

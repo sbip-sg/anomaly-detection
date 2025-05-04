@@ -11,6 +11,7 @@ from detect_utils.bytes_detection import detect_4bytes
 from detect_utils.detect_all import rule_based_detection
 from detect_utils.chatgpt_detect import chatgpt_detect
 from detect_utils.tools import load_json
+from detect_utils.in_context_learning import in_context_output
 import json
 import time
 import pandas as pd
@@ -121,9 +122,9 @@ def main(block_number, chain, overwrite=False):
             selected_tx = tx_df[tx_df['hash'] == tx_hash]
             selected_tx_dict = selected_tx.to_dict(orient="records")[0]
             if not selected_tx.empty:
-                from_address = selected_tx.iloc[0]['from']
-                to_address = selected_tx.iloc[0]['to']
-                gas_used = selected_tx.iloc[0]['gasUsed']
+                from_address = selected_tx_dict['from']
+                to_address = selected_tx_dict['to']
+                gas_used = selected_tx_dict['gasUsed']
 
                 main_token, NFT_transaction = collect_token(tx_hash, chain, from_address, to_address,
                                            int(block_number), edpool, tx_folder_prefix)
@@ -145,7 +146,9 @@ def main(block_number, chain, overwrite=False):
                     json.dump(selected_tx_dict, json_file, indent=2)
                 rule_end_time = time.time()
                 time_dict['tx_details'][tx_hash]['rule_based'] = rule_end_time - token_end_time
-                generate_output(tx_hash, chain, selected_tx_dict, tx_folder_prefix, main_token)
+                if selected_tx_dict["detection_result"] or selected_tx_dict["la_tx"]:
+                    generate_output(tx_hash, chain, selected_tx_dict, tx_folder_prefix, main_token)
+                    in_context_output(to_address, int(block_number), selected_tx_dict["4byteData"], edpool, tx_folder_prefix, chain)
                 output_end_time = time.time()
                 time_dict['tx_details'][tx_hash]['output'] = output_end_time - rule_end_time
         print(f"CSV file created: {csv_file}")
