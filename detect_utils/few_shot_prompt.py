@@ -35,22 +35,22 @@ def get_transactions(address, block_number, page=1, offset=40, sort='asc'):
         print(f"HTTP Error {response.status_code}: {response.text}")
         return []
 
-def in_context_search(address, block_number, identifier):
+def transaction_search(address, block_number, identifier):
     transactions = get_transactions(address, block_number)
-    in_context_list = []
+    few_shot_list = []
     for tx in transactions:
         if tx['input'][:10] == identifier:
-            in_context_list.append(tx)
-    return in_context_list[:2]
+            few_shot_list.append(tx)
+    return few_shot_list[:2]
 
-def in_context_output(address, block_number, identifier, edpool, folder_prefix, chain):
-    in_context_list = in_context_search(address, block_number, identifier)
-    if in_context_list:
-        in_context_folder = f"{folder_prefix}/in_context"
-        os.makedirs(in_context_folder, exist_ok=True)
-        for tx in in_context_list:
+def few_shot_output(address, block_number, identifier, edpool, folder_prefix, chain):
+    few_shot_list = transaction_search(address, block_number, identifier)
+    if few_shot_list:
+        few_shot_folder = f"{folder_prefix}/few_shots"
+        os.makedirs(few_shot_folder, exist_ok=True)
+        for tx in few_shot_list:
             tx_hash = tx['hash']
-            tx_folder_prefix = f"{in_context_folder}/{tx_hash}"
+            tx_folder_prefix = f"{few_shot_folder}/{tx_hash}"
             os.makedirs(tx_folder_prefix, exist_ok=True)
             basic_info = collect_info(tx_hash, edpool)
             collect_trace(tx_hash, edpool, tx_folder_prefix)

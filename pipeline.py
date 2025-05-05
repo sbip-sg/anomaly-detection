@@ -11,7 +11,7 @@ from detect_utils.bytes_detection import detect_4bytes
 from detect_utils.detect_all import rule_based_detection
 from detect_utils.chatgpt_detect import chatgpt_detect
 from detect_utils.tools import load_json
-from detect_utils.in_context_learning import in_context_output
+from detect_utils.few_shot_prompt import few_shot_output
 import json
 import time
 import pandas as pd
@@ -148,7 +148,8 @@ def main(block_number, chain, overwrite=False):
                 time_dict['tx_details'][tx_hash]['rule_based'] = rule_end_time - token_end_time
                 if selected_tx_dict["detection_result"] or selected_tx_dict["la_tx"]:
                     generate_output(tx_hash, chain, selected_tx_dict, tx_folder_prefix, main_token)
-                    in_context_output(to_address, int(block_number), selected_tx_dict["4byteData"], edpool, tx_folder_prefix, chain)
+                    few_shot_result = few_shot_output(to_address, int(block_number), selected_tx_dict["4byteData"], edpool, tx_folder_prefix, chain)
+
                 output_end_time = time.time()
                 time_dict['tx_details'][tx_hash]['output'] = output_end_time - rule_end_time
         print(f"CSV file created: {csv_file}")
