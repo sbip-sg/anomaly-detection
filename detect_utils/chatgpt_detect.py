@@ -90,11 +90,11 @@ def chatgpt_detect(tx_hash, folder_prefix, few_shot_learning):
 
     generated_text = response.choices[0].message.content
 
-    print(generated_text)
     print(f"Response time: {elapsed_time:.2f} seconds")
 
-    # Save output to a text file
-    with open(output_file, "w", encoding="utf-8") as txt_file:
-        txt_file.write(generated_text)
+    try:
+        score = json.loads(generated_text)
+    except:
+        score = 0
 
-    return True
+    return score, elapsed_time
