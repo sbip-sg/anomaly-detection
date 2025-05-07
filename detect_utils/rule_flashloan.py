@@ -23,13 +23,12 @@ def has_flashloan(tx_hash, folder_prefix):
     return address_list
 
 # Detect whether a transaction uses flashloan and has high incomes.
-def detect_flashloan_transaction(tx_hash, folder_prefix):
-    basic_info = collect_from_file(folder_prefix, '/basic_info.json')
+def detect_flashloan_transaction(tx_hash, gas_used, from_address, to_address, folder_prefix):
     trace = collect_from_file(folder_prefix, '/invocation_tree/decode_trace_' + tx_hash + '.json')
     address_list = has_flashloan(tx_hash, folder_prefix)
 
     # Gas usage not passed
-    if not filter_transaction(basic_info, trace):
+    if not filter_transaction(gas_used, to_address):
         return False
 
     # No flashloan
@@ -39,12 +38,12 @@ def detect_flashloan_transaction(tx_hash, folder_prefix):
     else:
         possible_hack = False
 
-        address_list.append(basic_info['from'])
-        address_list.append(basic_info['to'])
+        address_list.append(from_address)
+        address_list.append(to_address)
 
         # Detect incomes of addresses
         for address in address_list:
-            if check_balance(tx_hash, folder_prefix, address):
+            if check_balance(tx_hash, folder_prefix, address, 27000):
                 possible_hack = True
 
         return possible_hack

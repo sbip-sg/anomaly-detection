@@ -15,7 +15,7 @@ def collect_idx(tx_hash, folder_prefix):
     event_parent_dict = {}
 
     # normally in an attack transaction, there is at least one address suffer loss.
-    if not check_balance_negative(tx_hash, folder_prefix, -10000):
+    if not check_balance_negative(tx_hash, folder_prefix, -8000):  # 8k USD, 10% of the samples
         return idx_dict
 
     for element in trace:
@@ -75,27 +75,29 @@ def collect_idx(tx_hash, folder_prefix):
                 # get exchange value
                 data = element['raw']['data'][2:]
                 if data:
-                    amount = int(data, 16)
+                    amount = int(data[:66], 16)
                 else:
                     amount = int(element['raw']['topics'][-1][2:], 16)
 
                 # get usd values. this has triggered overflow of int so add try.
                 try:
-                    usd_value = rate * amount / pow(10, decimal)
+                    value = amount / pow(10, decimal)
+                    usd_value = rate * value
                 except (ValueError, TypeError):
-                    usd_value = 20000
+                    usd_value = 25000      # 25k USD, 20% of the samples, this happens when amount is vary large
             # need to check this event call's parent and parent of parent
-            checked_idx = event_parent_dict[depth]
-            if checked_idx not in idx_dict and isinstance(checked_idx, int):
-                idx_dict[checked_idx] = usd_value
-            # check whether this event call's parent has a parent with the same address
-            same_address = False
-            if checked_idx in parent_dict:
-                if parent_dict[checked_idx][0] in parent_dict:
-                    same_address = parent_dict[checked_idx][2] == parent_dict[parent_dict[checked_idx][0]][2]
-                # if not same address
-                if parent_dict[checked_idx][0] not in idx_dict and not same_address:
-                    idx_dict[parent_dict[checked_idx][0]] = usd_value
+            if depth in event_parent_dict:
+                checked_idx = event_parent_dict[depth]
+                if checked_idx not in idx_dict and isinstance(checked_idx, int):
+                    idx_dict[checked_idx] = usd_value
+                # check whether this event call's parent has a parent with the same address
+                same_address = False
+                if checked_idx in parent_dict:
+                    if parent_dict[checked_idx][0] in parent_dict:
+                        same_address = parent_dict[checked_idx][2] == parent_dict[parent_dict[checked_idx][0]][2]
+                    # if not same address
+                    if parent_dict[checked_idx][0] not in idx_dict and not same_address:
+                        idx_dict[parent_dict[checked_idx][0]] = usd_value
     return idx_dict
 
 
@@ -136,7 +138,6 @@ def detect_access_control(tx_hash, folder_prefix):
     trace = collect_from_file(folder_prefix, '/trace_json/trace_' + tx_hash + '.json')
     # get all USD values and USD values of call without access control
     sum_value = 0
-    sum_all_value = sum(idx_dict.values())
     for t in trace:
         if 'call' in t['kind'] and t['call_idx'] in idx_dict:
             opcodes = t['opcodes']
@@ -147,6 +148,6 @@ def detect_access_control(tx_hash, folder_prefix):
             if not check_opcodes(opcodes):
                 sum_value += idx_dict[t['call_idx']]
     # if USD values of non-access-control and all transfers exceed settings
-    if sum_value > 20000 and sum_all_value > 40000:
+    if sum_value > 63000:  # filtered in SVM
         return True
     return False

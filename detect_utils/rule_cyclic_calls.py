@@ -21,13 +21,10 @@ def has_cycle(xs):
 # Detector containing two checks to be considered as possible hack:
 # 1. cyclic calls in transactions: each sequence of calls with minimum length MIN_CALL_LENGTH
 # 2. if the sender's balance changes by more than 10k USD
-def detect_cyclic_transaction(tx_hash, folder_prefix):
-    basic_info = collect_from_file(folder_prefix, '/basic_info.json')
+def detect_cyclic_transaction(tx_hash, gas_used, sender, to_address, folder_prefix):
     trace = collect_from_file(folder_prefix, '/invocation_tree/decode_trace_' + tx_hash + '.json')
-    if not filter_transaction(basic_info, trace):
+    if not filter_transaction(gas_used, to_address):
         return False
-
-    sender = basic_info.get('from')
     functions = []
 
     for call in trace:
@@ -39,7 +36,7 @@ def detect_cyclic_transaction(tx_hash, folder_prefix):
             print(f"Unknown trace type: {call['type']}")
 
     possible_hack = False
-    if has_cycle(functions) is not None:
-        possible_hack = check_balance(tx_hash, folder_prefix, sender)
+    if has_cycle(functions[:500]) is not None:
+        possible_hack = check_balance(tx_hash, folder_prefix, sender, 27000)
 
     return possible_hack
