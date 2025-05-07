@@ -34,13 +34,13 @@ def main(tx_hash, chain, overwrite=False, use_llm=False):
 
     # Collect traces (raw invocation tree)
     collect_trace(tx_hash, edpool, folder_prefix)
-    foundry_to_graph(folder_prefix)
 
     # Decode trace JSON and extract information from invocation tree
-    decode_trace_json(folder_prefix)
+    decode_trace_json(tx_hash, folder_prefix)
+    foundry_to_graph(tx_hash, folder_prefix)
 
     # According to the decoded invocation tree, get token flow and balance changes.
-    main_token = collect_token(tx_hash, chain, basic_info['from'], basic_info['to'], basic_info['blocknumber'], edpool, folder_prefix)
+    main_token = collect_token(tx_hash, chain, basic_info['from'], basic_info['to'], basic_info['blockNumber'], edpool, folder_prefix)
 
     # Save basic information
     with open(folder_prefix + '/basic_info.json', 'w') as json_file:
