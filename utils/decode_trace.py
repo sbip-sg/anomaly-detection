@@ -9,6 +9,35 @@ try:
 except ImportError:
     from db_tools import get_function_signature, get_event_db_signature
 
+# Define the JSON file name
+FUNC_EVENT_JSON = "func_event_dict.json"
+
+# Load existing function-event dictionary from file
+def load_func_event_dict():
+    if os.path.exists(FUNC_EVENT_JSON):
+        with open(FUNC_EVENT_JSON, "r") as f:
+            return json.load(f)
+    return {}
+
+# Save function-event dictionary to file
+def save_func_event_dict():
+    with open(FUNC_EVENT_JSON, "w") as f:
+        json.dump(func_event_dict, f, indent=4)
+
+# Initialize dictionary from JSON file
+func_event_dict = load_func_event_dict()
+
+def get_function(func_hash, is_event = False):
+    if func_hash not in func_event_dict:
+        if is_event:
+            signature = get_event_db_signature(func_hash)
+        else:
+            signature = get_function_signature(func_hash)
+        func_event_dict[func_hash] = signature
+        return signature
+    else:
+        return func_event_dict[func_hash]
+
 # Parse the structure of parameter types of a function
 def parse_structure(structure):
     def parse_element(element):
@@ -61,8 +90,10 @@ def parse_structure(structure):
     return parse_element(structure)
 
 def process_function(function):
+    if not function or not isinstance(function,str):
+        return 'invalid function', {}
     # Can not determine the function of this hash
-    if function.find(';') != -1:
+    if function.find(';') != -1 or function.find('(') == -1:
         return function, {}
     try:
         # Separate function name and parameters
@@ -114,7 +145,7 @@ def decode_input(function_text, input_hash):
     if len(input_hash) % 64 == 0:
         # If decoded function name is only one(possible to find several function sharing same 4bytes)
         # and function_text have parameters, we use decode from eth_abi package to decode them
-        if len(function_text.split('(', 1)) != 1 and len(input_hash) != 0 and len(function_text.split(';')) == 1:
+        if isinstance(function_text, str) and len(function_text.split('(', 1)) != 1 and len(input_hash) != 0 and len(function_text.split(';')) == 1:
             start_index = function_text.find('(')
             end_index = function_text.rfind(')')
             raw_parameters = function_text[start_index + 1:end_index]
@@ -170,7 +201,19 @@ def decode_unknown_input(chunks, data=False, event=True, transfer = False):
             elif count_of_zeros == 64:  # Address type
                 input_list.append(decode(['address'], bytes.fromhex(line))[0])
         else:
-            input_list.append(decode(['address'], bytes.fromhex(line))[0])
+            if len(input_list) < 2:
+                input_list.append(decode(['address'], bytes.fromhex(line))[0])
+            else:
+                if 24 <= count_of_zeros < 35:  # Address type
+                    input_list.append(decode(['address'], bytes.fromhex(line))[0])
+                # Number: We consider that the biggest number is 16^28 more than 10e33 and for normal wei = 1e18
+                # Normally most numbers are no bigger than 1e15
+                elif 35 <= count_of_zeros < 64:  # uint256 type
+                    input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
+                # null address
+                elif count_of_zeros == 64:  # Address type
+                    input_list.append(decode(['address'], bytes.fromhex(line))[0])
+                transfer = False
     return input_list
 
 
@@ -301,9 +344,9 @@ def decode_trace_json(folder_prefix="result"):
     # Get list of JSON files in trace_json directory with raw traces
     jsonlist = listdir(folder_prefix + '/trace_json')
     for i in jsonlist:
-        file = open(folder_prefix + '/trace_json/' + i)
+        with open(folder_prefix + '/trace_json/' + i) as f:
+            tx = json.load(f)
         invocation_tree = []
-        tx = json.load(file)
         locations = [-1]
         for trace in tx:
             new_trace = {"type": trace['kind'].lower()}
@@ -345,6 +388,13 @@ def decode_trace_json(folder_prefix="result"):
                         new_args.append(arg)
                     new_trace["input"] = new_args
                     if len(new_args) == 0 and len(trace['data'][10:]) != 0:
+                        if func_hash == "52bbbe29":
+                            new_trace["function"] = \
+                                "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)"
+                            new_trace["functionName"] = "swap"
+                        else:
+                            new_trace["function"] =  get_function(func_hash)
+                            new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
                         new_trace["input"] = decode_input(new_trace["function"], input_hash)
                         new_trace["decodeStatue"] = "database"
                     else:
@@ -353,7 +403,7 @@ def decode_trace_json(folder_prefix="result"):
                 else:
 
                     # Use function signature database to search for 4bytes
-                    func_name = get_function_signature(func_hash)
+                    func_name = get_function(func_hash)
 
                     if func_name:
                         new_trace["decodeStatue"] = "database"
@@ -383,16 +433,18 @@ def decode_trace_json(folder_prefix="result"):
                     func_hash = trace['raw']['topics'][0][2:]
 
                     # Use event signature database to search for 4bytes
-                    event_name = get_event_db_signature(func_hash)
+                    event_name = get_function(func_hash, is_event=True)
                     if event_name:
                         new_trace["function"] = event_name
                     else:
                         new_trace["function"] = func_hash
-
+                else:
+                    new_trace["function"] = "0x"
                 # For events, foundry do not give significant parameters
                 new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
-                istransfer = new_trace['data'] and new_trace["function"].lower() == 'transfer'
-                new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:], transfer=istransfer)
+                is_transfer = (new_trace["function"].lower() in ['deposit', 'withdrawal']
+                               or (new_trace["function"].lower() == 'transfer' and len(trace['raw']['topics']) > 2))
+                new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:], transfer=is_transfer)
 
             # If trace is a create log
             elif 'create' in trace['kind'].lower():
@@ -421,4 +473,5 @@ def decode_trace_json(folder_prefix="result"):
         # Dump the decoded invocation tree to a json file
         with open(json_file_path + 'decode_' + i, 'w') as jsonfile:
             json.dump(invocation_tree, jsonfile, default=convert_bytes_to_string, indent=2)
+        save_func_event_dict()
         print('decode_invocation_tree_finished', i)
