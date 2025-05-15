@@ -190,20 +190,8 @@ def decode_unknown_input(chunks, data=False, event=True, transfer = False):
         count_of_zeros = len(line) - len(line.lstrip('0'))  # Count leading zeros
         # Address: normally length == 40, considering starting with zeros, we have a buffer for 10 zeros.
         # The possibility of missing an address is 1/2^40, which means that is mostly impossible.
-        if not transfer:
-            if 24 <= count_of_zeros < 35:  # Address type
-                input_list.append(decode(['address'], bytes.fromhex(line))[0])
-            # Number: We consider that the biggest number is 16^28 more than 10e33 and for normal wei = 1e18
-            # Normally most numbers are no bigger than 1e15
-            elif 35 <= count_of_zeros < 64:  # uint256 type
-                input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
-            # null address
-            elif count_of_zeros == 64:  # Address type
-                input_list.append(decode(['address'], bytes.fromhex(line))[0])
-        else:
-            if len(input_list) < 2:
-                input_list.append(decode(['address'], bytes.fromhex(line))[0])
-            else:
+        try:
+            if not transfer:
                 if 24 <= count_of_zeros < 35:  # Address type
                     input_list.append(decode(['address'], bytes.fromhex(line))[0])
                 # Number: We consider that the biggest number is 16^28 more than 10e33 and for normal wei = 1e18
@@ -213,7 +201,23 @@ def decode_unknown_input(chunks, data=False, event=True, transfer = False):
                 # null address
                 elif count_of_zeros == 64:  # Address type
                     input_list.append(decode(['address'], bytes.fromhex(line))[0])
-                transfer = False
+            else:
+                if len(input_list) < 2:
+                    input_list.append(decode(['address'], bytes.fromhex(line))[0])
+                else:
+                    if 24 <= count_of_zeros < 35:  # Address type
+                        input_list.append(decode(['address'], bytes.fromhex(line))[0])
+                    # Number: We consider that the biggest number is 16^28 more than 10e33 and for normal wei = 1e18
+                    # Normally most numbers are no bigger than 1e15
+                    elif 35 <= count_of_zeros < 64:  # uint256 type
+                        input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
+                    # null address
+                    elif count_of_zeros == 64:  # Address type
+                        input_list.append(decode(['address'], bytes.fromhex(line))[0])
+                    transfer = False
+        except Exception as e:
+            print("unable to decode:", e)
+            input_list.append("0x")
     return input_list
 
 
@@ -441,7 +445,8 @@ def decode_trace_json(tx_hash, folder_prefix):
                 new_trace["function"] = "0x"
             # For events, foundry do not give significant parameters
             new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
-            is_transfer = (new_trace["function"].lower() in ['deposit', 'withdrawal']
+            is_transfer = ((new_trace["function"].lower() in ['deposit', 'withdrawal']
+                            and new_trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
                            or (new_trace["function"].lower() == 'transfer' and len(trace['raw']['topics']) > 2))
             new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:], transfer=is_transfer)
 
