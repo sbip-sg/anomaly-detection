@@ -1,5 +1,5 @@
 import json
-import time
+import os
 import requests
 
 def load_json(filepath):
@@ -14,6 +14,7 @@ def collect_from_file(folder_prefix, filename):
     return output_json
 
 def contract_creator(contract_addresses):
+    contract_addresses = list(set(contract_addresses))
     url = "https://api.etherscan.io/v2/api"
     api_key = "VVAXBFG3KQAZHF4EGQ2FTTFES5ZA1WS3UZ"  # Replace with your API key
 
@@ -38,12 +39,61 @@ def contract_creator(contract_addresses):
         if response.ok:
             data = response.json()
             for entry in data.get('result', []):
+                entry.pop('creationBytecode', None)  # Safely remove the field if it exists
                 results[entry['contractAddress']] = entry
         else:
             print(f"Error with batch {batch}: {response.status_code}, {response.text}")
 
         index += 5
-        # Optional: Respect API rate limits
-        time.sleep(0.2)
 
     return results
+
+def get_contract_info(contract_addresses, json_path='contract_info.json'):
+    # Load existing data if file exists
+    if os.path.exists(json_path):
+        with open(json_path, 'r') as f:
+            existing_data = json.load(f)
+    else:
+        existing_data = {}
+
+    contract_addresses = [addr.lower() for addr in contract_addresses]  # Normalize
+    cached_addresses = set(existing_data.keys())
+    new_addresses = list(set(contract_addresses) - cached_addresses)
+
+    # Query only new addresses
+    if new_addresses:
+        print(f"Querying {len(new_addresses)} new addresses from API...")
+        new_data = contract_creator(new_addresses)
+        existing_data.update(new_data)
+
+        # Save back to JSON
+        with open(json_path, 'w') as f:
+            json.dump(existing_data, f, indent=2)
+    else:
+        print("All addresses found in local cache.")
+
+    # Return only requested addresses
+    return {addr: existing_data[addr] for addr in contract_addresses if addr in existing_data}
+
+def brief_address_info(creation_info):
+    if len(creation_info["contractFactory"]) != 0:
+        code_created = False
+    else:
+        code_created = True
+    return creation_info["contractCreator"], creation_info["timestamp"], code_created
+
+def extract_contract_info(tx_data):
+    contract_addresses = []
+    output_tx_data = []
+    for basic_info in tx_data:
+        if not basic_info["to_is_eoa"]:
+            contract_addresses.append(basic_info["to"])
+    contract_creators = get_contract_info(contract_addresses)
+    for basic_info in tx_data:
+        if basic_info["to_is_eoa"]:
+            basic_info["to_creator"], basic_info["to_timestamp"], basic_info["code_created"] = "0x", 0, False
+        else:
+            basic_info["to_creator"], basic_info["to_timestamp"], basic_info["code_created"] \
+                = brief_address_info(contract_creators[basic_info["to"]])
+        output_tx_data.append(basic_info)
+    return output_tx_data

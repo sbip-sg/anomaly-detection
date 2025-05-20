@@ -58,7 +58,7 @@ def generate_message(json_data: dict, few_shot_inputs = None):
 
     return messages
 
-def chatgpt_detect(tx_hash, folder_prefix, few_shot_learning):
+def chatgpt_detect(tx_hash, folder_prefix, few_shot_learning = False):
     # Read the content of the JSON file
     input_file = f"{folder_prefix}/output_{tx_hash}.json"
     output_file = f"{folder_prefix}/llm_result_{tx_hash}.txt"

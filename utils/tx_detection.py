@@ -5,7 +5,6 @@ from utils.token_info import collect_token
 from utils.generate_output import generate_output
 from detect_utils.detect_all import rule_based_detection
 from detect_utils.chatgpt_detect import chatgpt_detect
-from detect_utils.few_shot_prompt import few_shot_output
 import json
 import time
 
@@ -19,7 +18,7 @@ def tx_detect(tx_hash, chain, block_number, folder_prefix, selected_tx_dict, edp
     foundry_end_time = time.time()
     tx_time_dict['foundry'] = foundry_end_time - tx_detail_start_time
     # Decode trace JSON and extract information from invocation tree
-    decode_trace_json(tx_folder_prefix)
+    decode_trace_json(tx_hash, tx_folder_prefix)
     decode_end_time = time.time()
     tx_time_dict['decode'] = decode_end_time - foundry_end_time
     if selected_tx_dict:
@@ -47,10 +46,8 @@ def tx_detect(tx_hash, chain, block_number, folder_prefix, selected_tx_dict, edp
         tx_time_dict['rule_based'] = rule_end_time - token_end_time
         if selected_tx_dict["detection_result"] or selected_tx_dict["la_tx"]:
             generate_output(tx_hash, chain, selected_tx_dict, tx_folder_prefix, main_token)
-            few_shot_result = few_shot_output(to_address, int(block_number), selected_tx_dict["4byteData"], edpool,
-                                              tx_folder_prefix, chain)
             if llm_detect:
-                score = chatgpt_detect(tx_hash, tx_folder_prefix, few_shot_result)
+                score = chatgpt_detect(tx_hash, tx_folder_prefix)
                 selected_tx_dict['llm_score'] = score
         with open(tx_folder_prefix + f"/basic_info_{tx_hash}.json", "w") as json_file:
             json.dump(selected_tx_dict, json_file, indent=2)

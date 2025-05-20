@@ -4,8 +4,8 @@ from utils.get_rpc import EndpointPool
 from utils.tx_detection import tx_detect
 from utils.collect_basic_info import collect_info
 from utils.collect_block import collect_block_all
+from utils.tools import load_json, extract_contract_info
 from detect_utils.bytes_detection import detect_4bytes
-from detect_utils.tools import load_json
 import json
 import time
 import pandas as pd
@@ -38,6 +38,7 @@ def main(block_number, chain, overwrite=False, llm_detect=False):
     block_tx_info_start_time = time.time()
     # Collect transaction details
     tx_data = [collect_info(tx_hash, edpool) for tx_hash in tx_list]
+    tx_data = extract_contract_info(tx_data)
     block_tx_info_end_time = time.time()
     time_dict['basic_info'] = block_tx_info_end_time - block_tx_info_start_time
     print(f"Block transaction info collection time: {block_tx_info_end_time - block_tx_info_start_time:.2f} seconds")
