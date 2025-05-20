@@ -1,8 +1,5 @@
-import json
-
-from mpmath import power
 from web3 import Web3
-from detect_utils.tools import load_json
+from utils.tools import load_json
 
 # Load ABI files and token info using the function
 abi = load_json("utils/erc20.abi.json")  # ABI for ERC-20 contract
@@ -31,7 +28,7 @@ erc165_abi = [{
 # Dict to store NFT address
 NFT_dict = {}
 
-def is_NFT(contract_address, w3):
+def is_nft(contract_address, w3):
     contract = w3.eth.contract(address=contract_address, abi=erc165_abi)
 
     try:
@@ -138,7 +135,7 @@ def get_currency(address, chain, block_number, w3, rate_dict):
             decimal = contract.functions.decimals().call()
             total_supply = contract.functions.totalSupply().call()
         except Exception as e:
-            if is_NFT(checksum_address, w3):
+            if is_nft(checksum_address, w3):
                 NFT_dict[address] = currency
                 currency_dict['NFT'] = NFT_dict
                 return currency, 0, True, 0

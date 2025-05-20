@@ -1,5 +1,4 @@
 import json
-from os import listdir
 from eth_abi import decode
 import os
 import re

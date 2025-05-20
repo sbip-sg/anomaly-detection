@@ -1,4 +1,4 @@
-from detect_utils.tools import collect_from_file
+from utils.tools import collect_from_file
 from utils.collect_transfer import find_address_transfer_event
 import json
 import tiktoken
