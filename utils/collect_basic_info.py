@@ -1,5 +1,4 @@
 from requests.exceptions import HTTPError
-from utils.tools import brief_address_info
 from web3 import Web3
 
 # Function to collect transaction information and return as a DataFrame
