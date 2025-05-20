@@ -1,4 +1,4 @@
-from detect_utils.tools import collect_from_file
+from utils.tools import collect_from_file
 from utils.collect_transfer import find_address_transfer_event
 import json
 import tiktoken
@@ -211,13 +211,13 @@ def transform_trace(tx_hash, folder_prefix, main_token, chain, main_token_rate):
                 calls[parent] += collect_event(t, currency_dict, chain, main_token_rate)
         elif 'create' in t['type']:
             c_value = rounded_number(t["value"]/ 1e18)
-            USD_value = rounded_number(main_token_rate * t["value"] / 1e18, usd_mode=True)
-            calls['c' + str(c_index)] = f'{shorten_address(t["from"])} creates {shorten_address(t['to'])} funding {c_value} {main_token} as {USD_value} USD.'
+            usd_value = rounded_number(main_token_rate * t["value"] / 1e18, usd_mode=True)
+            calls['c' + str(c_index)] = f'{shorten_address(t["from"])} creates {shorten_address(t['to'])} funding {c_value} {main_token} as {usd_value} USD.'
             c_index += 1
         elif 'selfdestruct' in t['type']:
             d_value = rounded_number(t["value"]/ 1e18)
-            USD_value = rounded_number(main_token_rate * t["value"] / 1e18, usd_mode=True)
-            calls['d' + str(d_index)] = f'{shorten_address(t["address"])} self-destructs refunding {d_value} {main_token} as {USD_value} USD to {shorten_address(t["refund_target"])}.'
+            usd_value = rounded_number(main_token_rate * t["value"] / 1e18, usd_mode=True)
+            calls['d' + str(d_index)] = f'{shorten_address(t["address"])} self-destructs refunding {d_value} {main_token} as {usd_value} USD to {shorten_address(t["refund_target"])}.'
             d_index += 1
     return calls
 
