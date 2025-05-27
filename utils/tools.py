@@ -74,12 +74,12 @@ def get_contract_info(contract_addresses, json_path='contract_info.json'):
         print(f"Querying {len(new_addresses)} new addresses from API...")
         new_data = contract_creator(new_addresses)
         existing_data.update(new_data)
-
-        # Save back to JSON
-        with open(json_path, 'w') as f:
-            json.dump(existing_data, f, indent=2)
     else:
         print("All addresses found in local cache.")
+
+    # Save back to JSON
+    with open(json_path, 'w') as f:
+        json.dump(existing_data, f, indent=2)
 
     # Return only requested addresses
     return {addr: existing_data[addr] for addr in contract_addresses if addr in existing_data}
