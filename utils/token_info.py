@@ -4,6 +4,7 @@ from os import listdir
 from web3 import Web3
 from utils.collect_transfer import find_address_transfer_event, deal_transfer, othertransfer
 from utils.collect_currency import get_currency, get_main_token, get_currency_dict, reset_currency_dict
+from utils.tools import is_address
 import os
 
 
@@ -33,6 +34,16 @@ def remove_zeros(total_dict):
             del total_dict[key1][key2]
     return total_dict
 
+# add an address to the list
+def add_to_list(address_list, value, w3, safe_check=False):
+    if Web3.is_address(value) and value not in address_list:
+        if not safe_check:
+            address_list.append(value)
+        else:
+            checksum_address = w3.to_checksum_address(value)
+            code = w3.eth.get_code(checksum_address)
+            if code != b'':
+                address_list.append(value)
 
 # collect tokens from decoded invocation tree
 def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, edpool, folder_prefix):
@@ -41,6 +52,8 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
     reset_currency_dict()
     # collect balance change of each transaction
     total_dict = {}
+    # collect balance change of each transaction
+    address_list = []
 
     # indicate whether an NFT transaction
     nft_transaction = False
@@ -70,9 +83,12 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
                 if trace["status"].lower() == 'revert' or trace["parent"] in revert_idx_list:
                     revert_idx_list.append(trace['call_idx'])
                     revert_idx_list.extend(trace['children'])
+                else:
+                    add_to_list(address_list, trace['to'], w3)
 
             # event does not show successful status, only to see whether last call is successful
             if trace['type'] == 'event' and trace['parent'] not in revert_idx_list:
+                add_to_list(address_list, trace['address'], w3)
                 event_name = trace["function"]
                 input_value = trace['input']
 
@@ -80,6 +96,8 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
                 if event_name.lower() == 'transfer' and len(input_value) != 0:
                     currency, decimal, is_nft, _ = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
                     from_address, to_address, amount = find_address_transfer_event(trace, input_value)
+                    add_to_list(address_list, from_address, w3, safe_check=True)
+                    add_to_list(address_list, to_address, w3, safe_check=True)
                     if amount == "0x0000000000000000000000000000000000000000":
                         amount = 0
                     if isinstance(amount, int):
@@ -97,6 +115,7 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
                 elif event_name.lower() == 'withdrawal' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
                     currency, decimal, _, _ = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
                     from_address = input_value[0]
+                    add_to_list(address_list, from_address, w3, safe_check=True)
                     if len(trace['data']) == 2:
                         amount = trace['data'][1]
                     else:
@@ -107,15 +126,16 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
 
                 # event name as deposit refers to token deposit
                 elif event_name.lower() == 'deposit' and trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2':
-                        currency, decimal, _, _ = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
-                        to_address = input_value[0]
-                        if len(trace['data']) == 2:
-                            amount = trace['data'][1]
-                        else:
-                            amount = trace['data'][0]
-                        if isinstance(amount, int):
-                            summary_dict = othertransfer(summary_dict, currency, trace['address'], to_address,
-                                                     amount / pow(10, decimal), flow)
+                    currency, decimal, _, _ = get_currency(trace['address'], chain, block_number - 1, w3, rate_dict)
+                    to_address = input_value[0]
+                    add_to_list(address_list, to_address, w3, safe_check=True)
+                    if len(trace['data']) == 2:
+                        amount = trace['data'][1]
+                    else:
+                        amount = trace['data'][0]
+                    if isinstance(amount, int):
+                        summary_dict = othertransfer(summary_dict, currency, trace['address'], to_address,
+                                                 amount / pow(10, decimal), flow)
 
             # for local token flow, there mostly is a trace with non-zero value
             if trace['type'] == 'call'  or trace['type'] == 'create' and trace["value"] != 0:
@@ -127,6 +147,8 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
                     summary_dict = deal_transfer(summary_dict, main_token, trace, flow)
 
             if trace['type'] == 'selfdestruct' and trace["value"] != 0:
+                add_to_list(address_list, trace['address'], w3)
+                add_to_list(address_list, trace['refund_target'], w3, safe_check=True)
                 if 'parent' in trace.keys() and trace['parent'] in revert_idx_list:
                     pass
                 else:
@@ -188,4 +210,4 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
     with open(folder_prefix + '/token_info/currency_dict.json', 'w') as json_file3:
         json.dump(currency_dict, json_file3, indent=2)
 
-    return main_token, nft_transaction
+    return main_token, nft_transaction, address_list

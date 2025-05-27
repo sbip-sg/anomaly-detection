@@ -13,6 +13,14 @@ def collect_from_file(folder_prefix, filename):
         output_json = json.load(input_json)
     return output_json
 
+# Check whether a value is an address
+def is_address(value):
+    if not isinstance(value, str):
+        return False
+    if len(value) == 42 and value.startswith("0x"):
+        return True
+    return False
+
 def contract_creator(contract_addresses):
     contract_addresses = list(set(contract_addresses))
     url = "https://api.etherscan.io/v2/api"
@@ -38,9 +46,10 @@ def contract_creator(contract_addresses):
 
         if response.ok:
             data = response.json()
-            for entry in data.get('result', []):
-                entry.pop('creationBytecode', None)  # Safely remove the field if it exists
-                results[entry['contractAddress']] = entry
+            if data["status"] != '0':
+                for entry in data.get('result', []):
+                    entry.pop('creationBytecode', None)  # Safely remove the field if it exists
+                    results[entry['contractAddress']] = entry
         else:
             print(f"Error with batch {batch}: {response.status_code}, {response.text}")
 

@@ -84,7 +84,7 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--overwrite", action="store_true", help="Overwrite existing result")
     args = parser.parse_args()
     if "," in args.input_block_number:
-        block_numbers = args.block_number.split(",")
+        block_numbers = args.input_block_number.split(",")
         print(f'Collecting data for {len(block_numbers)} blocks.')
         for input_block_number in block_numbers:
             if isinstance(input_block_number, str) and input_block_number.isdigit():

@@ -38,6 +38,29 @@ def filter_transaction(gas_used, to_address):
 
     return False
 
+# Sum balance changes according to trader side and public side
+def separate_balance(tx_hash, folder_prefix, from_address, to_address):
+    balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
+    address_dict = collect_from_file(folder_prefix, '/token_info/address_dict.json')
+    traders = [from_address, to_address]
+    trader_sum_list = []
+    public_contract_sum_list = []
+    for address in balance_change.keys():
+        address_balance_change = balance_change.get(address)
+        address_usd_change = 0
+        for token in address_balance_change:
+            address_usd_change += address_balance_change[token][1]
+        if address in traders:
+            trader_sum_list.append(address_usd_change)
+        elif address in address_dict:
+            if address_dict[address]["contractCreator"] == from_address:
+                trader_sum_list.append(address_usd_change)
+            else:
+                public_contract_sum_list.append(address_usd_change)
+        else:
+            trader_sum_list.append(address_usd_change)
+    return {"trader": trader_sum_list, "public": public_contract_sum_list}
+
 # Detect the balance change of given address of a transaction
 def check_balance(tx_hash, folder_prefix, address, threshold):
     possible_hack = False

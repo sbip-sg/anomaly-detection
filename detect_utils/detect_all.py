@@ -1,8 +1,9 @@
+import json
 from detect_utils.rule_cyclic_calls import detect_cyclic_transaction
 from detect_utils.rule_flashloan import detect_flashloan_transaction
 from detect_utils.rule_token_supply import detect_token_supply
 from detect_utils.rule_access_control import detect_access_control
-from detect_utils.tools import check_balance, check_balance_all, check_total_supply
+from detect_utils.tools import check_balance, check_balance_all, check_total_supply, separate_balance
 
 # Combine all detections in detect_utils
 def rule_based_detection(tx_hash, gas_used, from_address, to_address, folder_prefix):
@@ -31,6 +32,11 @@ def rule_based_detection(tx_hash, gas_used, from_address, to_address, folder_pre
     #    reason.append('Lack Access Control Detected')
 
     la_tx = False
+
+    separated = separate_balance(tx_hash, folder_prefix, from_address, to_address)
+    with open(f"{folder_prefix}/separated.json", "w") as joutput:
+        json.dump(separated, joutput, indent=2)
+
 
     if check_total_supply(tx_hash, folder_prefix, 0.3):
         print('Very large compared with total supply')  # To be updated

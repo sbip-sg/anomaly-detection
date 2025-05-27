@@ -9,6 +9,12 @@ def detect_tx(transaction):
     recipient = transaction['to']
     if recipient == "empty":
         return True
+    elif (transaction['to_creator'] ==  transaction['from'] and int(transaction["timestamp"])
+          - int(transaction["to_timestamp"]) < 600000):
+        return True
+    elif transaction['to_is_eoa'] or not transaction['code_created']:
+        return False
+
     tx_type = transaction["4byteData"]
     if isinstance(tx_type, str) and len(tx_type) == 10:
         if tx_type in gas_limits:

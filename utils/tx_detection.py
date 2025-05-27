@@ -3,6 +3,7 @@ from utils.get_traces import collect_trace
 from utils.decode_trace import decode_trace_json
 from utils.token_info import collect_token
 from utils.generate_output import generate_output
+from utils.tools import get_contract_info
 from detect_utils.detect_all import rule_based_detection
 from detect_utils.chatgpt_detect import chatgpt_detect
 import json
@@ -26,8 +27,10 @@ def tx_detect(tx_hash, chain, block_number, folder_prefix, selected_tx_dict, edp
         to_address = selected_tx_dict['to']
         gas_used = selected_tx_dict['gasUsed']
 
-        main_token, nft_transaction = collect_token(tx_hash, chain, from_address, to_address,
+        main_token, nft_transaction, address_list = collect_token(tx_hash, chain, from_address, to_address,
                                                     int(block_number), edpool, tx_folder_prefix)
+        address_json_path = f"{folder_prefix}/{tx_hash}/token_info/address_dict.json"
+        get_contract_info(address_list, address_json_path)
         token_end_time = time.time()
         tx_time_dict['token'] = token_end_time - decode_end_time
         if to_address.lower() not in mev_bots:
