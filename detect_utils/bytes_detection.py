@@ -10,9 +10,9 @@ def detect_tx(transaction):
     if recipient == "empty":
         return True
     elif (transaction['to_creator'] ==  transaction['from'] and int(transaction["timestamp"])
-          - int(transaction["to_timestamp"]) < 600000):
+          - int(transaction["to_timestamp"]) < 2600000):
         return True
-    elif transaction['to_is_eoa'] or not transaction['code_created']:
+    elif transaction['to_is_eoa']:
         return False
 
     tx_type = transaction["4byteData"]

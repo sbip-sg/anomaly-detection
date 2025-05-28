@@ -43,23 +43,26 @@ def separate_balance(tx_hash, folder_prefix, from_address, to_address):
     balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
     address_dict = collect_from_file(folder_prefix, '/token_info/address_dict.json')
     traders = [from_address, to_address]
-    trader_sum_list = []
-    public_contract_sum_list = []
+    trader_sum_dict = {}
+    public_contract_sum_dict = {}
     for address in balance_change.keys():
         address_balance_change = balance_change.get(address)
         address_usd_change = 0
         for token in address_balance_change:
             address_usd_change += address_balance_change[token][1]
-        if address in traders:
-            trader_sum_list.append(address_usd_change)
-        elif address in address_dict:
-            if address_dict[address]["contractCreator"] == from_address:
-                trader_sum_list.append(address_usd_change)
-            else:
-                public_contract_sum_list.append(address_usd_change)
+        if address == "0x0000000000000000000000000000000000000000":
+            public_contract_sum_dict[address] = address_usd_change
         else:
-            trader_sum_list.append(address_usd_change)
-    return {"trader": trader_sum_list, "public": public_contract_sum_list}
+            if address in traders:
+                trader_sum_dict[address] = address_usd_change
+            elif address in address_dict:
+                if address_dict[address]["contractCreator"] == from_address:
+                    trader_sum_dict[address] = address_usd_change
+                else:
+                    public_contract_sum_dict[address] = address_usd_change
+            else:
+                trader_sum_dict[address] = address_usd_change
+    return {"trader": trader_sum_dict, "public": public_contract_sum_dict}
 
 # Detect the balance change of given address of a transaction
 def check_balance(tx_hash, folder_prefix, address, threshold):

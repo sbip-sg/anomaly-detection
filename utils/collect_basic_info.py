@@ -35,9 +35,9 @@ def collect_info(transaction_hash, edpool):
 
     if transaction['to']:
         recipient = transaction['to'].lower()
-        if input_data == "0x":
+        if input_data == "0x" and int(receipt['gasUsed']) == 21000:
             is_eoa = True
-        else:
+        elif input_data == "0x" or int(receipt['gasUsed']) < 63000:
             try:
                 checked_recipient = w3.to_checksum_address(recipient)
                 code = w3.eth.get_code(checked_recipient)
@@ -45,9 +45,11 @@ def collect_info(transaction_hash, edpool):
             except Exception as e:
                 print(f"Failed to check if recipient is EOA: {e}")
                 is_eoa = False  # Could not determine
+        else:
+            is_eoa = False
     else:
         recipient = 'empty'
-        is_eoa = 'created'
+        is_eoa = False
 
     # Construct dictionary containing transaction data
     transaction_data = {
