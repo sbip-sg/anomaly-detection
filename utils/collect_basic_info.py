@@ -1,4 +1,5 @@
 from requests.exceptions import HTTPError
+from utils.tools import contract_creator
 from web3 import Web3
 
 # Function to collect transaction information and return as a DataFrame
@@ -35,18 +36,23 @@ def collect_info(transaction_hash, edpool):
 
     if transaction['to']:
         recipient = transaction['to'].lower()
-        if input_data == "0x" and int(receipt['gasUsed']) == 21000:
+        if input_data == "0x":
             is_eoa = True
-        elif input_data == "0x" or int(receipt['gasUsed']) < 63000:
+        else:
             try:
                 checked_recipient = w3.to_checksum_address(recipient)
                 code = w3.eth.get_code(checked_recipient)
-                is_eoa = code == b''  # True if it's an EOA
+                if code != b'':
+                    is_eoa = False
+                else:
+                    result = contract_creator([recipient])
+                    if result:
+                        is_eoa = False
+                    else:
+                        is_eoa = True
             except Exception as e:
                 print(f"Failed to check if recipient is EOA: {e}")
                 is_eoa = False  # Could not determine
-        else:
-            is_eoa = False
     else:
         recipient = 'empty'
         is_eoa = False

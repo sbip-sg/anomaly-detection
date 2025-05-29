@@ -65,8 +65,16 @@ def get_contract_info(contract_addresses, json_path='contract_info.json'):
     else:
         existing_data = {}
 
+    exist_dict = 'contract_info.json'
+    reading_dict = json_path == exist_dict
+    if not reading_dict and os.path.exists(exist_dict):
+        with open(exist_dict, 'r') as f:
+            json_dict = json.load(f)
+    else:
+        json_dict = existing_data
+
     contract_addresses = [addr.lower() for addr in contract_addresses]  # Normalize
-    cached_addresses = set(existing_data.keys())
+    cached_addresses = set(json_dict.keys())
     new_addresses = list(set(contract_addresses) - cached_addresses)
 
     # Query only new addresses
@@ -74,12 +82,18 @@ def get_contract_info(contract_addresses, json_path='contract_info.json'):
         print(f"Querying {len(new_addresses)} new addresses from API...")
         new_data = contract_creator(new_addresses)
         existing_data.update(new_data)
+        if not reading_dict:
+            json_dict.update(new_data)
     else:
         print("All addresses found in local cache.")
 
     # Save back to JSON
     with open(json_path, 'w') as f:
         json.dump(existing_data, f, indent=2)
+
+    if not reading_dict:
+        with open(exist_dict, 'w') as f:
+            json.dump(json_dict, f, indent=2)
 
     # Return only requested addresses
     return {addr: existing_data[addr] for addr in contract_addresses if addr in existing_data}
@@ -99,7 +113,7 @@ def extract_contract_info(tx_data):
             contract_addresses.append(basic_info["to"])
     contract_creators = get_contract_info(contract_addresses)
     for basic_info in tx_data:
-        if basic_info["to_is_eoa"]:
+        if basic_info["to_is_eoa"] or basic_info["to"] == 'empty' or basic_info["to"] not in contract_creators:
             basic_info["to_creator"], basic_info["to_timestamp"], basic_info["code_created"] = "0x", 0, False
         else:
             basic_info["to_creator"], basic_info["to_timestamp"], basic_info["code_created"] \
