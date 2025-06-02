@@ -6,7 +6,7 @@ from detect_utils.rule_access_control import detect_access_control
 from detect_utils.tools import check_balance, check_balance_all, check_total_supply, separate_balance
 
 # Combine all detections in detect_utils
-def rule_based_detection(tx_hash, gas_used, from_address, to_address, folder_prefix):
+def rule_based_detection(tx_hash, tx_timestamp, gas_used, from_address, to_address, folder_prefix):
 
     detection_result = False
     reason = []
@@ -26,14 +26,13 @@ def rule_based_detection(tx_hash, gas_used, from_address, to_address, folder_pre
         detection_result = True
         reason.append('Token Supply Abrupt Changes Detected')
 
-    #if detect_access_control(tx_hash, folder_prefix):
-    #    print('Lack Access Control Detected')  # To be updated
-    #    detection_result = True
-    #    reason.append('Lack Access Control Detected')
+    if detect_access_control(tx_hash, folder_prefix):
+        print('Lack Access Control Detected')  # To be updated
+        reason.append('Lack Access Control Detected')
 
     la_tx = False
 
-    separated = separate_balance(tx_hash, folder_prefix, from_address, to_address)
+    separated = separate_balance(tx_hash, tx_timestamp, folder_prefix, from_address, to_address)
     with open(f"{folder_prefix}/separated.json", "w") as joutput:
         json.dump(separated, joutput, indent=2)
 

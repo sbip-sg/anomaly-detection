@@ -58,20 +58,13 @@ def contract_creator(contract_addresses):
     return results
 
 def get_contract_info(contract_addresses, json_path='contract_info.json'):
-    # Load existing data if file exists
-    if os.path.exists(json_path):
-        with open(json_path, 'r') as f:
-            existing_data = json.load(f)
-    else:
-        existing_data = {}
-
     exist_dict = 'contract_info.json'
     reading_dict = json_path == exist_dict
-    if not reading_dict and os.path.exists(exist_dict):
+    if (not reading_dict) and os.path.exists(exist_dict):
         with open(exist_dict, 'r') as f:
             json_dict = json.load(f)
     else:
-        json_dict = existing_data
+        json_dict = {}
 
     contract_addresses = [addr.lower() for addr in contract_addresses]  # Normalize
     cached_addresses = set(json_dict.keys())
@@ -81,22 +74,21 @@ def get_contract_info(contract_addresses, json_path='contract_info.json'):
     if new_addresses:
         print(f"Querying {len(new_addresses)} new addresses from API...")
         new_data = contract_creator(new_addresses)
-        existing_data.update(new_data)
-        if not reading_dict:
-            json_dict.update(new_data)
+        json_dict.update(new_data)
     else:
         print("All addresses found in local cache.")
 
     # Save back to JSON
-    with open(json_path, 'w') as f:
-        json.dump(existing_data, f, indent=2)
+    with open(exist_dict, 'w') as f:
+        json.dump(json_dict, f, indent=2)
 
+    full_json_dict = {addr: json_dict[addr] for addr in contract_addresses if addr in json_dict}
     if not reading_dict:
-        with open(exist_dict, 'w') as f:
-            json.dump(json_dict, f, indent=2)
+        with open(json_path, 'w') as f:
+            json.dump(full_json_dict, f, indent=2)
 
     # Return only requested addresses
-    return {addr: existing_data[addr] for addr in contract_addresses if addr in existing_data}
+    return full_json_dict
 
 def brief_address_info(creation_info):
     if len(creation_info["contractFactory"]) != 0:

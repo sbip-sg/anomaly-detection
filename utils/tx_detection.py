@@ -34,7 +34,7 @@ def tx_detect(tx_hash, chain, block_number, folder_prefix, selected_tx_dict, edp
         token_end_time = time.time()
         tx_time_dict['token'] = token_end_time - decode_end_time
         if to_address.lower() not in mev_bots:
-            detection_result, reason, la_tx = rule_based_detection(tx_hash, gas_used,
+            detection_result, reason, la_tx = rule_based_detection(tx_hash, selected_tx_dict["timestamp"], gas_used,
                                                                    from_address, to_address, tx_folder_prefix)
             selected_tx_dict['NFT_transaction'] = nft_transaction
             selected_tx_dict["detection_result"] = detection_result

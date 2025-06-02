@@ -39,29 +39,33 @@ def filter_transaction(gas_used, to_address):
     return False
 
 # Sum balance changes according to trader side and public side
-def separate_balance(tx_hash, folder_prefix, from_address, to_address):
+def separate_balance(tx_hash, tx_timestamp, folder_prefix, from_address, to_address):
     balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
     address_dict = collect_from_file(folder_prefix, '/token_info/address_dict.json')
-    traders = [from_address, to_address]
+    if to_address not in address_dict:
+        traders = [from_address, to_address]
+    else:
+        to_info = address_dict[to_address]
+        if not to_info['contractFactory'] and int(tx_timestamp) - int(to_info["timestamp"]) < 2600000:
+            traders = [from_address, to_address]
+        else:
+            traders = [from_address]
     trader_sum_dict = {}
     public_contract_sum_dict = {}
     for address in balance_change.keys():
         address_balance_change = balance_change.get(address)
-        address_usd_change = 0
-        for token in address_balance_change:
-            address_usd_change += address_balance_change[token][1]
         if address == "0x0000000000000000000000000000000000000000":
-            public_contract_sum_dict[address] = address_usd_change
+            public_contract_sum_dict[address] = address_balance_change
         else:
             if address in traders:
-                trader_sum_dict[address] = address_usd_change
+                trader_sum_dict[address] = address_balance_change
             elif address in address_dict:
                 if address_dict[address]["contractCreator"] == from_address:
-                    trader_sum_dict[address] = address_usd_change
+                    trader_sum_dict[address] = address_balance_change
                 else:
-                    public_contract_sum_dict[address] = address_usd_change
+                    public_contract_sum_dict[address] = address_balance_change
             else:
-                trader_sum_dict[address] = address_usd_change
+                trader_sum_dict[address] = address_balance_change
     return {"trader": trader_sum_dict, "public": public_contract_sum_dict}
 
 # Detect the balance change of given address of a transaction

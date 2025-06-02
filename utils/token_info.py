@@ -78,13 +78,13 @@ def collect_token(transaction_hash, chain, o_from_add, o_to_add, block_number, e
         revert_idx_list = []
 
         for trace in traces:
+            if 'call' in trace['type'] or trace['type'] == 'create':
+                add_to_list(address_list, trace['to'], w3)
             # starting with reverted and out-of-gas check
             if trace['type'] == 'call':
                 if trace["status"].lower() == 'revert' or trace["parent"] in revert_idx_list:
                     revert_idx_list.append(trace['call_idx'])
                     revert_idx_list.extend(trace['children'])
-                else:
-                    add_to_list(address_list, trace['to'], w3)
 
             # event does not show successful status, only to see whether last call is successful
             if trace['type'] == 'event' and trace['parent'] not in revert_idx_list:
