@@ -25,7 +25,6 @@ def tx_detect(tx_hash, chain, block_number, folder_prefix, selected_tx_dict, edp
     if selected_tx_dict:
         from_address = selected_tx_dict['from']
         to_address = selected_tx_dict['to']
-        gas_used = selected_tx_dict['gasUsed']
 
         main_token, nft_transaction, address_list = collect_token(tx_hash, chain, from_address, to_address,
                                                     int(block_number), edpool, tx_folder_prefix)
@@ -34,25 +33,26 @@ def tx_detect(tx_hash, chain, block_number, folder_prefix, selected_tx_dict, edp
         token_end_time = time.time()
         tx_time_dict['token'] = token_end_time - decode_end_time
         if to_address.lower() not in mev_bots:
-            detection_result, reason, la_tx = rule_based_detection(tx_hash, selected_tx_dict["timestamp"], gas_used,
-                                                                   from_address, to_address, tx_folder_prefix)
+            filter_result, true_flags, reason, la_tx = rule_based_detection(tx_hash, selected_tx_dict, nft_transaction, tx_folder_prefix)
             selected_tx_dict['NFT_transaction'] = nft_transaction
-            selected_tx_dict["detection_result"] = detection_result
+            selected_tx_dict["filter_result"] = filter_result
+            selected_tx_dict["true_flags"] = true_flags
             selected_tx_dict["reason"] = reason
             selected_tx_dict["la_tx"] = la_tx
         else:
             selected_tx_dict['NFT_transaction'] = False
-            selected_tx_dict["detection_result"] = False
+            selected_tx_dict["filter_result"] = False
+            selected_tx_dict["true_flags"] = []
             selected_tx_dict["reason"] = ['To address as MEV Bot']
             selected_tx_dict["la_tx"] = False
         rule_end_time = time.time()
         tx_time_dict['rule_based'] = rule_end_time - token_end_time
-        if selected_tx_dict["detection_result"] or selected_tx_dict["la_tx"]:
+        if selected_tx_dict["filter_result"]:
             generate_output(tx_hash, chain, selected_tx_dict, tx_folder_prefix, main_token)
             if llm_detect:
                 score = chatgpt_detect(tx_hash, tx_folder_prefix)
                 selected_tx_dict['llm_score'] = score
-        with open(tx_folder_prefix + f"/basic_info_{tx_hash}.json", "w") as json_file:
+        with open(tx_folder_prefix + f"/basic_info.json", "w") as json_file:
             json.dump(selected_tx_dict, json_file, indent=2)
         output_end_time = time.time()
         tx_time_dict['output'] = output_end_time - rule_end_time

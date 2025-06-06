@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 def load_json(filepath):
     """Utility function to load a JSON file safely."""
@@ -43,30 +44,51 @@ def separate_balance(tx_hash, tx_timestamp, folder_prefix, from_address, to_addr
     balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
     address_dict = collect_from_file(folder_prefix, '/token_info/address_dict.json')
     if to_address not in address_dict:
-        traders = [from_address, to_address]
+        senders = [from_address, to_address]
     else:
         to_info = address_dict[to_address]
-        if not to_info['contractFactory'] and int(tx_timestamp) - int(to_info["timestamp"]) < 2600000:
-            traders = [from_address, to_address]
+        if (not to_info['contractFactory']) and int(tx_timestamp) - int(to_info["timestamp"]) < 2600000:
+            senders = [from_address, to_address]
         else:
-            traders = [from_address]
+            senders = [from_address]
+    sender_sum_dict = {}
+    public_sum_dict = {}
     trader_sum_dict = {}
-    public_contract_sum_dict = {}
     for address in balance_change.keys():
         address_balance_change = balance_change.get(address)
         if address == "0x0000000000000000000000000000000000000000":
-            public_contract_sum_dict[address] = address_balance_change
+            public_sum_dict[address] = address_balance_change
         else:
-            if address in traders:
-                trader_sum_dict[address] = address_balance_change
+            if address in senders:
+                sender_sum_dict[address] = address_balance_change
             elif address in address_dict:
                 if address_dict[address]["contractCreator"] == from_address:
-                    trader_sum_dict[address] = address_balance_change
+                    sender_sum_dict[address] = address_balance_change
                 else:
-                    public_contract_sum_dict[address] = address_balance_change
+                    public_sum_dict[address] = address_balance_change
             else:
                 trader_sum_dict[address] = address_balance_change
-    return {"trader": trader_sum_dict, "public": public_contract_sum_dict}
+    return {"sender": sender_sum_dict, "trader": trader_sum_dict, "public": public_sum_dict}
+
+def sum_group(group_data):
+    summed = defaultdict(lambda: [0, 0])
+    usd_sumed = 0
+    for address, tokens in group_data.items():
+        for token, (amount, usd) in tokens.items():
+            summed[token][0] += amount
+            summed[token][1] += usd
+            usd_sumed += usd
+    return dict(summed), usd_sumed
+
+def abs_sum_group(group_data):
+    abs_summed = defaultdict(lambda: [0, 0])
+    abs_usd_sumed = 0
+    for address, tokens in group_data.items():
+        for token, (amount, usd) in tokens.items():
+            abs_summed[token][0] += abs(amount)
+            abs_summed[token][1] += abs(usd)
+            abs_usd_sumed += abs(usd)
+    return dict(abs_summed), abs_usd_sumed
 
 # Detect the balance change of given address of a transaction
 def check_balance(tx_hash, folder_prefix, address, threshold):
@@ -114,3 +136,57 @@ def check_total_supply(tx_hash, folder_prefix, threshold_rate):
                     if zero_rate_dict[token] * threshold_rate < token_changed < zero_rate_dict[token]:
                         return True
     return False
+
+def self_created(selected_tx_dict):
+    if selected_tx_dict['to'] == "empty":
+        return True
+    elif (selected_tx_dict['to_creator'] ==  selected_tx_dict['from'] and int(selected_tx_dict["timestamp"])
+          - int(selected_tx_dict["to_timestamp"]) < 2600000):
+        return True
+    return False
+
+def flow_in(separated_balance, is_nft):
+    abnormal_flow = False
+    token_thief = False
+    senders, senders_sum = sum_group(separated_balance['sender'])
+    traders, traders_sum = sum_group(separated_balance['trader'])
+    contracts, contracts_sum = sum_group(separated_balance['public'])
+    _, sender_abs_sum = abs_sum_group(separated_balance['sender'])
+    _, trader_abs_sum = abs_sum_group(separated_balance['trader'])
+    _, contract_abs_sum = abs_sum_group(separated_balance['public'])
+    max_abs_sum = max([sender_abs_sum, trader_abs_sum, contract_abs_sum])
+    if max_abs_sum > 27000:
+        factor = 0.05
+    else:
+        factor = 0.1
+    flow_in_type = None
+    if senders_sum > 10 and senders_sum > max_abs_sum * factor * 0.1:
+        if senders_sum > max_abs_sum * factor or senders_sum > 63000:
+            abnormal_flow, token_thief = True, False
+            if traders_sum < contracts_sum:
+                flow_in_type = "sender large profit from other EOA"
+            else:
+                flow_in_type = "sender large profit from contracts"
+    elif traders_sum == trader_abs_sum and traders_sum > 2000:
+        abnormal_flow, token_thief = True, False
+        flow_in_type = "other EOA from contracts"
+    elif max_abs_sum == 0 and not len(contracts):
+        if len(senders) == 1:
+            for token in senders:
+                if senders[token][0] > 0:
+                    abnormal_flow, token_thief = True, True
+                    flow_in_type = "senders steal token from EOA"
+    if is_nft and not abnormal_flow:
+        count = 0
+        abs_count = 0
+        trader_count = 0
+        for token in senders:
+            if '_' in token:
+                count += senders[token][0]
+                abs_count += 1
+                if token in traders:
+                    trader_count += traders[token][0]
+        if count == abs_count and trader_count + count == 0:
+            abnormal_flow, token_thief = True, True
+            flow_in_type = "senders steal nfts from EOA"
+    return abnormal_flow, token_thief, flow_in_type

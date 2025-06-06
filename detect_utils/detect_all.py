@@ -3,27 +3,31 @@ from detect_utils.rule_cyclic_calls import detect_cyclic_transaction
 from detect_utils.rule_flashloan import detect_flashloan_transaction
 from detect_utils.rule_token_supply import detect_token_supply
 from detect_utils.rule_access_control import detect_access_control
-from detect_utils.tools import check_balance, check_balance_all, check_total_supply, separate_balance
+from detect_utils.tools import check_balance, check_balance_all, check_total_supply, separate_balance, self_created, flow_in
 
 # Combine all detections in detect_utils
-def rule_based_detection(tx_hash, tx_timestamp, gas_used, from_address, to_address, folder_prefix):
+def rule_based_detection(tx_hash, selected_tx_dict, is_nft, folder_prefix):
+    from_address = selected_tx_dict['from']
+    to_address = selected_tx_dict['to']
+    gas_used = selected_tx_dict['gasUsed']
+    tx_timestamp = selected_tx_dict['timestamp']
 
-    detection_result = False
+    rule_detection_result = False
     reason = []
 
-    if detect_cyclic_transaction(tx_hash,gas_used, from_address, to_address, folder_prefix):
+    if detect_cyclic_transaction(tx_hash, gas_used, from_address, to_address, folder_prefix):
         print('Suspicious Reentrancy Attack Detected')  # To be updated
-        detection_result = True
+        rule_detection_result = True
         reason.append('Suspicious Reentrancy Attack Detected')
 
     if detect_flashloan_transaction(tx_hash, gas_used, from_address, to_address, folder_prefix):
         print('Suspicious Flashloan Attack Detected')  # To be updated
-        detection_result = True
+        rule_detection_result = True
         reason.append('Suspicious Flashloan Attack Detected')
 
     if detect_token_supply(tx_hash, folder_prefix):
         print('Token Supply Abrupt Changes Detected')  # To be updated
-        detection_result = True
+        rule_detection_result = True
         reason.append('Token Supply Abrupt Changes Detected')
 
     if detect_access_control(tx_hash, folder_prefix):
@@ -32,14 +36,14 @@ def rule_based_detection(tx_hash, tx_timestamp, gas_used, from_address, to_addre
 
     la_tx = False
 
-    separated = separate_balance(tx_hash, tx_timestamp, folder_prefix, from_address, to_address)
-    with open(f"{folder_prefix}/separated.json", "w") as joutput:
-        json.dump(separated, joutput, indent=2)
+    detect_self_create = self_created(selected_tx_dict)
+    separated_balance = separate_balance(tx_hash, tx_timestamp, folder_prefix, from_address, to_address)
+    detect_flow_in, detect_token_thief, flow_in_type = flow_in(separated_balance, is_nft)
 
 
     if check_total_supply(tx_hash, folder_prefix, 0.3):
         print('Very large compared with total supply')  # To be updated
-        reason.append(f'Large Amount Compared with Total Supply')
+        reason.append('Large Amount Compared with Total Supply')
 
     # 63k USD and 27k for sender and receiver, the hard margin of SVM
     if check_balance_all(tx_hash, folder_prefix, 63000):
@@ -52,4 +56,12 @@ def rule_based_detection(tx_hash, tx_timestamp, gas_used, from_address, to_addre
         print('To Address Large Amount Transaction')
         la_tx = True
 
-    return detection_result, reason, la_tx
+    filter_result = sum([detect_self_create, detect_flow_in, detect_token_thief, la_tx, rule_detection_result]) >= 2
+    flags = [detect_self_create, la_tx, rule_detection_result]
+    flag_names = ['detect_self_create', 'la_tx', 'rule_detection_result']
+    # Get a list of which ones are True
+    true_flags = [name for name, flag in zip(flag_names, flags) if flag]
+    if flow_in_type:
+        true_flags.append(flow_in_type)
+
+    return filter_result, true_flags, reason, la_tx

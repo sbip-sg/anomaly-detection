@@ -60,7 +60,7 @@ def contract_creator(contract_addresses):
 def get_contract_info(contract_addresses, json_path='contract_info.json'):
     exist_dict = 'contract_info.json'
     reading_dict = json_path == exist_dict
-    if (not reading_dict) and os.path.exists(exist_dict):
+    if os.path.exists(exist_dict):
         with open(exist_dict, 'r') as f:
             json_dict = json.load(f)
     else:
@@ -84,8 +84,18 @@ def get_contract_info(contract_addresses, json_path='contract_info.json'):
 
     full_json_dict = {addr: json_dict[addr] for addr in contract_addresses if addr in json_dict}
     if not reading_dict:
+        # Load existing data from json_path, if any
+        if os.path.exists(json_path):
+            with open(json_path, 'r') as f:
+                existing_json_path_data = json.load(f)
+        else:
+            existing_json_path_data = {}
+
+        # Merge existing data with new/updated data
+        existing_json_path_data.update(full_json_dict)
+
         with open(json_path, 'w') as f:
-            json.dump(full_json_dict, f, indent=2)
+            json.dump(existing_json_path_data, f, indent=2)
 
     # Return only requested addresses
     return full_json_dict

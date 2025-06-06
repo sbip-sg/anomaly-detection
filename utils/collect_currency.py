@@ -117,14 +117,16 @@ def get_currency(address, chain, block_number, w3, rate_dict):
                 special_tokens = chain_token_info["special_tokens"]
                 if currency.lower() in chain_token_info["special_tokens"]:
                     token_info = special_tokens[currency.lower()]
-                    if checksum_address != token_info[0]:
+                    if checksum_address.lower() != token_info[0].lower():
                         currency = f'{currency}_{address}'
                     else:
+                        if currency not in currency_address:
+                            currency_address[currency] = address
                         token_eq = token_info[1]
                 else:
                     if currency in currency_address and currency_address[currency] != address:
                         currency = f'{currency}_{address}'
-                    else:
+                    elif currency not in currency_address:
                         currency_address[currency] = address
             except Exception as e:
                 print('Error:', e, ' ,can not get transfer currency symbol', address)
