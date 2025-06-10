@@ -60,7 +60,7 @@ def find_largest_number(d):
 
 # detect whether a transaction has high range of total supply changes.
 def detect_token_supply(tx_hash, folder_prefix):
-    if not check_balance_all(tx_hash, folder_prefix, 1000):
+    if not check_balance_all(tx_hash, [], folder_prefix, 1000):
         return False
     total_supply_dict = get_total_supply(tx_hash, folder_prefix)
 

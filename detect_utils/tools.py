@@ -47,7 +47,7 @@ def separate_balance(tx_hash, tx_timestamp, folder_prefix, from_address, to_addr
         senders = [from_address, to_address]
     else:
         to_info = address_dict[to_address]
-        if (not to_info['contractFactory']) and int(tx_timestamp) - int(to_info["timestamp"]) < 2600000:
+        if (not to_info['contractFactory']) and int(tx_timestamp) - int(to_info["timestamp"]) < 86400:
             senders = [from_address, to_address]
         else:
             senders = [from_address]
@@ -72,23 +72,23 @@ def separate_balance(tx_hash, tx_timestamp, folder_prefix, from_address, to_addr
 
 def sum_group(group_data):
     summed = defaultdict(lambda: [0, 0])
-    usd_sumed = 0
+    usd_sum = 0
     for address, tokens in group_data.items():
         for token, (amount, usd) in tokens.items():
             summed[token][0] += amount
             summed[token][1] += usd
-            usd_sumed += usd
-    return dict(summed), usd_sumed
+            usd_sum += usd
+    return dict(summed), usd_sum
 
 def abs_sum_group(group_data):
-    abs_summed = defaultdict(lambda: [0, 0])
-    abs_usd_sumed = 0
+    abs_sum = defaultdict(lambda: [0, 0])
+    abs_usd_sum = 0
     for address, tokens in group_data.items():
         for token, (amount, usd) in tokens.items():
-            abs_summed[token][0] += abs(amount)
-            abs_summed[token][1] += abs(usd)
-            abs_usd_sumed += abs(usd)
-    return dict(abs_summed), abs_usd_sumed
+            abs_sum[token][0] += abs(amount)
+            abs_sum[token][1] += abs(usd)
+            abs_usd_sum += abs(usd)
+    return dict(abs_sum), abs_usd_sum
 
 # Detect the balance change of given address of a transaction
 def check_balance(tx_hash, folder_prefix, address, threshold):
@@ -105,6 +105,8 @@ def check_balance(tx_hash, folder_prefix, address, threshold):
 # Detect the balance change of all addresses of a transaction
 def check_balance_all(tx_hash, checking_list, folder_prefix, threshold):
     balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
+    if not checking_list:
+        checking_list = list(balance_change.keys())
     for address in checking_list:
         if address in balance_change:
             address_balance_change = balance_change.get(address)
@@ -168,15 +170,15 @@ def flow_in(separated_balance, is_nft):
                 flow_in_type = "sender large profit from other EOA"
             else:
                 flow_in_type = "sender large profit from contracts"
-    elif traders_sum == trader_abs_sum and traders_sum > 2000:
+    elif traders_sum == trader_abs_sum and contracts_sum < senders_sum and traders_sum > 1000:
         abnormal_flow, token_thief = True, False
         flow_in_type = "other EOA from contracts"
-    elif max_abs_sum == 0 and not len(contracts):
+    elif max_abs_sum <= 10 and not len(contracts):
         if len(senders) == 1:
-            for token in senders:
-                if senders[token][0] > 0:
-                    abnormal_flow, token_thief = True, True
-                    flow_in_type = "senders steal token from EOA"
+            token, data = next(iter(senders.items()))
+            if data[0] > 0:
+                abnormal_flow, token_thief = True, True
+                flow_in_type = "senders steal token from EOA"
     if is_nft and not abnormal_flow:
         count = 0
         abs_count = 0
