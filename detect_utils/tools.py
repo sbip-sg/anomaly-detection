@@ -103,15 +103,16 @@ def check_balance(tx_hash, folder_prefix, address, threshold):
     return possible_hack
 
 # Detect the balance change of all addresses of a transaction
-def check_balance_all(tx_hash, folder_prefix, threshold):
+def check_balance_all(tx_hash, checking_list, folder_prefix, threshold):
     balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
-    for address in balance_change.keys():
-        address_balance_change = balance_change.get(address)
-        address_usd_change = 0
-        for token in address_balance_change:
-            address_usd_change += address_balance_change[token][1]
-        if address_usd_change > threshold:
-            return True
+    for address in checking_list:
+        if address in balance_change:
+            address_balance_change = balance_change.get(address)
+            address_usd_change = 0
+            for token in address_balance_change:
+                address_usd_change += address_balance_change[token][1]
+            if address_usd_change > threshold:
+                return True
     return False
 
 def zero_rate_token(folder_prefix):

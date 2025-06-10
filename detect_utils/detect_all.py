@@ -39,6 +39,9 @@ def rule_based_detection(tx_hash, selected_tx_dict, is_nft, folder_prefix):
     detect_self_create = self_created(selected_tx_dict)
     separated_balance = separate_balance(tx_hash, tx_timestamp, folder_prefix, from_address, to_address)
     detect_flow_in, detect_token_thief, flow_in_type = flow_in(separated_balance, is_nft)
+    sender_list = list(separated_balance['sender'].keys())
+    trader_list = list(separated_balance['trader'].keys())
+    checking_list = list(set(sender_list + trader_list))
 
 
     if check_total_supply(tx_hash, folder_prefix, 0.3):
@@ -46,7 +49,7 @@ def rule_based_detection(tx_hash, selected_tx_dict, is_nft, folder_prefix):
         reason.append('Large Amount Compared with Total Supply')
 
     # 63k USD and 27k for sender and receiver, the hard margin of SVM
-    if check_balance_all(tx_hash, folder_prefix, 63000):
+    if check_balance_all(tx_hash, checking_list, folder_prefix, 63000):
         print('Large Amount Transaction')
         la_tx = True
     elif check_balance(tx_hash, folder_prefix, from_address, 27000):
