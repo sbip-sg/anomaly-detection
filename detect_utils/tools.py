@@ -189,7 +189,7 @@ def flow_in(separated_balance, is_nft):
                 abs_count += 1
                 if token in traders:
                     trader_count += traders[token][0]
-        if count == abs_count and trader_count + count == 0:
+        if count != 0 and count == abs_count and trader_count + count == 0:
             abnormal_flow, token_thief = True, True
             flow_in_type = "senders steal nfts from EOA"
     return abnormal_flow, token_thief, flow_in_type
