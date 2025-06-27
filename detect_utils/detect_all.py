@@ -30,9 +30,9 @@ def rule_based_detection(tx_hash, selected_tx_dict, is_nft, folder_prefix):
         rule_detection_result = True
         reason.append('Token Supply Abrupt Changes Detected')
 
-    if detect_access_control(tx_hash, folder_prefix):
-        print('Lack Access Control Detected')  # To be updated
-        reason.append('Lack Access Control Detected')
+    # if detect_access_control(tx_hash, folder_prefix):
+    #     print('Lack Access Control Detected')  # To be updated
+    #     reason.append('Lack Access Control Detected')
 
     la_tx = False
 
@@ -44,9 +44,9 @@ def rule_based_detection(tx_hash, selected_tx_dict, is_nft, folder_prefix):
     checking_list = list(set(sender_list + trader_list))
 
 
-    if check_total_supply(tx_hash, folder_prefix, 0.3):
-        print('Very large compared with total supply')  # To be updated
-        reason.append('Large Amount Compared with Total Supply')
+    # if check_total_supply(tx_hash, folder_prefix, 0.3):
+    #     print('Very large compared with total supply')  # To be updated
+    #     reason.append('Large Amount Compared with Total Supply')
 
     # 63k USD and 27k for sender and receiver, the hard margin of SVM
     if check_balance_all(tx_hash, checking_list, folder_prefix, 63000):
