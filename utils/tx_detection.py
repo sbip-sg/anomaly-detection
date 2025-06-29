@@ -5,7 +5,7 @@ from utils.token_info import collect_token
 from utils.generate_output import generate_output
 from utils.tools import get_contract_info
 from detect_utils.detect_all import rule_based_detection
-from detect_utils.chatgpt_detect import chatgpt_detect
+from detect_utils.deprecated_chatgpt_detect import chatgpt_detect
 import json
 import time
 

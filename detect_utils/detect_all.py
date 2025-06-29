@@ -2,7 +2,7 @@ import json
 from detect_utils.rule_cyclic_calls import detect_cyclic_transaction
 from detect_utils.rule_flashloan import detect_flashloan_transaction
 from detect_utils.rule_token_supply import detect_token_supply
-from detect_utils.rule_access_control import detect_access_control
+from detect_utils.deprecated_rule_access_control import detect_access_control
 from detect_utils.tools import check_balance, check_balance_all, check_total_supply, separate_balance, self_created, flow_in
 
 # Combine all detections in detect_utils
@@ -59,6 +59,7 @@ def rule_based_detection(tx_hash, selected_tx_dict, is_nft, folder_prefix):
         print('To Address Large Amount Transaction')
         la_tx = True
 
+    # At least two flags means attack
     filter_result = sum([detect_self_create, detect_flow_in, detect_token_thief, la_tx, rule_detection_result]) >= 2
     flags = [detect_self_create, la_tx, rule_detection_result]
     flag_names = ['detect_self_create', 'la_tx', 'rule_detection_result']
