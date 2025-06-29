@@ -105,7 +105,7 @@ Utility to filter and detect transaction information. Have deprecated files and 
  
 - **`detect_utils/detect_all.py`**  
   Process single transaction with all detection methods.
-- 
+
 - **`detect_utils/gas_limit.json`**  
   Store gas limits of the common 4byte functions in ethereum blockchain during one year.
 
@@ -118,3 +118,15 @@ Requires: datasets, transformers, tqdm, numpy, pandas, sklearn, peft, trl, torch
 Recommend to run in gpu environment.
 
 Names are usage of these Python files.
+
+### dataset
+Store collected and sampled dataset.
+
+- **`dataset/attack_blocks.txt`**  
+  List of blocks having anomaly transactions.
+ 
+- **`dataset/sample_normal_block.txt`**  
+  List of blocks sampled from attack blocks.
+
+- **`dataset/block_atk_dict.json`**  
+  Show which transactions in attack blocks are anomaly transactions
