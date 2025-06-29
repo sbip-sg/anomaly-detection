@@ -21,10 +21,11 @@ def is_address(value):
         return True
     return False
 
+# use etherscan api to get address information
 def contract_creator(contract_addresses):
     contract_addresses = list(set(contract_addresses))
     url = "https://api.etherscan.io/v2/api"
-    api_key = "VVAXBFG3KQAZHF4EGQ2FTTFES5ZA1WS3UZ"  # Replace with your API key
+    api_key = "VVAXBFG3KQAZHF4EGQ2FTTFES5ZA1WS3UZ"
 
     results = {}
     index = 0
@@ -57,6 +58,7 @@ def contract_creator(contract_addresses):
 
     return results
 
+# Warp contract info query in checking exist records
 def get_contract_info(contract_addresses, json_path='contract_info.json'):
     exist_dict = 'contract_info.json'
     reading_dict = json_path == exist_dict
@@ -100,6 +102,7 @@ def get_contract_info(contract_addresses, json_path='contract_info.json'):
     # Return only requested addresses
     return full_json_dict
 
+# Only return useful information
 def brief_address_info(creation_info):
     if len(creation_info["contractFactory"]) != 0:
         code_created = False
@@ -107,6 +110,7 @@ def brief_address_info(creation_info):
         code_created = True
     return creation_info["contractCreator"], creation_info["timestamp"], code_created
 
+# add to address related info to basic info of a block
 def extract_contract_info(tx_data):
     contract_addresses = []
     output_tx_data = []

@@ -167,6 +167,7 @@ def get_currency(address, chain, block_number, w3, rate_dict):
     return currency, decimal, False, exchange_rate
 
 def get_main_token(chain, block_number, w3):
+    # Read hard encoded info of blockchain
     chain_token_info = chain_info[chain]
     chain_token = chain_token_info['chainToken']
     contract_address = chain_token_info['uniswapV2Address']

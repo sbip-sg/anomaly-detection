@@ -9,6 +9,7 @@ from detect_utils.deprecated_chatgpt_detect import chatgpt_detect
 import json
 import time
 
+# detection process for single transaction
 def tx_detect(tx_hash, chain, block_number, folder_prefix, selected_tx_dict, edpool, mev_bots, llm_detect):
     tx_time_dict = {}
     tx_detail_start_time = time.time()
@@ -22,16 +23,20 @@ def tx_detect(tx_hash, chain, block_number, folder_prefix, selected_tx_dict, edp
     decode_trace_json(tx_hash, tx_folder_prefix)
     decode_end_time = time.time()
     tx_time_dict['decode'] = decode_end_time - foundry_end_time
+    # make sure basic info is inputted, selected_tx_dict == basic_info
     if selected_tx_dict:
         from_address = selected_tx_dict['from']
         to_address = selected_tx_dict['to']
 
         main_token, nft_transaction, address_list = collect_token(tx_hash, chain, from_address, to_address,
                                                     int(block_number), edpool, tx_folder_prefix)
+
+        # save contracts in trace to a dict
         address_json_path = f"{folder_prefix}/{tx_hash}/token_info/address_dict.json"
         get_contract_info(address_list, address_json_path)
         token_end_time = time.time()
         tx_time_dict['token'] = token_end_time - decode_end_time
+        # ignore mev bots
         if to_address.lower() not in mev_bots:
             filter_result, true_flags, reason, la_tx = rule_based_detection(tx_hash, selected_tx_dict, nft_transaction, tx_folder_prefix)
             selected_tx_dict['NFT_transaction'] = nft_transaction
@@ -48,10 +53,11 @@ def tx_detect(tx_hash, chain, block_number, folder_prefix, selected_tx_dict, edp
         rule_end_time = time.time()
         tx_time_dict['rule_based'] = rule_end_time - token_end_time
         if selected_tx_dict["filter_result"]:
-            generate_output(tx_hash, chain, selected_tx_dict, tx_folder_prefix, main_token)
+            generate_output(tx_folder_prefix, chain, main_token)
             if llm_detect:
-                score = chatgpt_detect(tx_hash, tx_folder_prefix)
-                selected_tx_dict['llm_score'] = score
+                pass
+                # score = chatgpt_detect(tx_hash, tx_folder_prefix)
+                # selected_tx_dict['llm_score'] = score
         with open(tx_folder_prefix + f"/basic_info.json", "w") as json_file:
             json.dump(selected_tx_dict, json_file, indent=2)
         output_end_time = time.time()

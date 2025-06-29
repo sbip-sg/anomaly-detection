@@ -3,13 +3,16 @@ import tiktoken
 from collections import defaultdict, Counter
 import re
 
+# whether a string is a hex with len 64
 def is_hex64(s):
     return bool(re.fullmatch(r'[0-9a-f]{64}', s))
 
+# use tiktoken package to estimate token amount
 def count_tokens(text, model="o1-"):
     encoding = tiktoken.encoding_for_model(model)
     return len(encoding.encode(text))
 
+# count function name
 def count_names(dict_list, name):
     return dict(Counter(d[name].split("(")[0] for d in dict_list if name in d))
 
@@ -27,6 +30,7 @@ def add_to_key_list_dict(d, key, item):
         d[key] = []
     d[key].append(item)
 
+# make addresses of dict to shortened address list
 def address_dict_to_key_list(input_dict):
     key_list = []
     for address in input_dict:
@@ -82,6 +86,7 @@ def shorten_address(address):
     else:
         raise TypeError('Non-string as address')
 
+# sum the balance change of group of addresses
 def sum_address_group(group_data):
     summed = defaultdict(lambda: [0, 0])
     usd_sum = 0
@@ -95,6 +100,7 @@ def sum_address_group(group_data):
             usd_sum += usd
     return dict(summed), usd_sum
 
+# use address information dict to judge an address
 def judge_address(address, address_dict, from_add, to_add):
     if address == "0x0000000000000000000000000000000000000000":
         output = "public contract"
@@ -114,6 +120,7 @@ def judge_address(address, address_dict, from_add, to_add):
             output = "others"
     return output
 
+# flatten balance change dict
 def flatten(d):
     def short_key(k):
         if "_0x" in k:
@@ -137,7 +144,9 @@ reason_message_map = {
     "senders steal nfts from eoa": " Sender earns nfts from other address.",
 }
 
+# basic info to prompt
 def transform_basic(folder_prefix, chain, main_token, main_token_rate):
+    # transform basic information
     basic_info = collect_from_file(folder_prefix, "basic_info.json")
     tx_hash = basic_info["hash"]
     value = basic_info['value']
@@ -151,6 +160,7 @@ def transform_basic(folder_prefix, chain, main_token, main_token_rate):
         output += f" with {rounded_number(value)} {main_token} as {rounded_number(value*main_token_rate, usd_mode=True)} USD"
     output += '.'
 
+    # transform detected reasons
     detected_reasons = basic_info["true_flags"]
     trace_reasons = basic_info["reason"]
     for reason, message in reason_message_map.items():
@@ -163,7 +173,7 @@ def transform_basic(folder_prefix, chain, main_token, main_token_rate):
     return output, tx_hash, from_add, to_add, detected_reasons, trace_reasons
 
 
-# balance changes to text
+# separate balance changes to different roles
 def transform_balance(tx_hash, folder_prefix, from_add, to_add):
     balance_change = collect_from_file(folder_prefix, '/token_info/balance.json')[tx_hash]
     address_dict = collect_from_file(folder_prefix, '/token_info/address_dict.json')
@@ -188,6 +198,7 @@ def transform_balance(tx_hash, folder_prefix, from_add, to_add):
     ## how to treat each group
     return balance_change, sender_dict, receiver_dict, eoa_dict, contract_dict
 
+# balance changes to prompt
 def process_balance(tx_hash, folder_prefix, from_add, to_add, reasons):
     balance_change, sender_dict, _, eoa_dict, contract_dict = transform_balance(tx_hash, folder_prefix, from_add, to_add)
     sender_sum, sender_usd_sum = sum_address_group(sender_dict)
@@ -196,6 +207,7 @@ def process_balance(tx_hash, folder_prefix, from_add, to_add, reasons):
     error_rate = False
     is_nft = False
     other_type = False
+    # give roles according to detected reason
     if "sender large profit from other eoa" in reasons:
         gainer = "sender"
         if len(sender_dict) > 1 or from_add not in sender_dict:
@@ -240,6 +252,7 @@ def process_balance(tx_hash, folder_prefix, from_add, to_add, reasons):
         balance_prompt = f"senders: {flatten(sender_sum)}, other users: {flatten(eoa_sum)}, public contracts: {flatten(contract_sum)}."
     return balance_prompt, sender_dict, eoa_dict, contract_dict
 
+# Collect trace into two dicts
 def transform_trace(tx_hash, folder_prefix):
     call_dict = {}
     event_dict = {}
@@ -256,9 +269,12 @@ def transform_trace(tx_hash, folder_prefix):
                 add_to_key_list_dict(event_dict, event_key, t)
     return call_dict, event_dict
 
+# trace to prompt
 def process_trace(tx_hash, folder_prefix, to_address, sender_dict, contract_dict, detect_flags, rule_reasons, token_left):
     call_collect, event_collect = transform_trace(tx_hash, folder_prefix)
     trace_prompt = ""
+
+    # transform trace related reasons
     if 'rule_detection_result' in detect_flags:
         if 'Suspicious Flashloan Attack Detected' in rule_reasons:
             trace_prompt += " Transaction has suspicious flash loan usage."
@@ -266,6 +282,8 @@ def process_trace(tx_hash, folder_prefix, to_address, sender_dict, contract_dict
             trace_prompt += " Total supply of related token changed."
         if 'Suspicious Reentrancy Attack Detected' in rule_reasons:
             trace_prompt += " There are repeated calls indicating reentrancy attack."
+
+    # transform counts of calls and events of important addresses to prompt
     trace_prompt += " The summary of calls and events of important addresses:"
     balanced_prompt = trace_prompt
     if to_address in call_collect:
@@ -289,6 +307,7 @@ def process_trace(tx_hash, folder_prefix, to_address, sender_dict, contract_dict
                 trace_prompt += f", emitting events: {count_names(event_collect[contract_address], "function")};"
             else:
                 trace_prompt += ";"
+    # if trace prompt is too short
     if count_tokens(trace_prompt) < count_tokens(balanced_prompt) + 50:
         for c_address in call_collect:
             balanced_prompt += f" {shorten_address(c_address)} called: {count_names(call_collect[c_address], "functionName")}"
@@ -296,6 +315,8 @@ def process_trace(tx_hash, folder_prefix, to_address, sender_dict, contract_dict
                 balanced_prompt += f", emitting events: {count_names(event_collect[c_address], "function")};"
         if count_tokens(balanced_prompt) < token_left:
             trace_prompt = balanced_prompt
+
+    # if trace prompt is too long
     elif count_tokens(trace_prompt) > token_left:
         # Only keep the 3 largest function count contract addresses
         def count_total_calls(addr):

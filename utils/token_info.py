@@ -4,7 +4,6 @@ from os import listdir
 from web3 import Web3
 from utils.collect_transfer import find_address_transfer_event, deal_transfer, othertransfer
 from utils.collect_currency import get_currency, get_main_token, get_currency_dict, reset_currency_dict
-from utils.tools import is_address
 import os
 
 

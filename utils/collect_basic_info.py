@@ -34,6 +34,7 @@ def collect_info(transaction_hash, edpool):
 
     input_data = str(transaction['input'][:10])
 
+    # Different situation for to address
     if transaction['to']:
         recipient = transaction['to'].lower()
         if input_data == "0x":
