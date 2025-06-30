@@ -15,7 +15,6 @@ def generate_prompt(data_point):
             Read the problem and answer with TRUE or False.
 
             [{data_point["summary"]}] = {data_point["label"]}
-            Reason: {data_point["reason"]}
             """.strip()
 
 def generate_test_prompt(data_point):
@@ -29,7 +28,7 @@ def read_data():
     test_filename = "test_prompts.csv"
 
     # Load CSVs
-    x_train_full = pd.read_csv(train_filename, header=0, names=["label", "summary", "reason"], encoding="utf-8", encoding_errors="replace")
+    x_train_full = pd.read_csv(train_filename, header=0, names=["label", "summary"], encoding="utf-8", encoding_errors="replace")
     x_test = pd.read_csv(test_filename, header=0, names=["label", "summary"], encoding="utf-8", encoding_errors="replace")
 
     # Sample 30 examples per label for evaluation from training set
@@ -59,11 +58,7 @@ def evaluate(y_true, y_pred):
     mapping = {'true': 1, 'false': 0}
 
     def map_func(x):
-        if isinstance(x, str):
-            return 1 if x.lower() == "true" else 0
-        if isinstance(x, bool):
-            return int(x)
-        return 1  # fallback
+        return mapping.get(x, 1)
 
     y_true = np.vectorize(map_func)(y_true)
     y_pred = np.vectorize(map_func)(y_pred)

@@ -35,11 +35,14 @@ peft_config = LoraConfig(
 
 # Apply LoRA to model
 model = get_peft_model(model, peft_config)
+model.gradient_checkpointing_enable()
+model.enable_input_require_grads()
+
 
 # Training args
 training_args = TrainingArguments(
     output_dir="trained_weights",
-    num_train_epochs=30,
+    num_train_epochs=20,
     per_device_train_batch_size=1,
     gradient_accumulation_steps=8,
     gradient_checkpointing=False,  # enable if large model / long sequence
@@ -65,10 +68,6 @@ trainer = SFTTrainer(
 
 # Train
 trainer.train()
-
-# Evaluate
-metrics = trainer.evaluate()
-print(metrics)
 
 # Save
 trainer.save_model("trained_weights")
