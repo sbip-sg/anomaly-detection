@@ -1,5 +1,4 @@
 import json
-from os import listdir
 from eth_abi import decode
 import os
 import re
@@ -8,6 +7,35 @@ try:
     from .db_tools import get_function_signature, get_event_db_signature
 except ImportError:
     from db_tools import get_function_signature, get_event_db_signature
+
+# Define the JSON file name
+FUNC_EVENT_JSON = "func_event_dict.json"
+
+# Load existing function-event dictionary from file
+def load_func_event_dict():
+    if os.path.exists(FUNC_EVENT_JSON):
+        with open(FUNC_EVENT_JSON, "r") as f:
+            return json.load(f)
+    return {}
+
+# Save function-event dictionary to file
+def save_func_event_dict():
+    with open(FUNC_EVENT_JSON, "w") as f:
+        json.dump(func_event_dict, f, indent=4)
+
+# Initialize dictionary from JSON file
+func_event_dict = load_func_event_dict()
+
+def get_function(func_hash, is_event = False):
+    if func_hash not in func_event_dict:
+        if is_event:
+            signature = get_event_db_signature(func_hash)
+        else:
+            signature = get_function_signature(func_hash)
+        func_event_dict[func_hash] = signature
+        return signature
+    else:
+        return func_event_dict[func_hash]
 
 # Parse the structure of parameter types of a function
 def parse_structure(structure):
@@ -61,8 +89,10 @@ def parse_structure(structure):
     return parse_element(structure)
 
 def process_function(function):
+    if not function or not isinstance(function,str):
+        return 'invalid function', {}
     # Can not determine the function of this hash
-    if function.find(';') != -1:
+    if function.find(';') != -1 or function.find('(') == -1:
         return function, {}
     try:
         # Separate function name and parameters
@@ -114,7 +144,7 @@ def decode_input(function_text, input_hash):
     if len(input_hash) % 64 == 0:
         # If decoded function name is only one(possible to find several function sharing same 4bytes)
         # and function_text have parameters, we use decode from eth_abi package to decode them
-        if len(function_text.split('(', 1)) != 1 and len(input_hash) != 0 and len(function_text.split(';')) == 1:
+        if isinstance(function_text, str) and len(function_text.split('(', 1)) != 1 and len(input_hash) != 0 and len(function_text.split(';')) == 1:
             start_index = function_text.find('(')
             end_index = function_text.rfind(')')
             raw_parameters = function_text[start_index + 1:end_index]
@@ -159,18 +189,34 @@ def decode_unknown_input(chunks, data=False, event=True, transfer = False):
         count_of_zeros = len(line) - len(line.lstrip('0'))  # Count leading zeros
         # Address: normally length == 40, considering starting with zeros, we have a buffer for 10 zeros.
         # The possibility of missing an address is 1/2^40, which means that is mostly impossible.
-        if not transfer:
-            if 24 <= count_of_zeros < 35:  # Address type
-                input_list.append(decode(['address'], bytes.fromhex(line))[0])
-            # Number: We consider that the biggest number is 16^28 more than 10e33 and for normal wei = 1e18
-            # Normally most numbers are no bigger than 1e15
-            elif 35 <= count_of_zeros < 64:  # uint256 type
-                input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
-            # null address
-            elif count_of_zeros == 64:  # Address type
-                input_list.append(decode(['address'], bytes.fromhex(line))[0])
-        else:
-            input_list.append(decode(['address'], bytes.fromhex(line))[0])
+        try:
+            if not transfer:
+                if 24 <= count_of_zeros < 35:  # Address type
+                    input_list.append(decode(['address'], bytes.fromhex(line))[0])
+                # Number: We consider that the biggest number is 16^28 more than 10e33 and for normal wei = 1e18
+                # Normally most numbers are no bigger than 1e15
+                elif 35 <= count_of_zeros < 64:  # uint256 type
+                    input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
+                # null address
+                elif count_of_zeros == 64:  # Address type
+                    input_list.append(decode(['address'], bytes.fromhex(line))[0])
+            else:
+                if len(input_list) < 2:
+                    input_list.append(decode(['address'], bytes.fromhex(line))[0])
+                else:
+                    if 24 <= count_of_zeros < 35:  # Address type
+                        input_list.append(decode(['address'], bytes.fromhex(line))[0])
+                    # Number: We consider that the biggest number is 16^28 more than 10e33 and for normal wei = 1e18
+                    # Normally most numbers are no bigger than 1e15
+                    elif 35 <= count_of_zeros < 64:  # uint256 type
+                        input_list.append(decode(['uint256'], bytes.fromhex(line))[0])
+                    # null address
+                    elif count_of_zeros == 64:  # Address type
+                        input_list.append(decode(['address'], bytes.fromhex(line))[0])
+                    transfer = False
+        except Exception as e:
+            print("unable to decode:", e)
+            input_list.append("0x")
     return input_list
 
 
@@ -293,132 +339,142 @@ def input_parameter(inputs, parameters, inner = False):
     return parameters
 
 # Function to decode trace JSON files
-def decode_trace_json(folder_prefix="result"):
+def decode_trace_json(tx_hash, folder_prefix):
     # dumping decoded traces and event to invocation_tree folder
     json_file_path = folder_prefix + '/invocation_tree/'
     os.makedirs(json_file_path, exist_ok=True)
 
-    # Get list of JSON files in trace_json directory with raw traces
-    jsonlist = listdir(folder_prefix + '/trace_json')
-    for i in jsonlist:
-        file = open(folder_prefix + '/trace_json/' + i)
-        invocation_tree = []
-        tx = json.load(file)
-        locations = [-1]
-        for trace in tx:
-            new_trace = {"type": trace['kind'].lower()}
-            # extract all kinds of information
-            if 'gas_used' in trace.keys():
-                new_trace["gasUsed"] = trace["gas_used"]
-            if 'value' in trace.keys():
-                new_trace["value"] = int(trace["value"][2:], 16)
+    raw_trace = folder_prefix + '/trace_json/' + f"trace_{tx_hash}.json"
 
-            # Check whether this trace is from successful call
-            if 'status' in trace.keys():
-                new_trace["status"] = trace['status']
+    with open(raw_trace) as f:
+        tx = json.load(f)
+    invocation_tree = []
+    locations = [-1]
+    for trace in tx:
+        new_trace = {"type": trace['kind'].lower()}
+        # extract all kinds of information
+        if 'gas_used' in trace.keys():
+            new_trace["gasUsed"] = trace["gas_used"]
+        if 'value' in trace.keys():
+            new_trace["value"] = int(trace["value"][2:], 16)
 
-            # If trace is a function call
-            if 'call' in trace['kind'].lower():
-                new_trace["from"] = trace["from"]
-                new_trace["to"] = trace["to"]
-                new_trace["depth"] = trace["depth"]
-                new_trace['parent']= trace['parent']
-                new_trace['children']= trace['children']
-                new_trace["call_idx"] = trace['call_idx']
+        # Check whether this trace is from successful call
+        if 'status' in trace.keys():
+            new_trace["status"] = trace['status']
 
-                # Move state changes into new trace
-                if 'statechanges' in trace.keys():
-                    new_trace["statechanges"] = trace['statechanges']
+        # If trace is a function call
+        if 'call' in trace['kind'].lower():
+            new_trace["from"] = trace["from"]
+            new_trace["to"] = trace["to"]
+            new_trace["depth"] = trace["depth"]
+            new_trace['parent']= trace['parent']
+            new_trace['children']= trace['children']
+            new_trace["call_idx"] = trace['call_idx']
 
-                # When foundry can decode it.
-                func_hash = trace['data'][2:10]
-                input_hash = trace['data'][10:]
-                new_trace["selector"] = func_hash
-                if trace['decoded']['call_data']:
-                    new_trace["decodeStatue"] = "foundry"
-                    new_trace["function"] = trace['decoded']['call_data']['signature']
-                    new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
-                    new_args = []
-                    args = trace['decoded']['call_data']['args']
-                    for arg in args:
-                        arg = parse_grouped_elements(arg)
-                        new_args.append(arg)
-                    new_trace["input"] = new_args
-                    if len(new_args) == 0 and len(trace['data'][10:]) != 0:
-                        new_trace["input"] = decode_input(new_trace["function"], input_hash)
-                        new_trace["decodeStatue"] = "database"
+            # Move state changes into new trace
+            if 'statechanges' in trace.keys():
+                new_trace["statechanges"] = trace['statechanges']
+
+            # When foundry can decode it.
+            func_hash = trace['data'][2:10]
+            input_hash = trace['data'][10:]
+            new_trace["selector"] = func_hash
+            if trace['decoded']['call_data']:
+                new_trace["decodeStatue"] = "foundry"
+                new_trace["function"] = trace['decoded']['call_data']['signature']
+                new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
+                new_args = []
+                args = trace['decoded']['call_data']['args']
+                for arg in args:
+                    arg = parse_grouped_elements(arg)
+                    new_args.append(arg)
+                new_trace["input"] = new_args
+                if len(new_args) == 0 and len(trace['data'][10:]) != 0:
+                    if func_hash == "52bbbe29":
+                        new_trace["function"] = \
+                            "swap((bytes32,uint8,address,address,uint256,bytes),(address,bool,address,bool),uint256,uint256)"
+                        new_trace["functionName"] = "swap"
                     else:
-                        new_trace['parameters'] = input_parameter(new_trace['input'], new_trace['parameters'])
-
-                else:
-
-                    # Use function signature database to search for 4bytes
-                    func_name = get_function_signature(func_hash)
-
-                    if func_name:
-                        new_trace["decodeStatue"] = "database"
-                        new_trace["function"] = func_name
+                        new_trace["function"] =  get_function(func_hash)
                         new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
-                        new_trace["input"] = decode_input(func_name, input_hash)
-                    else:
-                        # If we can not get the function name, just use function hash as name
-                        new_trace["decodeStatue"] = "none"
-                        new_trace["function"] = func_hash
-                        new_trace["functionName"], new_trace["parameters"] = func_hash, {}
-                        new_trace["input"] = decode_input(func_hash, input_hash)
-                new_trace["output"] = decode_input(func_hash, trace['output'][2:])
+                    new_trace["input"] = decode_input(new_trace["function"], input_hash)
+                    new_trace["decodeStatue"] = "database"
+                else:
+                    new_trace['parameters'] = input_parameter(new_trace['input'], new_trace['parameters'])
 
-            # If trace is an event log
-            elif trace['kind'].lower() == 'event':
-                new_trace["address"] = trace["from"]
-                new_trace['parent'] = trace['parent']
-                new_trace["depth"] = trace["depth"] + 1
+            else:
 
-                # When foundry can decode it.
-                if trace['decoded']['name']:
-                    new_trace["function"] = trace['decoded']['name']
+                # Use function signature database to search for 4bytes
+                func_name = get_function(func_hash)
+
+                if func_name:
+                    new_trace["decodeStatue"] = "database"
+                    new_trace["function"] = func_name
+                    new_trace["functionName"], new_trace["parameters"] = process_function(new_trace["function"])
+                    new_trace["input"] = decode_input(func_name, input_hash)
+                else:
+                    # If we can not get the function name, just use function hash as name
+                    new_trace["decodeStatue"] = "none"
+                    new_trace["function"] = func_hash
+                    new_trace["functionName"], new_trace["parameters"] = func_hash, {}
+                    new_trace["input"] = decode_input(func_hash, input_hash)
+            new_trace["output"] = decode_input(func_hash, trace['output'][2:])
+
+        # If trace is an event log
+        elif trace['kind'].lower() == 'event':
+            new_trace["address"] = trace["from"]
+            new_trace['parent'] = trace['parent']
+            new_trace["depth"] = trace["depth"] + 1
+
+            # When foundry can decode it.
+            if trace['decoded']['name']:
+                new_trace["function"] = trace['decoded']['name']
 
 
-                elif len(trace['raw']['topics']) != 0:
-                    func_hash = trace['raw']['topics'][0][2:]
+            elif len(trace['raw']['topics']) != 0:
+                func_hash = trace['raw']['topics'][0][2:]
 
-                    # Use event signature database to search for 4bytes
-                    event_name = get_event_db_signature(func_hash)
-                    if event_name:
-                        new_trace["function"] = event_name
-                    else:
-                        new_trace["function"] = func_hash
+                # Use event signature database to search for 4bytes
+                event_name = get_function(func_hash, is_event=True)
+                if event_name:
+                    new_trace["function"] = event_name
+                else:
+                    new_trace["function"] = func_hash
+            else:
+                new_trace["function"] = "0x"
+            # For events, foundry do not give significant parameters
+            new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
+            is_transfer = ((new_trace["function"].lower() in ['deposit', 'withdrawal']
+                            and new_trace['address'].lower() == '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
+                           or (new_trace["function"].lower() == 'transfer' and len(trace['raw']['topics']) > 2))
+            new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:], transfer=is_transfer)
 
-                # For events, foundry do not give significant parameters
-                new_trace['data'] = decode_unknown_input(trace['raw']['data'], data=True)
-                istransfer = new_trace['data'] and new_trace["function"].lower() == 'transfer'
-                new_trace["input"] = decode_unknown_input(trace['raw']['topics'][1:], transfer=istransfer)
+        # If trace is a create log
+        elif 'create' in trace['kind'].lower():
 
-            # If trace is a create log
-            elif 'create' in trace['kind'].lower():
+            new_trace["from"] = trace["from"]
+            new_trace["to"] = trace["to"]
+            new_trace["depth"] = trace["depth"]
+            new_trace['data'] = trace['data']
+        elif trace['kind'].lower() == 'selfdestruct':
 
-                new_trace["from"] = trace["from"]
-                new_trace["to"] = trace["to"]
-                new_trace["depth"] = trace["depth"]
-                new_trace['data'] = trace['data']
-            elif trace['kind'].lower() == 'selfdestruct':
+            new_trace["address"] = trace["address"]
+            new_trace["refund_target"] = trace["refund_target"]
+            new_trace["depth"] = trace["depth"]
 
-                new_trace["address"] = trace["address"]
-                new_trace["refund_target"] = trace["refund_target"]
-                new_trace["depth"] = trace["depth"]
+        # according to the depth of trace, find its location
+        if new_trace['depth'] + 1 >= len(locations):
+            while len(locations) <= new_trace['depth']:
+                locations.append(-1)
+        locations[new_trace["depth"]] += 1
+        for position in range(new_trace["depth"] + 1, len(locations)):
+            locations[position] = -1
+        new_trace['location'] = locations[:new_trace["depth"] + 1]
 
-            # according to the depth of trace, find its location
-            if new_trace['depth'] + 1 >= len(locations):
-                while len(locations) <= new_trace['depth']:
-                    locations.append(-1)
-            locations[new_trace["depth"]] += 1
-            for position in range(new_trace["depth"] + 1, len(locations)):
-                locations[position] = -1
-            new_trace['location'] = locations[:new_trace["depth"] + 1]
+        invocation_tree.append(new_trace)
 
-            invocation_tree.append(new_trace)
-
-        # Dump the decoded invocation tree to a json file
-        with open(json_file_path + 'decode_' + i, 'w') as jsonfile:
-            json.dump(invocation_tree, jsonfile, default=convert_bytes_to_string, indent=2)
-        print('decode_invocation_tree_finished', i)
+    # Dump the decoded invocation tree to a json file
+    with open(json_file_path + f'decode_trace_{tx_hash}.json', 'w') as jsonfile:
+        json.dump(invocation_tree, jsonfile, default=convert_bytes_to_string, indent=2)
+    save_func_event_dict()
+    print('decode_invocation_tree_finished', tx_hash)

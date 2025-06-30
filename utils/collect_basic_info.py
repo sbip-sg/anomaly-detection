@@ -1,6 +1,6 @@
 from requests.exceptions import HTTPError
+from utils.tools import contract_creator
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
 
 # Function to collect transaction information and return as a DataFrame
 def collect_info(transaction_hash, edpool):
@@ -9,7 +9,6 @@ def collect_info(transaction_hash, edpool):
         try:
             # Initialize Web3 instance with the RPC provider
             w3 = Web3(Web3.HTTPProvider(rpc))
-            w3.middleware_onion.inject(geth_poa_middleware, layer=0)
             # Get transaction details
             transaction = w3.eth.get_transaction(transaction_hash)
             # Get transaction receipt
@@ -32,10 +31,32 @@ def collect_info(transaction_hash, edpool):
 
     # Extract sender and recipient addresses, converting to lowercase for consistency
     sender = transaction['from'].lower()
+
+    input_data = str(transaction['input'][:10])
+
+    # Different situation for to address
     if transaction['to']:
         recipient = transaction['to'].lower()
+        if input_data == "0x":
+            is_eoa = True
+        else:
+            try:
+                checked_recipient = w3.to_checksum_address(recipient)
+                code = w3.eth.get_code(checked_recipient)
+                if code != b'':
+                    is_eoa = False
+                else:
+                    result = contract_creator([recipient])
+                    if result:
+                        is_eoa = False
+                    else:
+                        is_eoa = True
+            except Exception as e:
+                print(f"Failed to check if recipient is EOA: {e}")
+                is_eoa = False  # Could not determine
     else:
         recipient = 'empty'
+        is_eoa = False
 
     # Construct dictionary containing transaction data
     transaction_data = {
@@ -43,9 +64,12 @@ def collect_info(transaction_hash, edpool):
         'value': transaction['value'] / 1e18,  # Convert value from Wei to Ether
         'from': sender,
         'to': recipient,
+        'gasLimit': transaction['gas'],  # Get gas limit from transaction receipt
         'gasUsed': receipt['gasUsed'],  # Get gas used from transaction receipt
         'timestamp': timestamp,
-        'blocknumber': transaction['blockNumber']
+        'status': receipt["status"],
+        '4byteData': input_data,
+        'to_is_eoa': is_eoa
     }
 
     # Return the DataFrame containing transaction information
