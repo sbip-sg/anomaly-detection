@@ -117,7 +117,7 @@ Requires: datasets, transformers, tqdm, numpy, pandas, sklearn, peft, trl, torch
 
 Recommend to run in gpu environment.
 
-Names are usage of these Python files.
+Names are usage of these Python files. Deepseek-r1 folder stores modified deepseek-r1 distill model finetuning code. Label-dataloading stores method only load labels.
 
 ### dataset
 Store collected and sampled dataset.
@@ -130,3 +130,9 @@ Store collected and sampled dataset.
 
 - **`dataset/block_atk_dict.json`**  
   Show which transactions in attack blocks are anomaly transactions
+
+- **`dataset/train_prompts.csv`**  
+  Training data and example for reason prompts.
+
+- **`dataset/test_prompts.csv`**  
+  Test dataset.
