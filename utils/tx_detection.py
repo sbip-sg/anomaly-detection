@@ -52,14 +52,16 @@ def tx_detect(tx_hash, chain, block_number, folder_prefix, selected_tx_dict, edp
             selected_tx_dict["la_tx"] = False
         rule_end_time = time.time()
         tx_time_dict['rule_based'] = rule_end_time - token_end_time
+        with open(tx_folder_prefix + f"/basic_info.json", "w") as json_file:
+            json.dump(selected_tx_dict, json_file, indent=2)
         if selected_tx_dict["filter_result"]:
             generate_output(tx_folder_prefix, chain, main_token)
             if llm_detect:
                 pass
                 # score = chatgpt_detect(tx_hash, tx_folder_prefix)
                 # selected_tx_dict['llm_score'] = score
-        with open(tx_folder_prefix + f"/basic_info.json", "w") as json_file:
-            json.dump(selected_tx_dict, json_file, indent=2)
+            with open(tx_folder_prefix + f"/basic_info.json", "w") as json_file:
+                json.dump(selected_tx_dict, json_file, indent=2)
         output_end_time = time.time()
         tx_time_dict['output'] = output_end_time - rule_end_time
 
