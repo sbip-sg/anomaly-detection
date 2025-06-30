@@ -20,28 +20,26 @@ def is_tx(tx_line: str):
     return False
 
 
-def main(block_number, chain, overwrite=False, llm_detect=False):
+def main(tx_hash, chain, overwrite=False, llm_detect=False):
     time_dict = {}
     os.makedirs('result', exist_ok=True)
 
-    folder_prefix = f'result/{block_number}_{chain}'
+    folder_prefix = f'result/{tx_hash}_{chain}/'
     # Create result directory if it doesn't exist
     if overwrite:
-        print(f'Deleting result folder to overwrite {block_number} on {chain}')
+        print(f'Deleting result folder to overwrite {tx_hash} on {chain}')
         os.system(f'rm -rf {folder_prefix}')
 
     os.makedirs(folder_prefix, exist_ok=True)
 
     edpool = EndpointPool(chain)
-    tx_list = collect_block_all(block_number, edpool)
 
-    block_tx_info_start_time = time.time()
+    tx_info_start_time = time.time()
     # Collect transaction details
-    tx_data = [collect_info(tx_hash, edpool) for tx_hash in tx_list]
-    tx_data = extract_contract_info(tx_data)
-    block_tx_info_end_time = time.time()
-    time_dict['basic_info'] = block_tx_info_end_time - block_tx_info_start_time
-    print(f"Block transaction info collection time: {block_tx_info_end_time - block_tx_info_start_time:.2f} seconds")
+    tx_data, block_number = collect_info(tx_hash, edpool)
+    tx_data = extract_contract_info([tx_data])[0]
+    tx_info_end_time = time.time()
+    time_dict['basic_info'] = tx_info_end_time - tx_info_start_time
 
     # Convert to DataFrame and save to CSV
     if tx_data:
@@ -50,49 +48,37 @@ def main(block_number, chain, overwrite=False, llm_detect=False):
         else:
             mev_bots = []
         time_dict['tx_details'] = {}
-        tx_df = pd.DataFrame(tx_data)
-        suspicious_list = detect_4bytes(tx_df)
-        csv_file = f"{folder_prefix}/transactions.csv"
-        tx_df.to_csv(csv_file, index=False)
-        for tx_hash in suspicious_list:
-            # Extract basic information from the transaction DataFrame
-            selected_tx = tx_df[tx_df['hash'] == tx_hash]
-            if not selected_tx.empty:
-                selected_tx_dict = selected_tx.to_dict(orient="records")[0]
-            else:
-                selected_tx_dict = None
-            time_dict['tx_details'][tx_hash] = tx_detect(tx_hash, chain, block_number, folder_prefix,
-                                                         selected_tx_dict, edpool, mev_bots, llm_detect)
-        print(f"CSV file created: {csv_file}")
+        time_dict['tx_details'][tx_hash] = tx_detect(tx_hash, chain, block_number, folder_prefix,
+                                                         tx_data, edpool, mev_bots, llm_detect)
     else:
         print("No transactions found.")
     detection_end_time = time.time()
-    time_dict['detection'] = detection_end_time - block_tx_info_end_time
-    time_dict['total'] = detection_end_time - block_tx_info_start_time
-    print(f"Total execution time: {detection_end_time - block_tx_info_end_time:.2f} seconds")
+    time_dict['detection'] = detection_end_time - tx_info_end_time
+    time_dict['total'] = detection_end_time - tx_info_start_time
+    print(f"Total execution time: {detection_end_time - tx_info_end_time:.2f} seconds")
     with open(folder_prefix + f"/time_analysis.json", "w") as json_file:
         json.dump(time_dict, json_file, indent=2)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("input_block_number", help="Block number for collection")
+    parser.add_argument("input_transaction_hash", help="Transaction hash for collection")
     parser.add_argument("chain", help="Ethereum block chain name")
     # use chatgpt to detect
     parser.add_argument("-llm", "--llm_detect", action="store_true", help="Use chatgpt to detect")
     # overwrite existing result
     parser.add_argument("-o", "--overwrite", action="store_true", help="Overwrite existing result")
     args = parser.parse_args()
-    if "," in args.input_block_number:
-        block_numbers = args.input_block_number.split(",")
-        print(f'Collecting data for {len(block_numbers)} blocks.')
-        for input_block_number in block_numbers:
-            if isinstance(input_block_number, str) and input_block_number.isdigit():
-                print(f'Collecting data for block {input_block_number}')
-                main(input_block_number, args.chain, args.overwrite, args.llm_detect)
+    if "," in args.input_transaction_hash:
+        transaction_hashes = args.input_block_number.split(",")
+        print(f'Collecting data for {len(transaction_hashes)} txs.')
+        for transaction_hash in transaction_hashes:
+            if isinstance(transaction_hash, str):
+                print(f'Collecting data for transaction {transaction_hash}')
+                main(transaction_hash, args.chain, args.overwrite, args.llm_detect)
     else:
-        input_block_number = args.input_block_number
-        if isinstance(input_block_number, str) and input_block_number.isdigit():
-            main(input_block_number, args.chain, args.overwrite, args.llm_detect)
+        transaction_hash = args.input_transaction_hash
+        if isinstance(transaction_hash, str):
+            main(transaction_hash, args.chain, args.overwrite, args.llm_detect)
         else:
             raise ValueError("not a transaction hash")

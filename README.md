@@ -45,11 +45,11 @@ Set the following,
 
 ## How to set input data?
 
-The input data is block number you want to detect.
+The input data is the transaction hash.
 
 ## How to process?
 ``` bash
-python pipeline.py <blocknumber> <chain> -o (-llm)
+python pipeline.py <tx_hash> <chain> -o (-llm)
 ```
 It will process the hash in your file.
 

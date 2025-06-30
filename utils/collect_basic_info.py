@@ -71,6 +71,7 @@ def collect_info(transaction_hash, edpool):
         '4byteData': input_data,
         'to_is_eoa': is_eoa
     }
+    block_number = transaction["blockNumber"]
 
     # Return the DataFrame containing transaction information
-    return transaction_data
+    return transaction_data, block_number
